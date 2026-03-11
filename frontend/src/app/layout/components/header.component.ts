@@ -39,8 +39,8 @@ import { CommonModule } from '@angular/common';
             </nav>
           </div>
           <div class="d-flex align-items-center">
-            <button class="btn btn-outline-light me-2" *ngIf="!isLoggedIn" (click)="openLoginModal()">Login</button>
-            <button class="btn btn-success" *ngIf="!isLoggedIn" (click)="openRegisterModal()">Register</button>
+            <button class="btn btn-outline-light me-2" *ngIf="!isLoggedIn" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+            <button class="btn btn-success" *ngIf="!isLoggedIn" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
             <button class="btn btn-outline-light" *ngIf="isLoggedIn" (click)="logout()">Logout</button>
           </div>
         </div>
@@ -48,9 +48,16 @@ import { CommonModule } from '@angular/common';
     </header>
   `,
   styles: [`
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
     .bg-primary {
       background-color: #F39C12 !important;
     }
+
     .navbar-nav .nav-link.active {
       font-weight: bold;
     }
@@ -59,14 +66,6 @@ import { CommonModule } from '@angular/common';
 export class HeaderComponent {
   userRole: string | null = 'CUSTOMER'; // This should come from auth service
   isLoggedIn: boolean = false; // This should come from auth service
-
-  openLoginModal() {
-    // TODO: Implement modal opening
-  }
-
-  openRegisterModal() {
-    // TODO: Implement modal opening
-  }
 
   logout() {
     // TODO: Implement logout

@@ -30,8 +30,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   /** Product showcase carousel data */
   carouselImages = [
-    { src: 'assets/images/carousel-1.png', alt: 'Sản phẩm mỹ phẩm chính hãng' },
-    { src: 'assets/images/carousel-2.png', alt: 'Sản phẩm điện tử đã qua sử dụng' }
+    { src: '/images/carousel-1.png', alt: 'Sản phẩm mỹ phẩm chính hãng' },
+    { src: '/images/carousel-2.png', alt: 'Sản phẩm điện tử đã qua sử dụng' }
   ];
 
   /** Auto-slide interval reference */

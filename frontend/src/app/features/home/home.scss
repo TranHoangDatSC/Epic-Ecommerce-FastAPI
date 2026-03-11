@@ -238,7 +238,7 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/assets/images/hero.jpg') !important; // root-relative path (required for Angular bundler)
+    background-image: url('/images/hero.jpg');
     background-size: cover;
     background-position: center;
     z-index: 1;
@@ -914,12 +914,14 @@ img {
 .feature-card {
   background: $color-white;
   border: 1px solid $color-border;
-  border-radius: $radius-lg;
+  border-radius: $radius-md;  // slightly less rounded for cleaner look
   padding: $spacing-xl;
   text-align: center;
+  height: 100%;
   @include card-hover();
   position: relative;
   overflow: hidden;
+  margin: $spacing-md; // add spacing around each card
 
   &::before {
     content: '';
@@ -969,171 +971,6 @@ img {
   }
 }
 
-// ===== FOOTER =====
-.footer {
-  background: linear-gradient(135deg, $color-footer 0%, $color-footer-darker 100%);
-  color: $color-footer-text;
-  padding: $spacing-section $spacing-container $spacing-lg;
-  margin-top: $spacing-section;
-  text-align: center;
-}
-
-// center each footer column on smaller screens and in general
-.footer-col {
-  text-align: center;
-}
-
-.footer-header,
-.footer-links,
-.contact-item {
-  justify-content: center !important;
-}
-
-.footer-content {
-  margin-bottom: $spacing-xl;
-}
-
-.footer-col {
-  margin-bottom: $spacing-xl;
-
-  @media (max-width: 768px) {
-    margin-bottom: $spacing-lg;
-  }
-}
-
-.footer-header {
-  @include flexy(row, flex-start, center);
-  gap: $spacing-md;
-  margin-bottom: $spacing-md;
-
-  i {
-    font-size: $font-size-lg;
-    color: $color-primary;
-  }
-}
-
-.footer-title {
-  font-size: $font-size-base;
-  font-weight: $font-weight-bold;
-  color: $color-white;
-  margin-bottom: $spacing-lg;
-  margin: 0;
-}
-
-.footer-desc {
-  color: #bdc3c7;
-  font-size: 0.9rem;
-  line-height: 1.7;
-  margin-bottom: $spacing-lg;
-}
-
-.social-links {
-  @include flexy(row, flex-start, center);
-  gap: $spacing-md;
-
-  .social-icon {
-    @include flexy();
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: $radius-full;
-    color: $color-white;
-    transition: all $transition-base;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      background: $color-primary;
-      border-color: $color-primary;
-      transform: translateY(-3px) scale(1.15);
-      box-shadow: 0 4px 12px rgba($color-primary, 0.4);
-    }
-  }
-}
-
-.footer-links {
-  list-style: none;
-  padding: 0;
-
-  li {
-    margin-bottom: $spacing-md;
-
-    a {
-      color: #bdc3c7;
-      text-decoration: none;
-      transition: all $transition-base;
-      font-size: 0.9rem;
-
-      &:hover {
-        color: $color-primary;
-        transform: translateX(4px);
-      }
-    }
-  }
-}
-
-.contact-item {
-  @include flexy(row, flex-start, center);
-  gap: $spacing-md;
-  margin-bottom: $spacing-md;
-  color: #bdc3c7;
-  font-size: 0.9rem;
-
-  i {
-    color: $color-primary;
-    width: 20px;
-  }
-
-  a {
-    color: #bdc3c7;
-
-    &:hover {
-      color: $color-primary;
-    }
-  }
-}
-
-.footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: $spacing-lg;
-  color: #95a5a6;
-  font-size: 0.9rem;
-}
-
-.copyright {
-  margin: 0;
-
-  strong {
-    color: $color-primary;
-  }
-}
-
-.footer-bottom-nav {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  gap: $spacing-md;
-
-  @media (max-width: 768px) {
-    justify-content: center;
-    margin-top: $spacing-lg;
-  }
-
-  a {
-    color: $color-footer-text;
-    text-decoration: none;
-    transition: color $transition-base;
-    font-size: 0.9rem;
-
-    &:hover {
-      color: $color-white;
-    }
-  }
-
-  .separator {
-    color: #7f8c8d;
-  }
-}
 
 // ===== RESPONSIVE DESIGN =====
 @media (max-width: 992px) {
