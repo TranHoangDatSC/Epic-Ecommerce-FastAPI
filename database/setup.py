@@ -6,7 +6,7 @@ OLDSHOP DATABASE - Database Setup
 Interactive setup script for OldShop database
 """
 
-import psycopg2
+import psycopg2 # type: ignore
 import os
 import sys
 from pathlib import Path
