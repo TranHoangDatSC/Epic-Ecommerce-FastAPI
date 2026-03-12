@@ -50,7 +50,13 @@ class User(Base):
     password_reset_expires = Column(DateTime)
 
     # Relationships
-    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    # link to roles assigned to this user.
+    # foreign_keys not required since UserRole now only references User once.
+    user_roles = relationship(
+        "UserRole",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     products = relationship("Product", foreign_keys="Product.seller_id", back_populates="seller")
     approved_products = relationship("Product", foreign_keys="Product.approved_by", back_populates="approved_by_user")
     orders = relationship("Order", back_populates="buyer")
@@ -69,17 +75,19 @@ class User(Base):
 
 
 class UserRole(Base):
-    """UserRole model - maps users to roles"""
+    """UserRole model - maps users to roles (composite primary key)"""
     __tablename__ = "user_role"
 
-    user_role_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False, index=True)
-    role_id = Column(Integer, ForeignKey("role.role_id"), nullable=False, index=True)
-    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    assigned_by = Column(Integer, ForeignKey("user.user_id"))
+    # composite key matches existing SQL schema
+    user_id = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
+    role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
 
     # Relationships
-    user = relationship("User", back_populates="user_roles", foreign_keys=[user_id])
+    user = relationship(
+        "User",
+        back_populates="user_roles",
+        foreign_keys=[user_id]
+    )
     role = relationship("Role", back_populates="user_roles")
 
 

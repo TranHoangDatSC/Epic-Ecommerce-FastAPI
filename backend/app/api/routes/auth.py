@@ -98,11 +98,12 @@ async def login(
     )
 
 
+from app.core.dependencies import get_current_user
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(
-    current_user: User = Depends(lambda db=Depends(get_db): Depends(get_db))
+    current_user: User = Depends(get_current_user)
 ) -> UserResponse:
-    """Get current authenticated user info"""
-    # This needs proper dependency injection
-    # Will be fixed in the main route registration
-    pass
+    """Return the authenticated user's profile"""
+    return current_user
