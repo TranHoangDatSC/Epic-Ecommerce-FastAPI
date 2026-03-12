@@ -8,7 +8,8 @@ settings = get_settings()
 # Create database engine
 engine = create_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
+    # echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,  # Test connections before using them
     pool_size=10,
     max_overflow=20,
@@ -25,7 +26,7 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
-def get_db() -> Session:
+def get_db() -> Session: 
     """Dependency for getting database session"""
     db = SessionLocal()
     try:

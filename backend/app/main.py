@@ -1,73 +1,99 @@
+import socket
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base
 from app.api.routes import auth, users, categories, products, orders
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# --- Helper để lấy IP Network ---
+def get_ip_address():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
-# Initialize FastAPI app
+# ==================== Lifespan (Startup/Shutdown) ====================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = get_settings()
+    # Khởi tạo tables (Chỉ dùng nếu không dùng Alembic)
+    Base.metadata.create_all(bind=engine)
+    
+    # Banner Terminal theo phong cách HEMIS
+    local_ip = "127.0.0.1"
+    network_ip = get_ip_address()
+    port = 8000
+    
+    print("\n" + "="*70)
+    print(f"  {settings.PROJECT_NAME.upper()} API Server")
+    print("="*70)
+    print(f"  Local:   http://{local_ip}:{port}")
+    print(f"  Network: http://{network_ip}:{port}")
+    print(f"  Docs:    http://{local_ip}:{port}/api/docs")
+    print(f"  ReDoc:   http://{local_ip}:{port}/api/redoc")
+    print("="*70 + "\n")
+    
+    yield
+    print(f"\n--- Shutting down {settings.PROJECT_NAME} ---")
+
+# ==================== Initialize App ====================
+
 settings = get_settings()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     description="FastAPI Backend for OldShop E-commerce Platform",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
+    lifespan=lifespan
 )
 
-
-# ==================== CORS Middleware ====================
+# ==================== Middleware ====================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to specific domains in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ==================== Base Routes ====================
 
-# ==================== Health Check ====================
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/api/docs")
 
-@app.get("/health")
+@app.get("/health", tags=["System"])
 async def health_check():
-    """Health check endpoint"""
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "version": settings.PROJECT_VERSION
     }
 
-
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "Welcome to OldShop API",
-        "docs": "/api/docs",
-        "version": settings.PROJECT_VERSION
-    }
-
-
 # ==================== API Routes ====================
 
-# Include routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(categories.router, prefix=settings.API_V1_STR)
 app.include_router(products.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
 
-
 # ==================== Error Handlers ====================
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
-    """Handle general exceptions"""
     return JSONResponse(
         status_code=500,
         content={
@@ -76,26 +102,7 @@ async def general_exception_handler(request, exc):
         }
     )
 
-
-# ==================== Startup/Shutdown ====================
-
-@app.on_event("startup")
-async def startup_event():
-    """On startup event"""
-    print(f"Starting {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
-    print(f"Database: {settings.DB_NAME}")
-    print(f"Debug mode: {settings.DEBUG}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """On shutdown event"""
-    print(f"Shutting down {settings.PROJECT_NAME}")
-
-
 if __name__ == "__main__":
-    import uvicorn
-    
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
