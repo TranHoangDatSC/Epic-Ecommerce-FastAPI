@@ -476,3 +476,35 @@ class TransactionResponse(TransactionBase):
 # Update forward references
 UserDetailResponse.update_forward_refs()
 ProductDetailResponse.update_forward_refs()
+
+
+# ==================== Moderator Schemas ====================
+
+class ProductApprovalRequest(BaseModel):
+    """Product approval request"""
+    product_id: int
+    status: int = Field(..., ge=0, le=2)  # 0: Pending, 1: Approved, 2: Rejected
+    reject_reason: Optional[str] = Field(None, max_length=500)
+
+
+class ViolationReportRequest(BaseModel):
+    """Violation report request"""
+    review_id: int
+
+
+class UserBanRequest(BaseModel):
+    """User ban request"""
+    user_id: int
+    reason: str = Field(..., max_length=500)
+
+
+class ViolationLogResponse(BaseModel):
+    """Violation log response"""
+    log_id: int
+    user_id: int
+    reason: str
+    action_taken: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

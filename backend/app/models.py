@@ -48,6 +48,7 @@ class User(Base):
     email_verification_token = Column(String(255))
     password_reset_token = Column(String(255))
     password_reset_expires = Column(DateTime)
+    trust_score = Column(Integer, default=100, nullable=False)
 
     # Relationships
     # link to roles assigned to this user.
@@ -388,4 +389,23 @@ class SystemLog(Base):
         Index('idx_system_log_user', 'user_id'),
         Index('idx_system_log_action', 'action'),
         Index('idx_system_log_created_at', 'created_at'),
+    )
+
+
+class ViolationLog(Base):
+    """ViolationLog model - logs for user violations and actions taken"""
+    __tablename__ = "violation_log"
+
+    log_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False, index=True)
+    reason = Column(String(500), nullable=False)
+    action_taken = Column(String(50), nullable=False)  # BAN, WARNING, etc.
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = relationship("User")
+
+    __table_args__ = (
+        Index('idx_violation_log_user', 'user_id'),
+        Index('idx_violation_log_created_at', 'created_at'),
     )

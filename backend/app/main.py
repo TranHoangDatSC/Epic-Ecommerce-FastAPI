@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base
-from app.api.routes import auth, users, categories, products, orders
+from app.api.routes import auth, users, categories, products, orders, moderator
 
 # --- Helper để lấy IP Network ---
 def get_ip_address():
@@ -89,6 +89,7 @@ app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(categories.router, prefix=settings.API_V1_STR)
 app.include_router(products.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
+app.include_router(moderator.router, prefix=settings.API_V1_STR)
 
 # ==================== Error Handlers ====================
 

@@ -1,72 +1,120 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ModeratorService } from '../../../shared/services/moderator.service';
+
+interface Product {
+  product_id: number;
+  title: string;
+  description?: string;
+  price: number;
+  status: number;
+  seller: {
+    full_name: string;
+  };
+  category: {
+    name: string;
+  };
+  product_images: Array<{
+    image_url: string;
+    is_primary: boolean;
+  }>;
+}
 
 @Component({
   selector: 'app-product-check',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <h2>Product Moderation</h2>
-      <div class="card">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Seller</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><img src="https://via.placeholder.com/50" class="img-thumbnail" alt="Product"></td>
-                  <td>Product A</td>
-                  <td>John Seller</td>
-                  <td>Electronics</td>
-                  <td>$99.99</td>
-                  <td><span class="badge bg-warning">Pending</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-success me-1">Approve</button>
-                    <button class="btn btn-sm btn-outline-danger me-1">Reject</button>
-                    <button class="btn btn-sm btn-outline-info">View Details</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><img src="https://via.placeholder.com/50" class="img-thumbnail" alt="Product"></td>
-                  <td>Product B</td>
-                  <td>Jane Seller</td>
-                  <td>Clothing</td>
-                  <td>$49.99</td>
-                  <td><span class="badge bg-danger">Rejected</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-success me-1">Approve</button>
-                    <button class="btn btn-sm btn-outline-warning me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-info">View Details</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><img src="https://via.placeholder.com/50" class="img-thumbnail" alt="Product"></td>
-                  <td>Product C</td>
-                  <td>Bob Seller</td>
-                  <td>Books</td>
-                  <td>$19.99</td>
-                  <td><span class="badge bg-success">Approved</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-info">View Details</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule],
+  templateUrl: './product-check.html',
+  styleUrl: './product-check.scss'
 })
-export class ProductCheckComponent {}
+export class ProductCheckComponent implements OnInit {
+  pendingProducts: Product[] = [];
+  selectedProduct: Product | null = null;
+  rejectReason: string = '';
+  showRejectModal: boolean = false;
+  processingProduct: number | null = null;
+
+  constructor(private moderatorService: ModeratorService) {}
+
+  ngOnInit() {
+    this.loadPendingProducts();
+  }
+
+  loadPendingProducts() {
+    this.moderatorService.getPendingProducts().subscribe({
+      next: (products) => {
+        this.pendingProducts = products;
+      },
+      error: (error) => {
+        console.error('Error loading pending products:', error);
+        // TODO: Show error message
+      }
+    });
+  }
+
+  approveProduct(productId: number) {
+    if (this.processingProduct) return;
+
+    this.processingProduct = productId;
+
+    this.moderatorService.approveProduct(productId, 1).subscribe({
+      next: () => {
+        this.pendingProducts = this.pendingProducts.filter(p => p.product_id !== productId);
+        this.processingProduct = null;
+        // TODO: Show success message
+      },
+      error: (error) => {
+        console.error('Error approving product:', error);
+        this.processingProduct = null;
+        // TODO: Show error message
+      }
+    });
+  }
+
+  openRejectModal(product: Product) {
+    this.selectedProduct = product;
+    this.rejectReason = '';
+    this.showRejectModal = true;
+  }
+
+  closeRejectModal() {
+    this.showRejectModal = false;
+    this.selectedProduct = null;
+    this.rejectReason = '';
+  }
+
+  rejectProduct() {
+    if (!this.selectedProduct || !this.rejectReason.trim()) return;
+
+    this.processingProduct = this.selectedProduct.product_id;
+
+    this.moderatorService.approveProduct(this.selectedProduct.product_id, 2, this.rejectReason).subscribe({
+      next: () => {
+        this.pendingProducts = this.pendingProducts.filter(p => p.product_id !== this.selectedProduct!.product_id);
+        this.closeRejectModal();
+        this.processingProduct = null;
+        // TODO: Show success message
+      },
+      error: (error) => {
+        console.error('Error rejecting product:', error);
+        this.processingProduct = null;
+        // TODO: Show error message
+      }
+    });
+  }
+
+  getPrimaryImage(product: Product): string {
+    const primaryImage = product.product_images.find(img => img.is_primary);
+    return primaryImage ? primaryImage.image_url : (product.product_images[0]?.image_url || '/images/placeholder.png');
+  }
+
+  getStatusBadge(status: number): { text: string, class: string } {
+    switch (status) {
+      case 0: return { text: 'Chờ duyệt', class: 'bg-warning' };
+      case 1: return { text: 'Đã duyệt', class: 'bg-success' };
+      case 2: return { text: 'Từ chối', class: 'bg-danger' };
+      default: return { text: 'Không xác định', class: 'bg-secondary' };
+    }
+  }
+}

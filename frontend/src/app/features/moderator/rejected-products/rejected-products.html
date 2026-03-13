@@ -1,0 +1,90 @@
+<div class="rejected-products-container">
+  <div class="section-header">
+    <h2 class="section-title">Sản phẩm Bị Từ Chối</h2>
+    <p class="section-subtitle">Quản lý các sản phẩm đã bị từ chối và theo dõi lý do</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          placeholder="Tìm theo tên sản phẩm hoặc người bán..."
+          class="form-control"
+        />
+      </div>
+
+      <div class="category-filter">
+        <select [(ngModel)]="selectedCategory" class="form-control">
+          <option value="">Tất cả danh mục</option>
+          <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+
+      <button class="btn btn-outline-secondary" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        Xóa bộ lọc
+      </button>
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid">
+    <div class="product-card" *ngFor="let product of filteredProducts">
+      <div class="card-image">
+        <img [src]="getPrimaryImage(product)" [alt]="product.title" class="product-img">
+        <div class="status-badge bg-danger">
+          Từ chối
+        </div>
+      </div>
+
+      <div class="card-content">
+        <h3 class="product-title">{{ product.title }}</h3>
+        <p class="product-description">{{ product.description || 'Không có mô tả' }}</p>
+
+        <div class="rejection-info">
+          <div class="rejection-reason">
+            <strong>Lý do từ chối:</strong>
+            <p>{{ product.rejection_reason }}</p>
+          </div>
+          <div class="rejection-date">
+            <i class="fas fa-calendar-times"></i>
+            Từ chối ngày: {{ product.rejected_at | date:'dd/MM/yyyy HH:mm' }}
+          </div>
+        </div>
+
+        <div class="product-meta">
+          <div class="meta-item">
+            <i class="fas fa-user"></i>
+            <span>{{ product.seller.full_name }}</span>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-tag"></i>
+            <span>{{ product.category.name }}</span>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-dollar-sign"></i>
+            <span>{{ product.price | number:'1.0-0' }} VND</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn btn-outline-primary" (click)="resubmitProduct(product.product_id)">
+          <i class="fas fa-redo"></i>
+          Cho phép nộp lại
+        </button>
+      </div>
+    </div>
+
+    <div class="no-products" *ngIf="filteredProducts.length === 0">
+      <i class="fas fa-times-circle"></i>
+      <h3>Không tìm thấy sản phẩm nào</h3>
+      <p *ngIf="rejectedProducts.length === 0">Chưa có sản phẩm bị từ chối.</p>
+      <p *ngIf="rejectedProducts.length > 0 && filteredProducts.length === 0">Không có sản phẩm nào khớp với bộ lọc.</p>
+    </div>
+  </div>
+</div>

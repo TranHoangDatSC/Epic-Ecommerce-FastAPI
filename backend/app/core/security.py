@@ -62,3 +62,57 @@ def decode_token(token: str) -> Optional[TokenData]:
         return TokenData(user_id=user_id, username=username, role_ids=role_ids)
     except JWTError:
         return None
+
+
+# FastAPI dependencies
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app import models
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
+    """Get current authenticated user"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    token_data = decode_token(token)
+    if token_data is None:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(
+        models.User.user_id == token_data.user_id,
+        models.User.is_deleted == False
+    ).first()
+    
+    if user is None:
+        raise credentials_exception
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated"
+        )
+    
+    return user
+
+
+def get_current_moderator(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Get current user and verify they are a moderator"""
+    # Check if user has moderator role (assuming role_id for moderator is known, e.g., 2)
+    # For simplicity, we'll check if user has any role that includes 'mod' in name
+    # In production, you'd want to check specific role IDs
+    
+    if not any('mod' in role.role_name.lower() for role in current_user.user_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    return current_user

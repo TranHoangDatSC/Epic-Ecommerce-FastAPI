@@ -1,0 +1,111 @@
+<div class="processing-history-container">
+  <div class="section-header">
+    <h2 class="section-title">Lịch sử Xử lý</h2>
+    <p class="section-subtitle">Theo dõi tất cả các hành động xử lý của moderator</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="applyFilters()"
+          placeholder="Tìm theo tiêu đề, moderator hoặc chi tiết..."
+          class="form-control"
+        />
+      </div>
+
+      <div class="action-filter">
+        <select [(ngModel)]="selectedActionType" (change)="applyFilters()" class="form-control">
+          <option *ngFor="let action of actionTypes" [value]="action.value">{{ action.label }}</option>
+        </select>
+      </div>
+
+      <div class="date-filter">
+        <select [(ngModel)]="selectedDateRange" (change)="applyFilters()" class="form-control">
+          <option *ngFor="let range of dateRanges" [value]="range.value">{{ range.label }}</option>
+        </select>
+      </div>
+
+      <button class="btn btn-outline-secondary" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        Xóa bộ lọc
+      </button>
+    </div>
+  </div>
+
+  <!-- History List -->
+  <div class="history-list">
+    <div class="history-item" *ngFor="let item of paginatedHistory">
+      <div class="item-icon" [ngClass]="getActionColor(item.action_type)">
+        <i [class]="getActionIcon(item.action_type)"></i>
+      </div>
+
+      <div class="item-content">
+        <div class="item-header">
+          <h4 class="item-title">{{ item.target_title }}</h4>
+          <span class="action-badge" [ngClass]="getActionColor(item.action_type)">
+            {{ getActionTypeLabel(item.action_type) }}
+          </span>
+        </div>
+
+        <p class="item-details">{{ item.action_details }}</p>
+
+        <div class="item-meta">
+          <span class="moderator">
+            <i class="fas fa-user-shield"></i>
+            {{ item.moderator.full_name }}
+          </span>
+          <span class="timestamp">
+            <i class="fas fa-clock"></i>
+            {{ item.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
+          </span>
+          <span class="target-type">
+            <i class="fas fa-tag"></i>
+            {{ item.target_type === 'product' ? 'Sản phẩm' : item.target_type === 'user' ? 'Người dùng' : 'Review' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-history" *ngIf="paginatedHistory.length === 0">
+      <i class="fas fa-history"></i>
+      <h3>Không có lịch sử xử lý</h3>
+      <p *ngIf="history.length === 0">Chưa có hành động xử lý nào.</p>
+      <p *ngIf="history.length > 0 && paginatedHistory.length === 0">Không có kết quả nào khớp với bộ lọc.</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button
+      class="btn btn-outline-primary btn-sm"
+      (click)="previousPage()"
+      [disabled]="currentPage === 1">
+      <i class="fas fa-chevron-left"></i>
+      Trước
+    </button>
+
+    <div class="page-numbers">
+      <button
+        *ngFor="let page of [].constructor(totalPages); let i = index"
+        class="btn btn-sm"
+        [class.btn-primary]="currentPage === i + 1"
+        [class.btn-outline-primary]="currentPage !== i + 1"
+        (click)="goToPage(i + 1)">
+        {{ i + 1 }}
+      </button>
+    </div>
+
+    <button
+      class="btn btn-outline-primary btn-sm"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages">
+      Sau
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+</div>

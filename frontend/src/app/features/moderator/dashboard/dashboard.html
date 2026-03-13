@@ -1,0 +1,154 @@
+<div class="dashboard-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Moderator Dashboard</h3>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- KIỂM DUYỆT NỘI DUNG -->
+      <div class="nav-section">
+        <h4 class="section-title">KIỂM DUYỆT NỘI DUNG</h4>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/moderator/product-check" class="nav-link">
+              <i class="fas fa-box"></i>
+              <span>Sản phẩm Chờ Duyệt</span>
+              <span class="badge">{{ stats.pendingProducts }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/moderator/rejected-products" class="nav-link">
+              <i class="fas fa-times-circle"></i>
+              <span>Sản phẩm Bị Từ Chối</span>
+              <span class="badge">{{ stats.rejectedProducts }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/moderator/archived-products" class="nav-link">
+              <i class="fas fa-archive"></i>
+              <span>Sản phẩm Lưu Kho</span>
+              <span class="badge">{{ stats.archivedProducts }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- AN TOÀN & TIN CẬY -->
+      <div class="nav-section">
+        <h4 class="section-title">AN TOÀN & TIN CẬY</h4>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/moderator/violation-report" class="nav-link">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>Báo cáo Vi phạm</span>
+              <span class="badge badge-danger">{{ stats.violationReports }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/moderator/processing-history" class="nav-link">
+              <i class="fas fa-history"></i>
+              <span>Lịch sử Xử lý</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/moderator/seller-appeals" class="nav-link">
+              <i class="fas fa-gavel"></i>
+              <span>Khiếu nại từ Người bán</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/moderator/unlock" class="nav-link">
+              <i class="fas fa-unlock"></i>
+              <span>Mở khóa tài khoản</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <h1>Trung tâm Điều phối Moderator</h1>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.processedToday }}</span>
+          <span class="stat-label">Đã xử lý hôm nay</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Action Center -->
+    <section class="action-center">
+      <!-- High-Priority Queue -->
+      <div class="queue-section">
+        <h2 class="section-title">
+          <i class="fas fa-exclamation-circle"></i>
+          Hàng chờ Khẩn cấp
+        </h2>
+        <div class="queue-list">
+          <div class="queue-item" *ngFor="let item of highPriorityQueue"
+               [ngClass]="getPriorityClass(item.priority)">
+            <div class="item-header">
+              <h4>{{ item.title }}</h4>
+              <span class="priority-badge" [ngClass]="getPriorityClass(item.priority)">
+                {{ item.priority === 'high' ? 'Cao' : item.priority === 'medium' ? 'Trung bình' : 'Thấp' }}
+              </span>
+            </div>
+            <p class="item-description">{{ item.description }}</p>
+            <div class="item-meta">
+              <span class="sla">SLA: {{ item.sla }}</span>
+              <span class="timestamp">{{ item.created_at | date:'short' }}</span>
+            </div>
+            <div class="item-actions">
+              <button class="btn btn-primary btn-sm" [routerLink]="getActionLink(item)">
+                Xử lý ngay
+              </button>
+            </div>
+          </div>
+          <div class="no-items" *ngIf="highPriorityQueue.length === 0">
+            <i class="fas fa-check-circle"></i>
+            <p>Không có mục khẩn cấp nào</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seller Reputation Cards -->
+      <div class="reputation-section">
+        <h2 class="section-title">
+          <i class="fas fa-star"></i>
+          Thẻ Tín nhiệm Người bán
+        </h2>
+        <div class="reputation-grid">
+          <div class="reputation-card" *ngFor="let seller of sellerReputations"
+               [ngClass]="getReputationStatusClass(seller.status)">
+            <div class="card-header">
+              <h4>{{ seller.full_name }}</h4>
+              <div class="score-display">
+                <span class="score">{{ seller.reputation_score }}</span>
+                <span class="score-label">Điểm</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="stat-row">
+                <span>Sản phẩm: {{ seller.total_products }}</span>
+                <span>Vi phạm: {{ seller.violations_count }}</span>
+              </div>
+              <div class="status-indicator">
+                <span class="status-text">{{ getReputationStatusText(seller.status) }}</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-outline-primary btn-sm" [routerLink]="['/moderator/seller', seller.seller_id]">
+                Xem chi tiết
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

@@ -44,7 +44,7 @@ import { RouterLink } from '@angular/router';
             </li>
             <!-- Moderator Navigation -->
             <li class="nav-item" *ngIf="currentUser?.role === 'MODERATOR'">
-              <a class="nav-link" routerLink="/moderator/product-check">Product Check</a>
+              <a class="nav-link" routerLink="/moderator/dashboard">Dashboard</a>
             </li>
           </ul>
           <ul class="navbar-nav">
