@@ -58,6 +58,7 @@ class UserResponse(UserBase):
     updated_at: Optional[datetime]
     last_login: Optional[datetime]
     email_verified: bool
+    trust_score: Optional[float] = None
 
     class Config:
         from_attributes = True

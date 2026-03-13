@@ -54,30 +54,45 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         product = review.product
         seller = product.seller
 
+        # Check if seller has role_id = 3
+        has_seller_role = db.query(models.UserRole).filter(
+            and_(models.UserRole.user_id == seller.user_id, models.UserRole.role_id == 3)
+        ).first() is not None
+
         # Deactivate the product
         product.status = 2  # Rejected
         product.reject_reason = f"Violation reported on review {review_id}"
 
-        # Decrease seller's trust score
-        seller.trust_score = max(0, seller.trust_score - 10)
+        # Decrease seller's trust score only if they have seller role
+        if has_seller_role:
+            current_score = seller.trust_score if seller.trust_score is not None else 0.0
+            seller.trust_score = max(0.0, current_score - 10.0)
 
-        # Log the violation
-        violation_log = models.ViolationLog(
-            user_id=seller.user_id,
-            reason=f"Violation on review {review_id} for product {product.product_id}",
-            action_taken="PRODUCT_REMOVAL"
-        )
-        db.add(violation_log)
-
-        # If trust score <= 0, ban the user
-        if seller.trust_score <= 0:
-            seller.is_active = False
-            ban_log = models.ViolationLog(
+            # Log the violation
+            violation_log = models.ViolationLog(
                 user_id=seller.user_id,
-                reason="Trust score dropped to 0 or below",
-                action_taken="BAN"
+                reason=f"Violation on review {review_id} for product {product.product_id}",
+                action_taken="PRODUCT_REMOVAL"
             )
-            db.add(ban_log)
+            db.add(violation_log)
+
+            # If trust score <= 0, ban the user
+            if seller.trust_score <= 0:
+                seller.is_active = False
+                ban_log = models.ViolationLog(
+                    user_id=seller.user_id,
+                    reason="Trust score dropped to 0 or below",
+                    action_taken="BAN"
+                )
+                db.add(ban_log)
+        else:
+            # Log without trust score penalty
+            violation_log = models.ViolationLog(
+                user_id=seller.user_id,
+                reason=f"Violation on review {review_id} for product {product.product_id} (no trust score penalty - not a seller)",
+                action_taken="PRODUCT_REMOVAL"
+            )
+            db.add(violation_log)
 
         db.commit()
         db.refresh(review)

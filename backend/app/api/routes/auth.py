@@ -7,7 +7,7 @@ from app.core.security import verify_password, create_access_token
 from app.crud.user import crud_user
 from app.models import User
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

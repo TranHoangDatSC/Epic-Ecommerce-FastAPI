@@ -48,7 +48,7 @@ class User(Base):
     email_verification_token = Column(String(255))
     password_reset_token = Column(String(255))
     password_reset_expires = Column(DateTime)
-    trust_score = Column(Integer, default=100, nullable=False)
+    trust_score = Column(DECIMAL(5,2), default=0.0, nullable=True)
 
     # Relationships
     # link to roles assigned to this user.

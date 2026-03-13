@@ -16,6 +16,9 @@ async def get_current_user_info(
     """
     Get current authenticated user's information with roles
     """
+    # Check if user has role_id = 3 (seller)
+    has_seller_role = any(role.role_id == 3 for role in current_user.user_roles)
+    
     return UserDetailResponse(
         user_id=current_user.user_id,
         username=current_user.username,
@@ -29,6 +32,7 @@ async def get_current_user_info(
         updated_at=current_user.updated_at,
         last_login=current_user.last_login,
         email_verified=current_user.email_verified,
+        trust_score=current_user.trust_score if has_seller_role else None,
         roles=[
             {
                 "role_id": role.role_id,
@@ -69,7 +73,24 @@ async def get_user(
             detail="User not found"
         )
     
-    return user
+    # Check if user has role_id = 3 (seller)
+    has_seller_role = any(role.role_id == 3 for role in user.user_roles)
+    
+    return UserResponse(
+        user_id=user.user_id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        address=user.address,
+        is_active=user.is_active,
+        is_deleted=user.is_deleted,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        last_login=user.last_login,
+        email_verified=user.email_verified,
+        trust_score=user.trust_score if has_seller_role else None
+    )
 
 
 @router.get("", response_model=list[UserResponse])
@@ -85,7 +106,25 @@ async def list_users(
     Requires admin role.
     """
     users = crud_user.get_active_users(db, skip=skip, limit=limit)
-    return users
+    result = []
+    for user in users:
+        has_seller_role = any(role.role_id == 3 for role in user.user_roles)
+        result.append(UserResponse(
+            user_id=user.user_id,
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            phone_number=user.phone_number,
+            address=user.address,
+            is_active=user.is_active,
+            is_deleted=user.is_deleted,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            last_login=user.last_login,
+            email_verified=user.email_verified,
+            trust_score=user.trust_score if has_seller_role else None
+        ))
+    return result
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
