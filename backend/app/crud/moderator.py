@@ -150,6 +150,45 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         db.refresh(user)
         return user
 
+    def lock_unlock_user(self, db: Session, *, user_id: int, action: str, reason: str, moderator_id: int) -> models.User:
+        """Lock or unlock a user account (only for users with role_id=3)"""
+        user = db.query(models.User).filter(
+            and_(models.User.user_id == user_id, models.User.is_deleted == False)
+        ).first()
+
+        if not user:
+            raise NotFoundException("User not found")
+
+        # Check if user has role_id=3 (User role)
+        user_role_ids = [ur.role_id for ur in user.user_roles]
+        if 3 not in user_role_ids:
+            raise ValidationException("Can only lock/unlock users with User role (role_id=3)")
+
+        if action == "lock":
+            if not user.is_active:
+                raise ValidationException("User is already locked")
+            user.is_active = False
+            action_taken = "LOCK"
+        elif action == "unlock":
+            if user.is_active:
+                raise ValidationException("User is already unlocked")
+            user.is_active = True
+            action_taken = "UNLOCK"
+        else:
+            raise ValidationException("Invalid action. Must be 'lock' or 'unlock'")
+
+        # Log the action
+        violation_log = models.ViolationLog(
+            user_id=user_id,
+            reason=reason,
+            action_taken=action_taken
+        )
+        db.add(violation_log)
+
+        db.commit()
+        db.refresh(user)
+        return user
+
     def get_violation_logs(self, db: Session, *, user_id: Optional[int] = None) -> List[models.ViolationLog]:
         """Get violation logs, optionally filtered by user"""
         query = db.query(models.ViolationLog)

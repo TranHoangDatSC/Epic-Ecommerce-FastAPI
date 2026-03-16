@@ -25,6 +25,25 @@ async def register(
     - **phone_number**: Optional phone number
     - **address**: Optional address
     """
+    # Enforce role_id = 3 for public registration
+    if getattr(user_in, 'role_id', 3) not in (None, 3):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Role ID can only be 3 (User) for public registration. Only admins can create other roles."
+        )
+    user_in.role_id = 3
+    
+    # Auto-generate username from email if not provided
+    if not user_in.username:
+        import random, string
+        base_name = user_in.email.split('@')[0][:40] # max 50 chars total
+        suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+        user_in.username = f"{base_name}_{suffix}"
+        
+        while crud_user.get_by_username(db, username=user_in.username):
+            suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            user_in.username = f"{base_name}_{suffix}"
+
     # Check if user already exists
     existing_user = crud_user.get_by_username(db, username=user_in.username)
     if existing_user:
@@ -42,6 +61,13 @@ async def register(
     
     # Create new user
     user = crud_user.create(db=db, obj_in=user_in)
+    
+    # Assign default role_id = 3
+    from app.models import UserRole
+    user_role = UserRole(user_id=user.user_id, role_id=3)
+    db.add(user_role)
+    db.commit()
+    db.refresh(user)
     
     return user
 

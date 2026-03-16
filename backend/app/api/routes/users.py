@@ -35,13 +35,13 @@ async def get_current_user_info(
         trust_score=current_user.trust_score if has_seller_role else None,
         roles=[
             {
-                "role_id": role.role_id,
-                "role_name": role.role_name,
-                "description": role.description,
-                "is_deleted": role.is_deleted,
-                "created_at": role.created_at
+                "role_id": ur.role.role_id,
+                "role_name": ur.role.role_name,
+                "description": ur.role.description,
+                "is_deleted": ur.role.is_deleted,
+                "created_at": ur.role.created_at
             }
-            for role in current_user.user_roles
+            for ur in current_user.user_roles
         ]
     )
 

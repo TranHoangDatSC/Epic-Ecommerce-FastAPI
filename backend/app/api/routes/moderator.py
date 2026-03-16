@@ -106,6 +106,28 @@ def unban_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+@router.post("/users/{user_id}/lock-unlock")
+def lock_unlock_user(
+    user_id: int,
+    lock_request: schemas.UserLockRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_moderator)
+):
+    """Lock or unlock a user account (only for users with role_id=3)"""
+    try:
+        user = crud_moderator.lock_unlock_user(
+            db,
+            user_id=user_id,
+            action=lock_request.action,
+            reason=lock_request.reason,
+            moderator_id=current_user.user_id
+        )
+        action_msg = "locked" if lock_request.action == "lock" else "unlocked"
+        return {"message": f"User {action_msg} successfully", "user": user}
+    except (NotFoundException, ValidationException) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.get("/violation-logs", response_model=List[schemas.ViolationLogResponse])
 def get_violation_logs(
     user_id: Optional[int] = None,

@@ -24,7 +24,7 @@ class TokenData(BaseModel):
 
 class UserBase(BaseModel):
     """Base user schema"""
-    username: str = Field(..., min_length=3, max_length=50)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: EmailStr
     full_name: str = Field(..., min_length=1, max_length=100)
     phone_number: Optional[str] = Field(None, max_length=15)
@@ -34,6 +34,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation schema"""
     password: str = Field(..., min_length=6)
+    role_id: Optional[int] = 3
 
 
 class UserLogin(BaseModel):
@@ -496,6 +497,12 @@ class ViolationReportRequest(BaseModel):
 class UserBanRequest(BaseModel):
     """User ban request"""
     user_id: int
+    reason: str = Field(..., max_length=500)
+
+
+class UserLockRequest(BaseModel):
+    """User lock/unlock request"""
+    action: str = Field(..., pattern="^(lock|unlock)$")  # lock or unlock
     reason: str = Field(..., max_length=500)
 
 

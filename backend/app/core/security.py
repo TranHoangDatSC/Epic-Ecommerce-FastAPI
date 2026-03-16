@@ -104,15 +104,14 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 def get_current_moderator(current_user: models.User = Depends(get_current_user)) -> models.User:
-    """Get current user and verify they are a moderator"""
-    # Check if user has moderator role (assuming role_id for moderator is known, e.g., 2)
-    # For simplicity, we'll check if user has any role that includes 'mod' in name
-    # In production, you'd want to check specific role IDs
-    
-    if not any('mod' in role.role_name.lower() for role in current_user.user_roles):
+    """Get current user and verify they are a moderator (Admin or Mod)"""
+    # Check if user has role_id 1 (Admin) or 2 (Mod)
+    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
+
+    if 1 not in user_role_ids and 2 not in user_role_ids:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Not enough permissions - Admin or Mod role required"
         )
-    
+
     return current_user
