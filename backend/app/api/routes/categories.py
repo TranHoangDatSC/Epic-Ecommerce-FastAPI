@@ -6,8 +6,7 @@ from app.schemas import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.core.dependencies import get_current_user, check_admin, check_moderator
 from app.crud.category import crud_category
 
-router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
-
+router = APIRouter(prefix="/categories", tags=["categories"])
 
 @router.get("", response_model=list[CategoryResponse])
 async def list_categories(

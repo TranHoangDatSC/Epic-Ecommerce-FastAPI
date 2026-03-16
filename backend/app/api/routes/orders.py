@@ -7,7 +7,7 @@ from app.core.dependencies import get_current_user, check_admin
 from app.crud.order import crud_order
 from decimal import Decimal
 
-router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
+router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.get("", response_model=list[OrderResponse])

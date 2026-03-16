@@ -7,7 +7,7 @@ from app.core.dependencies import get_current_user, check_admin, check_moderator
 from app.crud.product import crud_product
 from app.crud.category import crud_category
 
-router = APIRouter(prefix="/api/v1/products", tags=["products"])
+router = APIRouter(prefix="/products", tags=["products"])
 
 
 @router.get("", response_model=list[ProductResponse])

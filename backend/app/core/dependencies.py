@@ -1,21 +1,20 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.core.security import decode_token
 from app.models import User
 from typing import Optional, List
 
-security = HTTPBearer()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 # ==================== Authentication ====================
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user from JWT token"""
-    token = credentials.credentials
     token_data = decode_token(token)
     
     if token_data is None:
@@ -38,13 +37,12 @@ async def get_current_user(
 
 async def get_current_user_optional(
     db: Session = Depends(get_db),
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+    token: Optional[str] = Depends(oauth2_scheme)
 ) -> Optional[User]:
     """Get current user if authenticated, otherwise return None"""
-    if credentials is None:
+    if not token:
         return None
     
-    token = credentials.credentials
     token_data = decode_token(token)
     
     if token_data is None:
