@@ -84,12 +84,21 @@ async def health_check():
 
 # ==================== API Routes ====================
 
+# Primary versioned API (used by docs)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(categories.router, prefix=settings.API_V1_STR)
 app.include_router(products.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
 app.include_router(moderator.router, prefix=settings.API_V1_STR)
+
+# Compatibility routes for clients calling /api/* (no /v1). These are not shown in the OpenAPI schema.
+app.include_router(auth.router, prefix="/api", include_in_schema=False)
+app.include_router(users.router, prefix="/api", include_in_schema=False)
+app.include_router(categories.router, prefix="/api", include_in_schema=False)
+app.include_router(products.router, prefix="/api", include_in_schema=False)
+app.include_router(orders.router, prefix="/api", include_in_schema=False)
+app.include_router(moderator.router, prefix="/api", include_in_schema=False)
 
 # ==================== Error Handlers ====================
 

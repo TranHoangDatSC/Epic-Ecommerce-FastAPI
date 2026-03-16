@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app import models, schemas
 from app.database import get_db
-from app.crud import moderator as crud_moderator
+from app.crud.moderator import moderator as crud_moderator
 from app.core.security import get_current_user, get_current_moderator
 from app.core.exceptions import NotFoundException, ValidationException
 
@@ -73,17 +73,18 @@ def ban_user(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_moderator)
 ):
-    """Ban a user account"""
+    """Deactivate a user account (set is_active=False)"""
     try:
-        crud_moderator.ban_user(
+        crud_moderator.toggle_user_status(
             db,
             user_id=user_id,
+            is_active=False,
             reason=ban_request.reason,
             moderator_id=current_user.user_id
         )
-        return {"message": "User banned successfully"}
-    except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        return {"message": "User deactivated successfully"}
+    except (NotFoundException, ValidationException) as e:
+        raise e
 
 
 @router.post("/users/{user_id}/unban")
@@ -93,17 +94,18 @@ def unban_user(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_moderator)
 ):
-    """Unban a user account"""
+    """Activate a user account (set is_active=True)"""
     try:
-        crud_moderator.unban_user(
+        crud_moderator.toggle_user_status(
             db,
             user_id=user_id,
+            is_active=True,
             reason=ban_request.reason,
             moderator_id=current_user.user_id
         )
-        return {"message": "User unbanned successfully"}
-    except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        return {"message": "User activated successfully"}
+    except (NotFoundException, ValidationException) as e:
+        raise e
 
 
 @router.post("/users/{user_id}/lock-unlock")

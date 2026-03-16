@@ -49,3 +49,7 @@ logs/
 # OS
 Thumbs.db
 .DS_Store
+
+# Ignore Python debug and sandbox files
+check_*.py
+test_*.py

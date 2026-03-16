@@ -5,6 +5,8 @@
 http://localhost:8000/api/v1
 ```
 
+> **Note:** For backwards compatibility, all endpoints are also available under `/api/*` (e.g., `/api/auth/login`).
+
 ## Authentication
 
 ### Register
