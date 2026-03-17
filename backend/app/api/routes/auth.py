@@ -83,10 +83,21 @@ async def login(
     
     Returns JWT access token for authentication.
     """
-    # Find user by username
-    user = crud_user.get_by_username(db, username=form_data.username) 
+    # Find user by username or email
+    user = db.query(User).filter(
+        (User.username == form_data.username) | (User.email == form_data.username)
+    ).first()
     
-    if not user or not verify_password(form_data.password, user.password_hash):
+    if not user:
+        print(f"Auth failed: User '{form_data.username}' not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    if not verify_password(form_data.password, user.password_hash):
+        print(f"Auth failed: Incorrect password for user '{user.username}'")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -94,6 +105,7 @@ async def login(
         )
     
     if user.is_deleted or not user.is_active:
+        print(f"Auth failed: User '{user.username}' is inactive or deleted")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account is inactive"
