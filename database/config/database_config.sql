@@ -3,6 +3,7 @@
 
 -- Set timezone
 SET timezone = 'Asia/Ho_Chi_Minh';
+SET client_encoding = 'UTF8';
 
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

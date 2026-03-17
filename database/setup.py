@@ -122,7 +122,8 @@ def test_connection(credentials):
             password=credentials['password'],
             host=credentials['host'],
             port=credentials['port'],
-            database='postgres'  # Connect to default postgres database first
+            database='postgres',  # Connect to default postgres database first
+            options="-c client_encoding=utf8"
         )
         conn.close()
         print_success("Connection successful")
@@ -143,7 +144,8 @@ def create_database(credentials):
             password=credentials['password'],
             host=credentials['host'],
             port=int(credentials['port']),
-            database='postgres'
+            database='postgres',
+            options="-c client_encoding=utf8"
         )
         conn.autocommit = True
         cursor = conn.cursor()
@@ -186,7 +188,8 @@ def reset_database(credentials):
             password=credentials['password'],
             host=credentials['host'],
             port=int(credentials['port']),
-            database='postgres'
+            database='postgres',
+            options="-c client_encoding=utf8"
         )
         conn.autocommit = True
         cursor = conn.cursor()
@@ -239,6 +242,7 @@ def run_init_script(credentials, script_path):
             '-U', credentials['username'],
             '-p', str(credentials['port']),
             '-d', credentials['database'],
+            '--set', 'client_encoding=utf8',
             '-f', os.path.abspath(script_path)
         ]
         

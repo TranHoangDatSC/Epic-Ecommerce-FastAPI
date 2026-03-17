@@ -1,10 +1,10 @@
 -- seed.sql
 INSERT INTO category (name, description) VALUES
-('Do dien tu', 'Thiet bi cong nghe, dien thoai, may tinh va linh kien so'),
-('Trang tri', 'Vat dung decor, do luu niem va noi that tham my'),
-('Quan ao', 'Trang phuc may mac co ban, do nam, nu va tre em'),
-('Thoi trang', 'Bo suu tap theo mua, xu huong va do thiet ke cao cap'),
-('Do choi', 'San pham giai tri, mo hinh va do choi giao duc cho moi lua tuoi'),
-('Do gia dung', 'Thiet bi dien may, do dung nha bep va tien ich gia dinh'),
-('Sach cu', 'An pham da qua su dung, sach hiem, tap chi va tai lieu suu tam'),
-('Phu kien', 'Trang suc, tui xach, that lung va do dung ca nhan di kem');
+('Đồ điện tử', 'Thiết bị công nghệ, điện thoại, máy tính và linh kiện số'),
+('Trang trí', 'Vật dụng decor, đồ lưu niệm và nội thất thẩm mỹ'),
+('Quần áo', 'Trang phục may mặc cơ bản, đồ nam, nữ và trẻ em'),
+('Thời trang', 'Bộ sưu tập theo mùa, xu hướng và đồ thiết kế cao cấp'),
+('Đồ chơi', 'Sản phẩm giải trí, mô hình và đồ chơi giáo dục cho mọi lứa tuổi'),
+('Đồ gia dụng', 'Thiết bị điện máy, đồ dùng nhà bếp và tiện ích gia đình'),
+('Sách cũ', 'Ấn phẩm đã qua sử dụng, sách hiếm, tạp chí và tài liệu sưu tầm'),
+('Phụ kiện', 'Trang sức, túi xách, thắt lưng và đồ dùng cá nhân đi kèm');
