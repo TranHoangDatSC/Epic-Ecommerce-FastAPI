@@ -8,5 +8,9 @@ export const sellerRoutes: Routes = [
   {
     path: 'inventory',
     loadComponent: () => import('./inventory/inventory').then(m => m.InventoryComponent)
+  },
+  {
+    path: 'inventory/add',
+    loadComponent: () => import('./inventory/add-product/add-product.component').then(m => m.AddProductComponent)
   }
 ];

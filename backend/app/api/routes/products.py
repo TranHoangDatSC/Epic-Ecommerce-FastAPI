@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Product
+from app.models import User, Product, ProductImage
 from app.schemas import ProductResponse, ProductDetailResponse, ProductCreate, ProductUpdate
 from app.core.dependencies import check_admin, check_moderator, check_user_role
 from app.crud.product import crud_product
 from app.crud.category import crud_category
+import os
+from pathlib import Path
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -77,34 +79,129 @@ async def get_product(
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    product_in: ProductCreate,
+    files: List[UploadFile] = File(...),
+    category_id: int = Form(...),
+    title: str = Form(...),
+    description: str = Form(None),
+    price: float = Form(...),
+    quantity: int = Form(...),
+    video_url: str = Form(None),
+    weight_grams: int = Form(None),
+    dimensions: str = Form(None),
+    condition_rating: int = Form(None),
+    warranty_months: int = Form(0),
     current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ) -> ProductResponse:
     """
-    Create a new product.
+    Create a new product with images.
     
     Requires authentication. Status will be 0 (pending for review).
+    At least one image file is required.
     """
+    # Validate at least one image
+    if not files or len(files) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one image file is required"
+        )
+
     # Verify category exists
-    category = crud_category.get_by_id(db, category_id=product_in.category_id)
+    category = crud_category.get_by_id(db, category_id=category_id)
     if not category:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Category not found"
         )
-    
-    # Create product with seller_id
-    product_data = product_in.dict()
-    product_data['seller_id'] = current_user.user_id
-    product_data['status'] = 0  # Pending
-    
-    product = Product(**product_data)
-    db.add(product)
-    db.commit()
-    db.refresh(product)
-    
-    return product
+
+    # Create product data
+    product_data = {
+        'seller_id': current_user.user_id,
+        'category_id': category_id,
+        'title': title,
+        'description': description,
+        'price': price,
+        'quantity': quantity,
+        'video_url': video_url,
+        'weight_grams': weight_grams,
+        'dimensions': dimensions,
+        'condition_rating': condition_rating,
+        'warranty_months': warranty_months,
+        'status': 0  # Pending
+    }
+
+    # Start transaction
+    try:
+        # Create product
+        product = Product(**product_data)
+        db.add(product)
+        db.flush()  # Get product_id without committing
+
+        # Get uploads directory
+        uploads_dir = Path(__file__).parent.parent.parent.parent / "uploads" / "products"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+
+        # Get current image count for this product
+        existing_images_count = db.query(ProductImage).filter(ProductImage.product_id == product.product_id).count()
+
+        # Process and save images
+        for i, file in enumerate(files, start=existing_images_count + 1):
+            # Validate file type
+            if not file.content_type.startswith('image/'):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"File {file.filename} is not an image"
+                )
+
+            # Generate new filename
+            original_name = Path(file.filename).stem
+            extension = Path(file.filename).suffix.lower()
+            new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
+            file_path = uploads_dir / new_filename
+
+            # Read file content
+            content = await file.read()
+
+            # Save file
+            with open(file_path, "wb") as f:
+                f.write(content)
+
+            # Create database record
+            image_url = f"/static/products/{new_filename}"
+            is_primary = (i == 1)  # First image is primary
+
+            product_image = ProductImage(
+                product_id=product.product_id,
+                image_url=image_url,
+                alt_text=f"{title} - Image {i}",
+                is_primary=is_primary,
+                display_order=i
+            )
+            db.add(product_image)
+
+        # Commit transaction
+        db.commit()
+        db.refresh(product)
+
+        return product
+
+    except Exception as e:
+        db.rollback()
+        # Clean up uploaded files if any
+        uploads_dir = Path(__file__).parent.parent.parent.parent / "uploads" / "products"
+        for file in files:
+            if hasattr(file, 'filename'):
+                original_name = Path(file.filename).stem
+                extension = Path(file.filename).suffix.lower()
+                for i in range(1, len(files) + 1):
+                    new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
+                    file_path = uploads_dir / new_filename
+                    if file_path.exists():
+                        file_path.unlink()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create product: {str(e)}"
+        )
 
 
 @router.get("/seller/my-products", response_model=list[ProductResponse])

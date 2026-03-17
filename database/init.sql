@@ -44,6 +44,7 @@
 \i 03_seeds/voucher/seed.sql
 \i 03_seeds/user/seed.sql
 \i 03_seeds/product/seed.sql
+\i 03_seeds/product_images/seed.sql
 \i 03_seeds/contact_info/seed.sql
 \i 03_seeds/order/seed.sql
 

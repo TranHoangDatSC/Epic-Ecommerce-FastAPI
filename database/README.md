@@ -28,6 +28,7 @@ database/
 │   ├── role/
 │   ├── user/
 │   ├── product/
+│   ├── product_images/
 │   └── ...
 ├── 04_modules/                 # CRUD operations
 │   ├── category/

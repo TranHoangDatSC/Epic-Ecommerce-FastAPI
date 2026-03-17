@@ -193,6 +193,7 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: Optional[datetime]
     is_approved: bool = False
+    product_images: List[ProductImageResponse] = []
 
     class Config:
         from_attributes = True
