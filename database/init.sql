@@ -29,6 +29,7 @@
 \i 01_schema/shopping_cart_items.sql
 \i 01_schema/reviews.sql
 \i 01_schema/system_logs.sql
+\i 01_schema/violation_logs.sql
 
 -- Execute functions and triggers (business logic and security)
 \i 02_functions/user/password_functions.sql

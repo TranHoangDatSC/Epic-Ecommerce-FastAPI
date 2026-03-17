@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Product
 from app.schemas import ProductResponse, ProductDetailResponse, ProductCreate, ProductUpdate
-from app.core.dependencies import get_current_user, check_admin, check_moderator
+from app.core.dependencies import check_admin, check_moderator, check_user_role
 from app.crud.product import crud_product
 from app.crud.category import crud_category
 
@@ -17,6 +17,7 @@ async def list_products(
     category_id: int = Query(None),
     search: str = Query(None),
     sort_by: str = Query("created_at", regex="^(created_at|price|rating)$"),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> list[ProductResponse]:
     """
@@ -77,7 +78,7 @@ async def get_product(
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     product_in: ProductCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ) -> ProductResponse:
     """
@@ -110,7 +111,7 @@ async def create_product(
 async def get_my_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> list[ProductResponse]:
     """Get current user's products"""
@@ -127,7 +128,7 @@ async def get_my_products(
 async def update_product(
     product_id: int,
     product_update: ProductUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> ProductResponse:
     """
@@ -170,7 +171,7 @@ async def update_product(
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
     product_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> None:
     """

@@ -36,11 +36,12 @@ BEGIN
     -- Insert audit log
     INSERT INTO system_log (
         user_id,
-        action_type,
-        table_name,
-        record_id,
-        description,
-        log_time
+        action,
+        resource_type,
+        resource_id,
+        details,
+        ip_address,
+        created_at
     )
     VALUES (
         p_user_id,
@@ -52,6 +53,7 @@ BEGIN
             WHEN client_ip IS NOT NULL THEN 'IP: ' || client_ip::TEXT
             ELSE 'System action'
         END,
+        client_ip::VARCHAR(45),
         CURRENT_TIMESTAMP
     );
 END;

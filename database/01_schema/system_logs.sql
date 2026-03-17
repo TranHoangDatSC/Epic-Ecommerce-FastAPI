@@ -1,13 +1,17 @@
--- reviews.sql
-CREATE TABLE review (
-    review_id SERIAL PRIMARY KEY,
-    product_id INT NOT NULL,
-    buyer_id INT NOT NULL,
-    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-    comment VARCHAR(500),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+-- system_logs.sql
+CREATE TABLE system_log (
+    log_id BIGSERIAL PRIMARY KEY,
+    user_id INT,
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50),
+    resource_id INT,
+    details TEXT,
+    ip_address VARCHAR(45),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_review_buyer_product UNIQUE (product_id, buyer_id),
-    FOREIGN KEY (product_id) REFERENCES product(product_id),
-    FOREIGN KEY (buyer_id) REFERENCES "user"(user_id)
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
+
+-- Indexes for performance
+CREATE INDEX idx_system_log_user ON system_log(user_id);
+CREATE INDEX idx_system_log_action ON system_log(action);
+CREATE INDEX idx_system_log_created_at ON system_log(created_at);

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Order, Product, ContactInfo
 from app.schemas import OrderResponse, OrderDetailResponse_Extended, OrderCreate, OrderUpdate
-from app.core.dependencies import get_current_user, check_admin
+from app.core.dependencies import check_admin, check_user_role
 from app.crud.order import crud_order
 from decimal import Decimal
 
@@ -15,7 +15,7 @@ async def list_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status_filter: int = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ) -> list[OrderResponse]:
     """
@@ -49,7 +49,7 @@ async def list_orders(
 @router.get("/{order_id}", response_model=OrderDetailResponse_Extended)
 async def get_order(
     order_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> OrderDetailResponse_Extended:
     """
@@ -81,7 +81,7 @@ async def get_order(
 @router.post("", response_model=OrderDetailResponse_Extended, status_code=status.HTTP_201_CREATED)
 async def create_order(
     order_in: OrderCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ) -> OrderDetailResponse_Extended:
     """
@@ -170,7 +170,7 @@ async def create_order(
 async def update_order(
     order_id: int,
     order_update: OrderUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> OrderResponse:
     """

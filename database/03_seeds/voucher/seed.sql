@@ -1,6 +1,6 @@
 -- seed.sql
-INSERT INTO voucher (voucher_code, discount_value, is_percentage, expiry_date, usage_limit, min_order_value, max_discount, created_by) VALUES
-('SAVE10', 10.00, TRUE, '2026-12-31 23:59:59', 100, 100.00, 50.00, 1),
-('DISCOUNT50', 50.00, FALSE, '2026-06-30 23:59:59', 50, 200.00, NULL, 1),
-('FREESHIP', 5.00, FALSE, '2026-05-01 23:59:59', NULL, 150.00, NULL, 1),
-('WELCOME20', 20.00, TRUE, '2026-12-31 23:59:59', 500, 50.00, 100.00, 1);
+INSERT INTO voucher (code, description, discount_type, discount_value, max_usage, usage_count, min_order_amount, valid_from, valid_to) VALUES
+('SAVE10', 'Giảm 10%', 1, 10.00, 100, 0, 100.00, NOW(), '2026-12-31 23:59:59'),
+('DISCOUNT50', 'Giảm 50k', 0, 50.00, 50, 0, 200.00, NOW(), '2026-06-30 23:59:59'),
+('FREESHIP', 'Miễn phí vận chuyển', 0, 5.00, NULL, 0, 150.00, NOW(), '2026-05-01 23:59:59'),
+('WELCOME20', 'Giảm 20%', 1, 20.00, 500, 0, 50.00, NOW(), '2026-12-31 23:59:59');

@@ -1,5 +1,5 @@
 -- seed.sql
-INSERT INTO category (category_name, description) VALUES
+INSERT INTO category (name, description) VALUES
 ('Đồ điện tử', 'Thiết bị công nghệ, điện thoại, máy tính và linh kiện số'),
 ('Trang trí', 'Vật dụng decor, đồ lưu niệm và nội thất thẩm mỹ'),
 ('Quần áo', 'Trang phục may mặc cơ bản, đồ nam, nữ và trẻ em'),

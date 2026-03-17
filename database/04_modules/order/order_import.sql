@@ -9,5 +9,5 @@ WITH new_order AS (
     VALUES (1, 1, 1, 100.00)
     RETURNING order_id
 )
-INSERT INTO order_detail (order_id, product_id, seller_id, purchased_price, quantity)
-SELECT order_id, 1, 2, 50.00, 2 FROM new_order;
+INSERT INTO order_detail (order_id, product_id, price_at_purchase, quantity)
+SELECT order_id, 1, 50.00, 2 FROM new_order;

@@ -32,29 +32,26 @@ BEGIN
         FROM voucher
         WHERE voucher_id = p_voucher_id
         AND is_active = TRUE
-        AND expiry_date > CURRENT_TIMESTAMP;
+        AND valid_to > CURRENT_TIMESTAMP;
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Invalid or expired voucher';
         END IF;
 
         -- Check usage limit
-        IF voucher_record.usage_limit IS NOT NULL AND voucher_record.used_count >= voucher_record.usage_limit THEN
+        IF voucher_record.max_usage IS NOT NULL AND voucher_record.usage_count >= voucher_record.max_usage THEN
             RAISE EXCEPTION 'Voucher usage limit exceeded';
         END IF;
 
         -- Check minimum order value
-        IF p_subtotal < voucher_record.min_order_value THEN
-            RAISE EXCEPTION 'Order value does not meet voucher minimum requirement of %', voucher_record.min_order_value;
+        IF p_subtotal < voucher_record.min_order_amount THEN
+            RAISE EXCEPTION 'Order value does not meet voucher minimum requirement of %', voucher_record.min_order_amount;
         END IF;
 
         -- Calculate discount
-        IF voucher_record.is_percentage THEN
+        IF voucher_record.discount_type = 1 THEN
+            -- Percentage discount
             discount_amount := p_subtotal * voucher_record.discount_value / 100;
-            -- Apply maximum discount limit for percentage vouchers
-            IF voucher_record.max_discount IS NOT NULL AND discount_amount > voucher_record.max_discount THEN
-                discount_amount := voucher_record.max_discount;
-            END IF;
         ELSE
             -- Fixed amount discount
             discount_amount := voucher_record.discount_value;
@@ -93,7 +90,7 @@ BEGIN
     END IF;
 
     -- Get voucher details
-    SELECT * INTO voucher_record FROM voucher WHERE voucher_code = p_voucher_code;
+    SELECT * INTO voucher_record FROM voucher WHERE code = p_voucher_code;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Voucher not found';
     END IF;
@@ -103,7 +100,7 @@ BEGIN
         RAISE EXCEPTION 'Voucher is not active';
     END IF;
 
-    IF voucher_record.expiry_date < CURRENT_TIMESTAMP THEN
+    IF voucher_record.valid_to < CURRENT_TIMESTAMP THEN
         RAISE EXCEPTION 'Voucher has expired';
     END IF;
 
@@ -126,8 +123,7 @@ BEGIN
 
     -- Update voucher usage
     UPDATE voucher
-    SET used_count = used_count + 1,
-        updated_at = CURRENT_TIMESTAMP
+    SET usage_count = usage_count + 1
     WHERE voucher_id = voucher_record.voucher_id;
 
     -- Log the voucher application
@@ -259,24 +255,20 @@ RETURNS DECIMAL(18,2) AS $$
 DECLARE
     total_revenue DECIMAL(18,2);
 BEGIN
-    SELECT COALESCE(SUM(od.purchased_price * od.quantity), 0)
+    SELECT COALESCE(SUM(od.price_at_purchase * od.quantity), 0)
     INTO total_revenue
     FROM order_detail od
+    JOIN product p ON od.product_id = p.product_id
     JOIN "order" o ON od.order_id = o.order_id
-    WHERE od.seller_id = p_seller_id
-    AND o.order_status IN (1, 2, 3) -- Confirmed, Shipping, Delivered
-    AND o.is_deleted = FALSE;
+    WHERE p.seller_id = p_seller_id
+      AND o.order_status IN (1, 2, 3) -- Confirmed, Shipping, Delivered
+      AND o.is_deleted = FALSE;
 
     RETURN total_revenue;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public;
-        NEW.status := 3; -- Sold Out
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 -- Create trigger for product status update
 CREATE TRIGGER trg_update_product_status

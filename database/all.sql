@@ -77,7 +77,8 @@ CREATE TABLE "user" (
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     email_verification_token VARCHAR(255),
     password_reset_token VARCHAR(255),
-    password_reset_expires TIMESTAMP
+    password_reset_expires TIMESTAMP,
+    trust_score DECIMAL(5,2) DEFAULT 0.0
 );
 
 -- Indexes for users
@@ -99,19 +100,20 @@ CREATE TABLE user_role (
 -- Categories table
 CREATE TABLE category (
     category_id SERIAL PRIMARY KEY,
-    category_name VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(255),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    parent_id INTEGER REFERENCES category(category_id),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    sort_order INTEGER DEFAULT 0,
-    icon_url VARCHAR(255),
-    parent_category_id INTEGER REFERENCES category(category_id)
+    updated_at TIMESTAMP
 );
 
 -- Indexes for categories
-CREATE INDEX idx_category_name ON category(category_name) WHERE is_deleted = FALSE;
-CREATE INDEX idx_category_parent ON category(parent_category_id) WHERE is_deleted = FALSE;
-CREATE INDEX idx_category_sort_order ON category(sort_order) WHERE is_deleted = FALSE;
+CREATE UNIQUE INDEX idx_category_name_active ON category(name) WHERE is_deleted = FALSE;
+CREATE INDEX idx_category_parent ON category(parent_id) WHERE is_deleted = FALSE;
+CREATE INDEX idx_category_is_active ON category(is_active) WHERE is_deleted = FALSE;
+CREATE INDEX idx_category_created_at ON category(created_at);
 
 -- Products table
 CREATE TABLE product (
@@ -153,33 +155,37 @@ CREATE TABLE product_image (
     image_id SERIAL PRIMARY KEY,
     product_id INT NOT NULL,
     image_url VARCHAR(500) NOT NULL,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    alt_text VARCHAR(255),
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
 );
+
+-- Indexes for product images
+CREATE INDEX idx_product_image_product ON product_image(product_id);
 
 -- Vouchers table
 CREATE TABLE voucher (
     voucher_id SERIAL PRIMARY KEY,
-    voucher_code VARCHAR(20) NOT NULL UNIQUE,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    discount_type SMALLINT NOT NULL DEFAULT 0,
     discount_value DECIMAL(18, 2) NOT NULL,
-    is_percentage BOOLEAN NOT NULL DEFAULT FALSE,
-    expiry_date TIMESTAMP NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    usage_limit INTEGER DEFAULT NULL,
-    used_count INTEGER NOT NULL DEFAULT 0,
-    min_order_value DECIMAL(18, 2) DEFAULT 0,
-    max_discount DECIMAL(18, 2) DEFAULT NULL,
-    applicable_categories TEXT,
-    created_by INT REFERENCES "user"(user_id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP
+    max_usage INT,
+    usage_count INT NOT NULL DEFAULT 0,
+    min_order_amount DECIMAL(18, 2),
+    valid_from TIMESTAMP NOT NULL,
+    valid_to TIMESTAMP NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes for vouchers
-CREATE UNIQUE INDEX idx_voucher_code_active ON voucher(voucher_code) WHERE is_active = TRUE;
-CREATE INDEX idx_voucher_expiry ON voucher(expiry_date) WHERE is_active = TRUE;
-CREATE INDEX idx_voucher_created_by ON voucher(created_by);
+CREATE UNIQUE INDEX idx_voucher_code_active ON voucher(code) WHERE is_active = TRUE;
+CREATE INDEX idx_voucher_valid_to ON voucher(valid_to) WHERE is_active = TRUE;
+CREATE INDEX idx_voucher_created_at ON voucher(created_at);
 
 -- Payment methods table
 CREATE TABLE payment_method (
@@ -193,13 +199,22 @@ CREATE TABLE payment_method (
 CREATE TABLE contact_info (
     contact_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    recipient_name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
-    street_address VARCHAR(255) NOT NULL,
-    city VARCHAR(100),
+    address VARCHAR(255) NOT NULL,
+    province VARCHAR(100),
+    district VARCHAR(100),
+    ward VARCHAR(100),
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
+
+-- Indexes for contact info
+CREATE INDEX idx_contact_info_user ON contact_info(user_id);
+CREATE INDEX idx_contact_info_default ON contact_info(is_default) WHERE is_deleted = FALSE;
 
 -- Orders table
 CREATE TABLE "order" (
@@ -234,27 +249,37 @@ CREATE TABLE order_detail (
     order_detail_id SERIAL PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
-    seller_id INT NOT NULL,
-    purchased_price DECIMAL(18, 2) NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
+    price_at_purchase DECIMAL(18, 2) NOT NULL,
+    subtotal DECIMAL(18, 2) NOT NULL,
     FOREIGN KEY (order_id) REFERENCES "order"(order_id),
-    FOREIGN KEY (product_id) REFERENCES product(product_id),
-    FOREIGN KEY (seller_id) REFERENCES "user"(user_id)
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
+
+-- Indexes for order details
+CREATE INDEX idx_order_detail_order ON order_detail(order_id);
 
 -- Transactions table
 CREATE TABLE transaction (
     transaction_id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL UNIQUE,
+    order_id INT NOT NULL,
+    user_id INT NOT NULL,
     payment_method_id INT NOT NULL,
-    transaction_code VARCHAR(100),
     amount DECIMAL(18, 2) NOT NULL,
-    transaction_status SMALLINT NOT NULL,
-    transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    transaction_status SMALLINT NOT NULL DEFAULT 0,
+    reference_number VARCHAR(100),
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES "order"(order_id),
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id),
     FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id)
 );
+
+-- Indexes for transactions
+CREATE INDEX idx_transaction_order ON transaction(order_id);
+CREATE INDEX idx_transaction_user ON transaction(user_id);
+CREATE INDEX idx_transaction_status ON transaction(transaction_status);
 
 -- Shopping carts table
 CREATE TABLE shopping_cart (
@@ -266,14 +291,18 @@ CREATE TABLE shopping_cart (
 
 -- Shopping cart items table
 CREATE TABLE shopping_cart_item (
-    item_id SERIAL PRIMARY KEY,
+    cart_item_id SERIAL PRIMARY KEY,
     cart_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
-    added_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cart_id) REFERENCES shopping_cart(cart_id),
     FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
+
+-- Indexes for shopping cart items
+CREATE INDEX idx_shopping_cart_item_cart ON shopping_cart_item(cart_id);
+CREATE INDEX idx_shopping_cart_item_product ON shopping_cart_item(product_id);
 
 -- Reviews table
 CREATE TABLE review (
@@ -281,10 +310,13 @@ CREATE TABLE review (
     product_id INT NOT NULL,
     buyer_id INT NOT NULL,
     rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-    comment VARCHAR(500),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    title VARCHAR(255),
+    content TEXT,
+    is_verified_purchase BOOLEAN NOT NULL DEFAULT FALSE,
+    helpful_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_review_buyer_product UNIQUE (product_id, buyer_id),
+    updated_at TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (product_id) REFERENCES product(product_id),
     FOREIGN KEY (buyer_id) REFERENCES "user"(user_id)
 );
@@ -293,13 +325,19 @@ CREATE TABLE review (
 CREATE TABLE system_log (
     log_id BIGSERIAL PRIMARY KEY,
     user_id INT,
-    action_type VARCHAR(50) NOT NULL,
-    table_name VARCHAR(50),
-    record_id INT,
-    description TEXT,
-    log_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50),
+    resource_id INT,
+    details TEXT,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
+
+-- Indexes for system logs
+CREATE INDEX idx_system_log_user ON system_log(user_id);
+CREATE INDEX idx_system_log_action ON system_log(action);
+CREATE INDEX idx_system_log_created_at ON system_log(created_at);
 
 -- ==============================================================================
 -- 3. FUNCTIONS AND TRIGGERS
@@ -505,276 +543,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Business functions
-CREATE OR REPLACE FUNCTION calculate_order_total(p_subtotal DECIMAL(18,2), p_voucher_id INT DEFAULT NULL, p_shipping_fee DECIMAL(18,2) DEFAULT 0)
-RETURNS DECIMAL(18,2) AS $$
-DECLARE
-    discount_amount DECIMAL(18,2) := 0;
-    voucher_record RECORD;
-    final_total DECIMAL(18,2);
-BEGIN
-    IF p_subtotal < 0 THEN
-        RAISE EXCEPTION 'Subtotal cannot be negative';
-    END IF;
-    IF p_shipping_fee < 0 THEN
-        RAISE EXCEPTION 'Shipping fee cannot be negative';
-    END IF;
-    IF p_voucher_id IS NOT NULL THEN
-        SELECT * INTO voucher_record FROM voucher WHERE voucher_id = p_voucher_id AND is_active = TRUE AND expiry_date > CURRENT_TIMESTAMP;
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Invalid or expired voucher';
-        END IF;
-        IF voucher_record.usage_limit IS NOT NULL AND voucher_record.used_count >= voucher_record.usage_limit THEN
-            RAISE EXCEPTION 'Voucher usage limit exceeded';
-        END IF;
-        IF p_subtotal < voucher_record.min_order_value THEN
-            RAISE EXCEPTION 'Order value does not meet voucher minimum requirement of %', voucher_record.min_order_value;
-        END IF;
-        IF voucher_record.is_percentage THEN
-            discount_amount := p_subtotal * voucher_record.discount_value / 100;
-            IF voucher_record.max_discount IS NOT NULL AND discount_amount > voucher_record.max_discount THEN
-                discount_amount := voucher_record.max_discount;
-            END IF;
-        ELSE
-            discount_amount := voucher_record.discount_value;
-        END IF;
-        discount_amount := LEAST(discount_amount, p_subtotal);
-    END IF;
-    final_total := GREATEST(p_subtotal - discount_amount + p_shipping_fee, 0);
-    RETURN final_total;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+-- Business functions and triggers
+\i 02_functions/all_functions.sql
 
-CREATE OR REPLACE FUNCTION apply_voucher_to_order(p_order_id INT, p_voucher_code VARCHAR(20))
-RETURNS DECIMAL(18,2) AS $$
-DECLARE
-    voucher_record RECORD;
-    order_record RECORD;
-    discount_amount DECIMAL(18,2) := 0;
-    final_total DECIMAL(18,2);
-BEGIN
-    SELECT * INTO order_record FROM "order" WHERE order_id = p_order_id;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Order not found';
-    END IF;
-    SELECT * INTO voucher_record FROM voucher WHERE voucher_code = p_voucher_code;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Voucher not found';
-    END IF;
-    IF NOT voucher_record.is_active THEN
-        RAISE EXCEPTION 'Voucher is not active';
-    END IF;
-    IF voucher_record.expiry_date < CURRENT_TIMESTAMP THEN
-        RAISE EXCEPTION 'Voucher has expired';
-    END IF;
-    IF order_record.voucher_id IS NOT NULL THEN
-        RAISE EXCEPTION 'Order already has a voucher applied';
-    END IF;
-    discount_amount := calculate_order_total(order_record.total_amount, voucher_record.voucher_id, order_record.shipping_fee) - order_record.total_amount + order_record.discount_amount;
-    UPDATE "order" SET voucher_id = voucher_record.voucher_id, discount_amount = discount_amount, final_amount = total_amount - discount_amount + shipping_fee, updated_at = CURRENT_TIMESTAMP WHERE order_id = p_order_id;
-    UPDATE voucher SET used_count = used_count + 1, updated_at = CURRENT_TIMESTAMP WHERE voucher_id = voucher_record.voucher_id;
-    PERFORM log_system_action(order_record.buyer_id, 'VOUCHER_APPLIED', 'order', p_order_id, 'Applied voucher ' || p_voucher_code || ' with discount ' || discount_amount);
-    RETURN discount_amount;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION update_product_status_on_quantity()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.quantity != OLD.quantity THEN
-        IF NEW.quantity = 0 AND OLD.quantity > 0 THEN
-            NEW.status := 3;
-            NEW.sold_at := CURRENT_TIMESTAMP;
-            PERFORM log_system_action(NULL, 'PRODUCT_SOLD_OUT', 'product', NEW.product_id, 'Product marked as sold out (quantity: 0)');
-        END IF;
-        NEW.updated_at := CURRENT_TIMESTAMP;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_update_product_status
-BEFORE UPDATE ON product
-FOR EACH ROW
-WHEN (OLD.quantity != NEW.quantity)
-EXECUTE FUNCTION update_product_status_on_quantity();
-
-CREATE OR REPLACE FUNCTION get_product_status_text(p_status SMALLINT)
-RETURNS TEXT AS $$
-BEGIN
-    RETURN CASE p_status WHEN 0 THEN 'Pending Review' WHEN 1 THEN 'Active' WHEN 2 THEN 'Rejected' WHEN 3 THEN 'Sold Out' ELSE 'Unknown' END;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION get_order_status_text(p_status SMALLINT)
-RETURNS TEXT AS $$
-BEGIN
-    RETURN CASE p_status WHEN 0 THEN 'Pending' WHEN 1 THEN 'Confirmed' WHEN 2 THEN 'Shipping' WHEN 3 THEN 'Delivered' WHEN 4 THEN 'Cancelled' ELSE 'Unknown' END;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION get_product_average_rating(p_product_id INT)
-RETURNS DECIMAL(3,2) AS $$
-DECLARE
-    avg_rating DECIMAL(3,2);
-BEGIN
-    SELECT COALESCE(AVG(rating)::DECIMAL(3,2), 0) INTO avg_rating FROM review WHERE product_id = p_product_id AND is_deleted = FALSE;
-    RETURN avg_rating;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION get_user_total_spending(p_user_id INT)
-RETURNS DECIMAL(18,2) AS $$
-DECLARE
-    total_spent DECIMAL(18,2);
-BEGIN
-    SELECT COALESCE(SUM(final_amount), 0) INTO total_spent FROM "order" WHERE buyer_id = p_user_id AND order_status IN (1, 2, 3) AND is_deleted = FALSE;
-    RETURN total_spent;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION get_seller_total_revenue(p_seller_id INT)
-RETURNS DECIMAL(18,2) AS $$
-DECLARE
-    total_revenue DECIMAL(18,2);
-BEGIN
-    SELECT COALESCE(SUM(od.purchased_price * od.quantity), 0) INTO total_revenue FROM order_detail od JOIN "order" o ON od.order_id = o.order_id WHERE od.seller_id = p_seller_id AND o.order_status IN (1, 2, 3) AND o.is_deleted = FALSE;
-    RETURN total_revenue;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- Utility functions
-CREATE OR REPLACE FUNCTION generate_transaction_code()
-RETURNS TEXT AS $$
-DECLARE
-    timestamp_part TEXT;
-    random_part TEXT;
-BEGIN
-    timestamp_part := TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS');
-    random_part := LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0');
-    RETURN 'TXN_' || timestamp_part || '_' || random_part;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION format_currency(amount DECIMAL(18,2))
-RETURNS TEXT AS $$
-BEGIN
-    RETURN TO_CHAR(amount, 'FM999,999,999,990') || ' VND';
-END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION calculate_percentage(part DECIMAL, total DECIMAL)
-RETURNS DECIMAL(5,2) AS $$
-BEGIN
-    IF total = 0 THEN RETURN 0; END IF;
-    RETURN ROUND((part / total * 100)::DECIMAL(5,2), 2);
-END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION get_database_stats()
-RETURNS TABLE (table_name TEXT, row_count BIGINT, size_pretty TEXT) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT t.table_name::TEXT, c.row_count, pg_size_pretty(pg_total_relation_size(t.table_schema || '.' || t.table_name))::TEXT
-    FROM information_schema.tables t
-    LEFT JOIN (SELECT schemaname, tablename, n_tup_ins - n_tup_del as row_count FROM pg_stat_user_tables) c
-    ON t.table_schema = c.schemaname AND t.table_name = c.tablename
-    WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
-    ORDER BY c.row_count DESC NULLS LAST;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- Order detail triggers
-CREATE OR REPLACE FUNCTION check_no_self_buying()
-RETURNS TRIGGER AS $$
-DECLARE
-    order_buyer_id INT;
-BEGIN
-    SELECT buyer_id INTO order_buyer_id FROM "order" WHERE order_id = NEW.order_id;
-    IF order_buyer_id = NEW.seller_id THEN
-        PERFORM log_system_action(order_buyer_id, 'SELF_BUY_BLOCKED', 'order_detail', NEW.order_detail_id, 'Attempted to buy own product (product_id: ' || NEW.product_id || ')');
-        RAISE EXCEPTION 'BUSINESS_RULE_VIOLATION: Người bán không thể tự mua sản phẩm của chính mình!';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_no_self_buying
-BEFORE INSERT ON order_detail
-FOR EACH ROW EXECUTE FUNCTION check_no_self_buying();
-
-CREATE OR REPLACE FUNCTION update_stock_on_order()
-RETURNS TRIGGER AS $$
-DECLARE
-    current_quantity INT;
-    order_buyer_id INT;
-BEGIN
-    SELECT quantity INTO current_quantity FROM product WHERE product_id = NEW.product_id;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'PRODUCT_NOT_FOUND: Product does not exist';
-    END IF;
-    IF current_quantity < NEW.quantity THEN
-        RAISE EXCEPTION 'INSUFFICIENT_STOCK: Only % items available, requested %', current_quantity, NEW.quantity;
-    END IF;
-    SELECT buyer_id INTO order_buyer_id FROM "order" WHERE order_id = NEW.order_id;
-    UPDATE product SET quantity = quantity - NEW.quantity, updated_at = CURRENT_TIMESTAMP WHERE product_id = NEW.product_id;
-    PERFORM log_system_action(order_buyer_id, 'STOCK_DECREASE', 'product', NEW.product_id, 'Stock decreased by ' || NEW.quantity || ' for order ' || NEW.order_id || ' (remaining: ' || (current_quantity - NEW.quantity) || ')');
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_update_stock
-BEFORE INSERT ON order_detail
-FOR EACH ROW EXECUTE FUNCTION update_stock_on_order();
-
-CREATE OR REPLACE FUNCTION update_voucher_usage()
-RETURNS TRIGGER AS $$
-DECLARE
-    voucher_code VARCHAR(20);
-BEGIN
-    IF NEW.voucher_id IS NOT NULL THEN
-        SELECT voucher_code INTO voucher_code FROM voucher WHERE voucher_id = NEW.voucher_id;
-        UPDATE voucher SET used_count = used_count + 1, updated_at = CURRENT_TIMESTAMP WHERE voucher_id = NEW.voucher_id;
-        PERFORM log_system_action(NEW.buyer_id, 'VOUCHER_USED', 'order', NEW.order_id, 'Voucher ' || voucher_code || ' applied to order');
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_update_voucher_usage
-AFTER INSERT ON "order"
-FOR EACH ROW
-WHEN (NEW.voucher_id IS NOT NULL)
-EXECUTE FUNCTION update_voucher_usage();
-
-CREATE OR REPLACE FUNCTION validate_order_detail()
-RETURNS TRIGGER AS $$
-DECLARE
-    product_status SMALLINT;
-    product_seller_id INT;
-BEGIN
-    SELECT status, seller_id INTO product_status, product_seller_id FROM product WHERE product_id = NEW.product_id;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'INVALID_PRODUCT: Product does not exist';
-    END IF;
-    IF product_status != 1 THEN
-        RAISE EXCEPTION 'PRODUCT_NOT_AVAILABLE: Product is not available for purchase (status: %)', get_product_status_text(product_status);
-    END IF;
-    NEW.seller_id := product_seller_id;
-    IF NEW.quantity <= 0 THEN
-        RAISE EXCEPTION 'INVALID_QUANTITY: Quantity must be greater than 0';
-    END IF;
-    IF NEW.purchased_price <= 0 THEN
-        RAISE EXCEPTION 'INVALID_PRICE: Price must be greater than 0';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_validate_order_detail
-BEFORE INSERT ON order_detail
-FOR EACH ROW EXECUTE FUNCTION validate_order_detail();
-
+-- ==============================================================================
+-- 4. SEED DATA
+-- ==============================================================================
 -- ==============================================================================
 -- 4. SEED DATA
 -- ==============================================================================
@@ -786,11 +560,11 @@ INSERT INTO role (role_name, description) VALUES
 ('User', 'Người dùng thông thường, có quyền mua hàng và tương tác cơ bản');
 
 -- Users with hashed passwords
-INSERT INTO "user" (username, email, password_hash, random_key, full_name, phone_number, address, email_verified) VALUES
-('admin', 'admin@oldshop.com', crypt('admin123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Administrator', '0123456789', 'Admin Address', TRUE),
-('reviewer1', 'mod1@gmail.com', crypt('mod123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Reviewer One', '0987654321', 'Reviewer Address', TRUE),
-('user1', 'user1@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'User One', '0111111111', 'User Address', TRUE),
-('user2', 'user2@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Seller One', '0222222222', 'Seller Address', TRUE);
+INSERT INTO "user" (username, email, password_hash, random_key, full_name, phone_number, address, email_verified, trust_score) VALUES
+('admin', 'admin@oldshop.com', crypt('admin123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Administrator', '0123456789', 'Admin Address', TRUE, NULL),
+('reviewer1', 'mod1@gmail.com', crypt('mod123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Reviewer One', '0987654321', 'Reviewer Address', TRUE, NULL),
+('user1', 'user1@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'User One', '0111111111', 'User Address', TRUE, 100.0),
+('user2', 'user2@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Seller One', '0222222222', 'Seller Address', TRUE, 100.0);
 
 -- User roles
 INSERT INTO user_role (user_id, role_id) VALUES
@@ -812,22 +586,11 @@ INSERT INTO payment_method (method_name, is_online) VALUES
 ('COD', FALSE), ('MOMO', TRUE), ('VNPAY', TRUE), ('PAYPAL', TRUE), ('BankTransfer', TRUE);
 
 -- Vouchers
-INSERT INTO voucher (voucher_code, discount_value, is_percentage, expiry_date, usage_limit, min_order_value, max_discount, created_by) VALUES
-('SAVE10', 10.00, TRUE, '2026-12-31 23:59:59', 100, 100.00, 50.00, 1),
-('DISCOUNT50', 50.00, FALSE, '2026-06-30 23:59:59', 50, 200.00, NULL, 1),
-('FREESHIP', 5.00, FALSE, '2026-05-01 23:59:59', NULL, 150.00, NULL, 1),
-('WELCOME20', 20.00, TRUE, '2026-12-31 23:59:59', 500, 50.00, 100.00, 1);
-
--- Users
-INSERT INTO "user" (username, email, password_hash, random_key, full_name, phone_number, address, email_verified) VALUES
-('admin', 'admin@oldshop.com', crypt('admin123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Administrator', '0123456789', 'Admin Address', TRUE),
-('reviewer1', 'mod1@gmail.com', crypt('mod123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Reviewer One', '0987654321', 'Reviewer Address', TRUE),
-('user1', 'user1@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'User One', '0111111111', 'User Address', TRUE),
-('user2', 'user2@gmail.com', crypt('user123', gen_salt('bf', 8)), encode(gen_random_bytes(32), 'hex'), 'Seller One', '0222222222', 'Seller Address', TRUE);
-
--- User roles
-INSERT INTO user_role (user_id, role_id) VALUES
-(1, 1), (2, 2), (3, 3), (4, 3);
+INSERT INTO voucher (code, discount_type, discount_value, max_usage, min_order_amount, valid_from, valid_to, is_active, is_deleted, created_at) VALUES
+('SAVE10', 1, 10.00, 100, 100.00, '2024-01-01 00:00:00', '2026-12-31 23:59:59', TRUE, FALSE, CURRENT_TIMESTAMP),
+('DISCOUNT50', 0, 50.00, 50, 200.00, '2024-01-01 00:00:00', '2026-06-30 23:59:59', TRUE, FALSE, CURRENT_TIMESTAMP),
+('FREESHIP', 0, 5.00, NULL, 150.00, '2024-01-01 00:00:00', '2026-05-01 23:59:59', TRUE, FALSE, CURRENT_TIMESTAMP),
+('WELCOME20', 1, 20.00, 500, 50.00, '2024-01-01 00:00:00', '2026-12-31 23:59:59', TRUE, FALSE, CURRENT_TIMESTAMP);
 
 -- Products
 INSERT INTO product (seller_id, category_id, title, description, price, quantity, weight_grams, dimensions, condition_rating, warranty_months) VALUES
@@ -838,21 +601,21 @@ INSERT INTO product (seller_id, category_id, title, description, price, quantity
 (4, 7, 'Toi ac va Hinh phat', 'Tac pham hien sinh noi tieng nhat cua Dostoevsky.', 800000.00, 1, 3500, '25x18x10 cm', 8, 0);
 
 -- Contact info
-INSERT INTO contact_info (user_id, recipient_name, phone_number, street_address, city) VALUES
-(3, 'Nguyen Van A', '0843001701', '123 Lac Long Quan, Phuong 10', 'TP.HCM'),
-(4, 'Tran Thi B', '0912345678', '456 Nguyen Hue, Phuong Ben Nghe', 'TP.HCM');
+INSERT INTO contact_info (user_id, full_name, phone_number, address) VALUES
+(3, 'Nguyen Van A', '0843001701', '123 Lac Long Quan, Phuong 10, TP.HCM'),
+(4, 'Tran Thi B', '0912345678', '456 Nguyen Hue, Phuong Ben Nghe, TP.HCM');
 
 -- Sample order
 INSERT INTO "order" (buyer_id, contact_id, payment_method_id, voucher_id, total_amount, shipping_fee, discount_amount, final_amount, order_status, shipping_address) VALUES
 (3, 1, 1, 1, 8500000.00, 30000.00, 850000.00, 7680000.00, 1, '123 Lac Long Quan, Phuong 10, TP.HCM');
 
 -- Order details
-INSERT INTO order_detail (order_id, product_id, seller_id, purchased_price, quantity) VALUES
-(1, 1, 4, 8500000.00, 1);
+INSERT INTO order_detail (order_id, product_id, price_at_purchase, quantity) VALUES
+(1, 1, 8500000.00, 1);
 
 -- Transaction
-INSERT INTO transaction (order_id, payment_method_id, amount, transaction_status, transaction_code) VALUES
-(1, 1, 7680000.00, 1, 'TXN_' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS') || '_' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0'));
+INSERT INTO transaction (order_id, user_id, payment_method_id, amount, transaction_status, reference_number) VALUES
+(1, 3, 1, 7680000.00, 1, 'TXN_' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS') || '_' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0'));
 
 -- ==============================================================================
 -- 5. FINAL SETUP

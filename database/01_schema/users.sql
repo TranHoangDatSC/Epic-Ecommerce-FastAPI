@@ -16,7 +16,8 @@ CREATE TABLE "user" (
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     email_verification_token VARCHAR(255),
     password_reset_token VARCHAR(255),
-    password_reset_expires TIMESTAMP
+    password_reset_expires TIMESTAMP,
+    trust_score DECIMAL(5,2) DEFAULT 0.0
 );
 
 -- Indexes for performance and constraints
