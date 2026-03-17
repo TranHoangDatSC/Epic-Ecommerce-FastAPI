@@ -60,7 +60,9 @@ export interface OrderDetail {
 }
 
 export interface Category {
-  id: number;
+  category_id: number;
   name: string;
   description: string;
+  // Optional alias for convenience in templates
+  id?: number;
 }

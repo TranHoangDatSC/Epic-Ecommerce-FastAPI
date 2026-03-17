@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/oldshop?client_encoding=utf8"
+    DATABASE_URL: str = "sqlite:///./oldshop.db"
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_USER: str = "postgres"

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from typing import List
 from app.database import get_db
 from app.models import User, Product, ProductImage
 from app.schemas import ProductResponse, ProductDetailResponse, ProductCreate, ProductUpdate
@@ -19,7 +20,6 @@ async def list_products(
     category_id: int = Query(None),
     search: str = Query(None),
     sort_by: str = Query("created_at", regex="^(created_at|price|rating)$"),
-    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> list[ProductResponse]:
     """

@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { Product, Category } from '../../core/models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-shop',
@@ -14,14 +15,21 @@ import { Product, Category } from '../../core/models';
   styleUrls: ['./shop.scss']
 })
 export class ShopComponent implements OnInit {
+  allProducts: Product[] = [];
   products: Product[] = [];
+  filteredProducts: Product[] = [];
   categories: Category[] = [];
+  categoryCounts: Record<number, number> = {};
+
   currentPage = 1;
   totalPages = 1;
   itemsPerPage = 9;
+
   loading = false;
   searchQuery = '';
   selectedCategoryId: number | null = null;
+  priceMin: number | null = null;
+  priceMax: number | null = null;
 
   constructor(
     private productService: ProductService,
@@ -46,27 +54,17 @@ export class ShopComponent implements OnInit {
 
   loadProducts() {
     this.loading = true;
-    const skip = (this.currentPage - 1) * this.itemsPerPage;
 
+    // Load all approved products to support filtering and counts
     this.productService.getProducts({
-      skip,
-      limit: this.itemsPerPage,
-      search: this.searchQuery || undefined,
-      category_id: this.selectedCategoryId || undefined,
+      skip: 0,
+      limit: 1000,
       sort_by: 'created_at'
     }).subscribe({
       next: (products) => {
-        this.products = products;
-        // Assuming the API returns all products, we need to calculate total pages
-        // In a real scenario, the API should return total count
-        // For now, if we get less than itemsPerPage, it's the last page
-        if (products.length < this.itemsPerPage) {
-          this.totalPages = this.currentPage;
-        } else {
-          // We need to estimate or get total count from API
-          // For simplicity, assume there are more pages
-          this.totalPages = this.currentPage + 1;
-        }
+        this.allProducts = products;
+        this.computeCategoryCounts();
+        this.applyFilters();
         this.loading = false;
       },
       error: (error) => {
@@ -76,20 +74,64 @@ export class ShopComponent implements OnInit {
     });
   }
 
-  onSearch() {
-    this.currentPage = 1;
-    this.loadProducts();
+  computeCategoryCounts() {
+    this.categoryCounts = {};
+    for (const product of this.allProducts) {
+      if (!this.categoryCounts[product.category_id]) {
+        this.categoryCounts[product.category_id] = 0;
+      }
+      this.categoryCounts[product.category_id] += 1;
+    }
   }
 
-  onCategoryChange() {
+  applyFilters() {
+    const min = this.priceMin ?? 0;
+    const max = this.priceMax ?? Number.MAX_SAFE_INTEGER;
+
+    this.filteredProducts = this.allProducts.filter((product) => {
+      const matchesSearch = this.searchQuery
+        ? product.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          (product.description || '').toLowerCase().includes(this.searchQuery.toLowerCase())
+        : true;
+
+      const matchesCategory = this.selectedCategoryId
+        ? product.category_id === this.selectedCategoryId
+        : true;
+
+      const price = Number(product.price);
+      const matchesPrice = price >= min && price <= max;
+
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+
+    this.totalPages = Math.max(1, Math.ceil(this.filteredProducts.length / this.itemsPerPage));
     this.currentPage = 1;
-    this.loadProducts();
+    this.updatePageProducts();
+  }
+
+  updatePageProducts() {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.products = this.filteredProducts.slice(start, end);
+  }
+
+  onSearch() {
+    this.applyFilters();
+  }
+
+  onCategoryChange(categoryId: number | null = null) {
+    this.selectedCategoryId = categoryId;
+    this.applyFilters();
+  }
+
+  onPriceFilter() {
+    this.applyFilters();
   }
 
   onPageChange(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.loadProducts();
+      this.updatePageProducts();
     }
   }
 
@@ -106,6 +148,28 @@ export class ShopComponent implements OnInit {
 
   getPrimaryImage(product: Product): string {
     const primaryImage = product.product_images?.find(img => img.is_primary);
-    return primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '/assets/placeholder.jpg');
+    const raw = primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '');
+
+    if (!raw) {
+      return 'https://via.placeholder.com/350x250?text=No+Image';
+    }
+
+    // If URL is relative (served by backend), prefix with base URL
+    if (raw.startsWith('/')) {
+      const base = environment.imageBaseUrl.replace(/\/+$/, '');
+      const trimmed = raw.replace(/^\/+/, '');
+      const withoutStatic = trimmed.replace(/^static\//, '');
+      return `${base}/${withoutStatic}`;
+    }
+
+    return raw;
+  }
+
+  formatPrice(value: number | string): string {
+    const price = typeof value === 'string' ? Number(value) : value;
+    if (!Number.isFinite(price)) {
+      return '0 ₫';
+    }
+    return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   }
 }
