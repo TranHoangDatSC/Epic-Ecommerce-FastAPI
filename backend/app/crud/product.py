@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from app.crud.base import CRUDBase
 from app.models import Product
@@ -12,6 +12,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         """Get product by ID"""
         return (
             db.query(Product)
+            .options(joinedload(Product.product_images))
             .filter(Product.product_id == product_id)
             .filter(Product.is_deleted == False)
             .first()
@@ -45,6 +46,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         """Get products by category"""
         query = (
             db.query(Product)
+            .options(joinedload(Product.product_images))
             .filter(Product.category_id == category_id)
             .filter(Product.is_deleted == False)
         )
@@ -64,6 +66,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         """Get all approved products"""
         query = (
             db.query(Product)
+            .options(joinedload(Product.product_images))
             .filter(Product.status == 1)  # Approved
             .filter(Product.is_deleted == False)
         )
@@ -87,6 +90,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         """Search products by title or description"""
         return (
             db.query(Product)
+            .options(joinedload(Product.product_images))
             .filter(Product.is_deleted == False)
             .filter(Product.status == 1)  # Only approved
             .filter(

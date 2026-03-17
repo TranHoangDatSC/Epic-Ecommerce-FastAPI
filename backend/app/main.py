@@ -3,10 +3,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base
 from app.api.routes import auth, users, categories, products, orders, moderator
+import os
 
 # --- Helper để lấy IP Network ---
 def get_ip_address():
@@ -57,6 +59,15 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     lifespan=lifespan
 )
+
+# ==================== Static Files ====================
+
+# Create uploads directory if it doesn't exist
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=uploads_dir), name="static")
 
 # ==================== Middleware ====================
 

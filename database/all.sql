@@ -600,6 +600,16 @@ INSERT INTO product (seller_id, category_id, title, description, price, quantity
 (4, 3, 'Ao khoac mua dong', 'Ao khoac len day, size L, mau den. Da giat sach, khong co hu hong.', 350000.00, 5, 800, NULL, 7, 0),
 (4, 7, 'Toi ac va Hinh phat', 'Tac pham hien sinh noi tieng nhat cua Dostoevsky.', 800000.00, 1, 3500, '25x18x10 cm', 8, 0);
 
+-- Product images
+INSERT INTO product_image (product_id, image_url, alt_text, is_primary, display_order) VALUES
+(1, '/static/products/1_1_dell_laptop.jpg', 'Dell Inspiron 15 front view', TRUE, 1),
+(1, '/static/products/1_2_dell_laptop_side.jpg', 'Dell Inspiron 15 side view', FALSE, 2),
+(2, '/static/products/2_1_iphone_12_pro_max.jpg', 'iPhone 12 Pro Max front', TRUE, 1),
+(2, '/static/products/2_2_iphone_12_pro_max_back.jpg', 'iPhone 12 Pro Max back', FALSE, 2),
+(3, '/static/products/3_1_sony_wh1000xm4.jpg', 'Sony WH-1000XM4 headphones', TRUE, 1),
+(4, '/static/products/4_1_winter_jacket.jpg', 'Winter jacket front', TRUE, 1),
+(5, '/static/products/5_1_crime_and_punishment.jpg', 'Crime and Punishment book cover', TRUE, 1);
+
 -- Contact info
 INSERT INTO contact_info (user_id, full_name, phone_number, address) VALUES
 (3, 'Nguyen Van A', '0843001701', '123 Lac Long Quan, Phuong 10, TP.HCM'),

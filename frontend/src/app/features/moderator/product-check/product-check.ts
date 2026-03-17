@@ -106,7 +106,7 @@ export class ProductCheckComponent implements OnInit {
 
   getPrimaryImage(product: Product): string {
     const primaryImage = product.product_images.find(img => img.is_primary);
-    return primaryImage ? primaryImage.image_url : (product.product_images[0]?.image_url || '/images/placeholder.png');
+    return primaryImage ? primaryImage.image_url : (product.product_images[0]?.image_url || '/assets/images/placeholder.png');
   }
 
   getStatusBadge(status: number): { text: string, class: string } {

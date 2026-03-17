@@ -14,16 +14,31 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface ProductImage {
+  image_id: number;
+  image_url: string;
+  alt_text?: string;
+  is_primary: boolean;
+  display_order: number;
+}
+
 export interface Product {
-  id: number;
-  name: string;
-  description: string;
+  product_id: number;
+  title: string;
+  description?: string;
   price: number;
-  categoryId: number;
-  sellerId: number;
-  images: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  quantity: number;
+  category_id: number;
+  seller_id: number;
+  status: number;
+  reject_reason?: string;
+  view_count: number;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at?: string;
+  is_approved: boolean;
+  product_images: ProductImage[];
+  seller?: User;
 }
 
 export interface Order {

@@ -1,0 +1,33 @@
+<div class="product-detail" *ngIf="product">
+  <div class="product-images">
+    <!-- Primary Image -->
+    <div class="primary-image" *ngIf="primaryImage">
+      <img [src]="getFullImageUrl(primaryImage.image_url)"
+           [alt]="primaryImage.alt_text || product.title"
+           class="main-image">
+    </div>
+
+    <!-- Secondary Images -->
+    <div class="secondary-images" *ngIf="secondaryImages.length > 0">
+      <div class="image-thumbnail"
+           *ngFor="let image of secondaryImages"
+           (click)="setPrimaryImage(image)">
+        <img [src]="getFullImageUrl(image.image_url)"
+             [alt]="image.alt_text || product.title"
+             class="thumbnail">
+      </div>
+    </div>
+  </div>
+
+  <div class="product-info">
+    <h1>{{ product.title }}</h1>
+    <p class="price">{{ product.price | currency:'VND':'symbol':'1.0-0' }}</p>
+    <p class="description">{{ product.description }}</p>
+
+    <div class="product-details">
+      <p><strong>Quantity:</strong> {{ product.quantity }}</p>
+      <p><strong>Status:</strong> {{ product.status === 1 ? 'Approved' : 'Pending' }}</p>
+      <p><strong>Views:</strong> {{ product.view_count }}</p>
+    </div>
+  </div>
+</div>
