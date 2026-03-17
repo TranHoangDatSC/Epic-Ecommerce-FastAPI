@@ -35,32 +35,62 @@ def seed_data():
         admin = User(
             username="admin",
             email="admin@oldshop.com",
-            password_hash="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6fMJyHnUe",  # password
+            password_hash="$2b$12$Y9POr3uNdDBMMPCfq/HAH.53c/W2Lkf577hLLpE/fYFHm.3hSsIoS", # admin123
             random_key="admin_key",
-            full_name="Administrator",
+            full_name="Quản trị viên",
             phone_number="0123456789",
-            address="Admin Address",
-            is_active=True
+            address="123A Sài Gòn",
+            is_active=True,
+            email_verified=True
         )
 
-        seller = User(
-            username="seller",
-            email="seller@oldshop.com",
-            password_hash="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6fMJyHnUe",
-            random_key="seller_key",
-            full_name="John Seller",
+        mod1 = User(
+            username="mod1",
+            email="mod1@gmail.com",
+            password_hash="$2b$12$fUbT2uWKVgYZkdwFokTs4uyfCxv1NV0/wmWmuUVUnA4NNkBWc4t3.", # mod123
+            random_key="mod1_key",
+            full_name="Người duyệt một",
             phone_number="0987654321",
-            address="Seller Address",
-            is_active=True
+            address="123A Trà Vinh",
+            is_active=True,
+            email_verified=True
         )
 
-        db.add_all([admin, seller])
+        user1 = User(
+            username="user1",
+            email="user1@gmail.com",
+            password_hash="$2b$12$XIvfr7x62eelLYMGyJ5G7OdiEtgn99Tx5Vk62Ku.LqdYOciKtoWXG", # user123
+            random_key="user1_key",
+            full_name="Người dùng một",
+            phone_number="0111111111",
+            address="123A Vĩnh Long",
+            is_active=True,
+            email_verified=True,
+            trust_score=100.0
+        )
+
+        user2 = User(
+            username="user2",
+            email="user2@gmail.com",
+            password_hash="$2b$12$XIvfr7x62eelLYMGyJ5G7OdiEtgn99Tx5Vk62Ku.LqdYOciKtoWXG", # user123
+            random_key="user2_key",
+            full_name="Người bán một",
+            phone_number="0222222222",
+            address="123A Sóc Trăng",
+            is_active=True,
+            email_verified=True,
+            trust_score=100.0
+        )
+
+        db.add_all([admin, mod1, user1, user2])
         db.commit()
 
         # Create user roles
         db.add_all([
             UserRole(user_id=admin.user_id, role_id=admin_role.role_id),
-            UserRole(user_id=seller.user_id, role_id=user_role.role_id)
+            UserRole(user_id=mod1.user_id, role_id=mod_role.role_id),
+            UserRole(user_id=user1.user_id, role_id=user_role.role_id),
+            UserRole(user_id=user2.user_id, role_id=user_role.role_id)
         ])
         db.commit()
 
@@ -74,7 +104,7 @@ def seed_data():
 
         # Create products
         laptop = Product(
-            seller_id=seller.user_id,
+            seller_id=user2.user_id,
             category_id=electronics.category_id,
             title="Laptop cũ Dell Inspiron 15",
             description="Laptop Dell Inspiron 15 đã qua sử dụng, cấu hình Core i5, RAM 8GB, SSD 256GB, màn hình 15.6 inch. Còn bảo hành 6 tháng.",
@@ -85,7 +115,7 @@ def seed_data():
         )
 
         iphone = Product(
-            seller_id=seller.user_id,
+            seller_id=user2.user_id,
             category_id=electronics.category_id,
             title="iPhone 12 Pro Max 256GB",
             description="iPhone 12 Pro Max màu xanh, dung lượng 256GB, kèm sạc và cáp. Máy còn mới 95%, không trầy xước.",
@@ -96,7 +126,7 @@ def seed_data():
         )
 
         headphones = Product(
-            seller_id=seller.user_id,
+            seller_id=user2.user_id,
             category_id=electronics.category_id,
             title="Tai nghe Sony WH-1000XM4",
             description="Tai nghe chống ồn Sony WH-1000XM4, màu đen, kèm hộp và cáp. Đã sử dụng 1 năm, còn như mới.",
@@ -107,7 +137,7 @@ def seed_data():
         )
 
         coat = Product(
-            seller_id=seller.user_id,
+            seller_id=user2.user_id,
             category_id=clothing.category_id,
             title="Áo khoác mùa đông",
             description="Áo khoác len dày, size L, màu đen. Đã giặt sạch, không có hư hỏng.",
@@ -118,7 +148,7 @@ def seed_data():
         )
 
         book = Product(
-            seller_id=seller.user_id,
+            seller_id=user2.user_id,
             category_id=books.category_id,
             title="Tội ác và Hình phạt",
             description="Tác phẩm hiện sinh nổi tiếng nhất của Dostoevsky.",

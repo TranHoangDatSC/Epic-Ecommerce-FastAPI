@@ -42,7 +42,7 @@ export class ModeratorService {
     if (rejectReason) {
       body.reject_reason = rejectReason;
     }
-    return this.http.put(`${this.apiUrl}/products/${productId}/approve`, body);
+    return this.http.put(`${this.apiUrl}/products/${productId}/change_state`, body);
   }
 
   // Violation reports

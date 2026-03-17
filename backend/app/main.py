@@ -5,10 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-from pathlib import Path
 from app.config import get_settings
 from app.database import engine, Base
-from app.api.v1.api import api_router
+from app.api.routes import auth, users, categories, products, orders, moderator
 import os
 
 # --- Helper để lấy IP Network ---
@@ -63,21 +62,12 @@ app = FastAPI(
 
 # ==================== Static Files ====================
 
-# Create uploads directory structure at root level (next to backend folder)
-# Get the project root: backend > parent > uploads
-project_root = Path(__file__).parent.parent.parent  # Go from app/main.py to root
-uploads_dir = project_root / "uploads"
-products_dir = uploads_dir / "products"
-
-# Ensure directories exist with proper permissions
-uploads_dir.mkdir(exist_ok=True, parents=True)
-products_dir.mkdir(exist_ok=True, parents=True)
-
-print(f"📁 Static files directory: {uploads_dir}")
-print(f"📁 Products images path: {products_dir}")
+# Create uploads directory if it doesn't exist
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
 
 # Mount static files
-app.mount("/static", StaticFiles(directory=str(uploads_dir)), name="static")
+app.mount("/static", StaticFiles(directory=uploads_dir), name="static")
 
 # ==================== Middleware ====================
 
@@ -105,9 +95,21 @@ async def health_check():
 
 # ==================== API Routes ====================
 
-# Include all v1 API endpoints with /api/v1 prefix
-# The api_router already includes the prefix from v1/api.py
-app.include_router(api_router)
+# Primary versioned API (used by docs)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(users.router, prefix=settings.API_V1_STR)
+app.include_router(categories.router, prefix=settings.API_V1_STR)
+app.include_router(products.router, prefix=settings.API_V1_STR)
+app.include_router(orders.router, prefix=settings.API_V1_STR)
+app.include_router(moderator.router, prefix=settings.API_V1_STR)
+
+# Compatibility routes for clients calling /api/* (no /v1). These are not shown in the OpenAPI schema.
+app.include_router(auth.router, prefix="/api", include_in_schema=False)
+app.include_router(users.router, prefix="/api", include_in_schema=False)
+app.include_router(categories.router, prefix="/api", include_in_schema=False)
+app.include_router(products.router, prefix="/api", include_in_schema=False)
+app.include_router(orders.router, prefix="/api", include_in_schema=False)
+app.include_router(moderator.router, prefix="/api", include_in_schema=False)
 
 # ==================== Error Handlers ====================
 
