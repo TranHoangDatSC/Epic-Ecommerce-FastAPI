@@ -7,6 +7,7 @@ Interactive setup script for OldShop database
 """
 
 import psycopg2 # type: ignore
+import subprocess
 import os
 import sys
 from pathlib import Path
@@ -215,7 +216,7 @@ def reset_database(credentials):
 
 
 def run_init_script(credentials, script_path):
-    """Run initialization SQL script"""
+    """Run initialization SQL script using psql"""
     print_info("Running initialization script...")
     
     if not os.path.exists(script_path):
@@ -223,30 +224,44 @@ def run_init_script(credentials, script_path):
         return False
     
     try:
-        # Read SQL script
-        with open(script_path, 'r', encoding='utf-8') as f:
-            sql_script = f.read()
+        # Change to script directory so relative paths in init.sql work
+        script_dir = os.path.dirname(os.path.abspath(script_path))
+        original_dir = os.getcwd()
+        os.chdir(script_dir)
         
-        # Connect and execute
-        conn = psycopg2.connect(
-            user=credentials['username'],
-            password=credentials['password'],
-            host=credentials['host'],
-            port=int(credentials['port']),
-            database=credentials['database']
-        )
-        conn.autocommit = True
-        cursor = conn.cursor()
+        # Build psql command
+        env = os.environ.copy()
+        env['PGPASSWORD'] = credentials['password']
         
-        # Execute script
-        cursor.execute(sql_script)
+        cmd = [
+            'psql',
+            '-h', credentials['host'],
+            '-U', credentials['username'],
+            '-p', str(credentials['port']),
+            '-d', credentials['database'],
+            '-f', os.path.abspath(script_path)
+        ]
         
-        print_success("Initialization script executed successfully")
+        print_info("Executing SQL file - this may take a moment...")
+        print()
         
-        cursor.close()
-        conn.close()
-        return True
-    except (psycopg2.Error, Exception) as e:
+        # Execute psql command
+        result = subprocess.run(cmd, env=env, capture_output=False, text=True)
+        
+        os.chdir(original_dir)
+        
+        if result.returncode == 0:
+            print()
+            print_success("Initialization script executed successfully")
+            print_success("Database setup complete with all tables and seed data!")
+            return True
+        else:
+            print()
+            print_error("Failed to execute script")
+            return False
+            
+    except Exception as e:
+        os.chdir(original_dir)
         print_error(f"Failed to execute script: {str(e)}")
         return False
 

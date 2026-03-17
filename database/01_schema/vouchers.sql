@@ -2,6 +2,7 @@
 CREATE TABLE voucher (
     voucher_id SERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255),
     discount_type SMALLINT NOT NULL DEFAULT 0,
     discount_value DECIMAL(18, 2) NOT NULL,
     max_usage INT,

@@ -13,8 +13,8 @@
 --   p_description: Detailed description of the action
 CREATE OR REPLACE FUNCTION log_system_action(
     p_user_id INT DEFAULT NULL,
-    p_action_type VARCHAR(50) DEFAULT 'UNKNOWN',
-    p_table_name VARCHAR(50) DEFAULT 'unknown',
+    p_action_type VARCHAR(50),
+    p_table_name VARCHAR(50),
     p_record_id INT DEFAULT NULL,
     p_description TEXT DEFAULT NULL
 )
@@ -151,7 +151,7 @@ RETURNS TABLE (
     log_id BIGINT,
     user_id INT,
     username VARCHAR(50),
-    action_type VARCHAR(100),
+    action_type VARCHAR(50),
     description TEXT,
     log_time TIMESTAMP
 ) AS $$
@@ -161,14 +161,14 @@ BEGIN
         sl.log_id,
         sl.user_id,
         u.username,
-        sl.action,
-        sl.details,
-        sl.created_at
+        sl.action_type,
+        sl.description,
+        sl.log_time
     FROM system_log sl
     LEFT JOIN "user" u ON sl.user_id = u.user_id
-    WHERE sl.resource_type = LOWER(trim(p_table_name))
-    AND sl.resource_id = p_record_id
-    ORDER BY sl.created_at DESC
+    WHERE sl.table_name = LOWER(trim(p_table_name))
+    AND sl.record_id = p_record_id
+    ORDER BY sl.log_time DESC
     LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql
@@ -185,7 +185,7 @@ DECLARE
 BEGIN
     -- Delete old logs
     DELETE FROM system_log
-    WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '1 day' * p_days_old;
+    WHERE log_time < CURRENT_TIMESTAMP - INTERVAL '1 day' * p_days_old;
 
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
 
@@ -203,3 +203,7 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;

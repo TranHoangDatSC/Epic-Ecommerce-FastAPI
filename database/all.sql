@@ -1,4 +1,4 @@
--- ==============================================================================
+-- =
 -- OLD SHOP DATABASE - COMPLETE SETUP SCRIPT
 -- ==============================================================================
 -- This script creates the entire OldShop PostgreSQL database from scratch

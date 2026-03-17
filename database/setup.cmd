@@ -149,6 +149,10 @@ if not "!confirm!"=="yes" (
 )
 
 echo [INFO] Resetting database...
+echo [INFO] - Terminating existing connections...
+echo [INFO] - Dropping old database...
+echo [INFO] - Creating new database...
+echo.
 
 REM Kill existing connections and drop database
 psql -h %DB_HOST% -U %DB_USER% -p %DB_PORT% -d postgres -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '%DB_NAME%' AND pid <> pg_backend_pid();" >nul 2>&1
@@ -157,8 +161,11 @@ psql -h %DB_HOST% -U %DB_USER% -p %DB_PORT% -d postgres -c "CREATE DATABASE %DB_
 
 if %ERRORLEVEL% equ 0 (
     echo [OK] Database '%DB_NAME%' reset successfully
+    echo.
     set /p run_init="Run initialization script? (yes/no): "
-    if "!run_init!"=="yes" goto run_init_script
+    if "!run_init!"=="yes" (
+        goto run_init_script
+    )
 ) else (
     echo [ERROR] Failed to reset database
 )
@@ -168,18 +175,34 @@ goto main_menu
 set script_path=%~dp0init.sql
 
 echo [INFO] Running initialization script...
+echo [INFO] Script path: !script_path!
+echo.
 
 if not exist "!script_path!" (
     echo [ERROR] Script file not found: !script_path!
     goto main_menu
 )
 
-psql -h %DB_HOST% -U %DB_USER% -p %DB_PORT% -d %DB_NAME% -f "!script_path!" >nul 2>&1
+echo [INFO] Executing SQL file - this may take a moment...
+echo.
+
+cd /d "%~dp0"
+psql -h %DB_HOST% -U %DB_USER% -p %DB_PORT% -d %DB_NAME% -f "!script_path!"
 
 if %ERRORLEVEL% equ 0 (
+    echo.
+    echo ==================================================
     echo [OK] Initialization script executed successfully
+    echo ==================================================
+    echo.
+    echo Database setup complete with all tables and seed data!
+    echo.
 ) else (
+    echo.
+    echo ==================================================
     echo [ERROR] Failed to execute script
+    echo ==================================================
+    echo.
 )
 goto main_menu
 

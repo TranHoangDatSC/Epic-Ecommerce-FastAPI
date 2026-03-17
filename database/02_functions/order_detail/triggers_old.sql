@@ -25,21 +25,12 @@ BEGIN
     END IF;
 
     IF order_buyer_id = product_seller_id THEN
-        PERFORM log_system_action(
-            order_buyer_id,
-            'SELF_BUY_BLOCKED',
-            'order_detail',
-            NEW.order_detail_id,
-            'Attempted to buy own product (product_id: ' || NEW.product_id || ')'
-        );
         RAISE EXCEPTION 'BUSINESS_RULE_VIOLATION: Sellers cannot buy their own products.';
     END IF;
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_no_self_buying
 BEFORE INSERT ON order_detail
@@ -48,6 +39,74 @@ FOR EACH ROW EXECUTE FUNCTION check_no_self_buying();
 -- Trigger function to update stock and handle inventory management
 -- Automatically reduces product quantity when order is placed
 CREATE OR REPLACE FUNCTION update_stock_on_order()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_quantity INT;
+    order_buyer_id INT;
+BEGIN
+    SELECT quantity INTO current_quantity
+    FROM product
+    WHERE product_id = NEW.product_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'PRODUCT_NOT_FOUND: Product does not exist';
+    END IF;
+
+    IF current_quantity < NEW.quantity THEN
+        RAISE EXCEPTION 'INSUFFICIENT_STOCK: Only % items available, requested %',
+                       current_quantity, NEW.quantity;
+    END IF;
+
+    SELECT buyer_id INTO order_buyer_id
+    FROM "order"
+    WHERE order_id = NEW.order_id;
+
+    UPDATE product
+    SET quantity = quantity - NEW.quantity,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE product_id = NEW.product_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_stock
+BEFORE INSERT ON order_detail
+FOR EACH ROW EXECUTE FUNCTION update_stock_on_order();
+
+-- Trigger function to validate order details before insertion
+CREATE OR REPLACE FUNCTION validate_order_detail()
+RETURNS TRIGGER AS $$
+DECLARE
+    product_exists BOOLEAN := FALSE;
+    order_exists BOOLEAN := FALSE;
+BEGIN
+    SELECT EXISTS(SELECT 1 FROM product WHERE product_id = NEW.product_id) INTO product_exists;
+    SELECT EXISTS(SELECT 1 FROM "order" WHERE order_id = NEW.order_id) INTO order_exists;
+
+    IF NOT product_exists THEN
+        RAISE EXCEPTION 'PRODUCT_NOT_FOUND: Product with ID % does not exist', NEW.product_id;
+    END IF;
+
+    IF NOT order_exists THEN
+        RAISE EXCEPTION 'ORDER_NOT_FOUND: Order with ID % does not exist', NEW.order_id;
+    END IF;
+
+    IF NEW.quantity <= 0 THEN
+        RAISE EXCEPTION 'INVALID_QUANTITY: Quantity must be greater than 0';
+    END IF;
+
+    IF NEW.price_at_purchase <= 0 THEN
+        RAISE EXCEPTION 'INVALID_PRICE: Price must be greater than 0';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validate_order_detail
+BEFORE INSERT ON order_detail
+FOR EACH ROW EXECUTE FUNCTION validate_order_detail();
 RETURNS TRIGGER AS $$
 DECLARE
     current_quantity INT;

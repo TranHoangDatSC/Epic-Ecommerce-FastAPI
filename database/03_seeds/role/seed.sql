@@ -1,5 +1,5 @@
 -- seed.sql
 INSERT INTO role (role_name, description) VALUES
-('Admin', 'Quản trị viên có quyền cao nhất, quản lý toàn bộ hệ thống'),
-('Mod', 'Kiểm duyệt viên có quyền quản lý nội dung và người dùng'),
-('User', 'Người dùng thông thường, có quyền mua hàng và tương tác cơ bản');
+('Admin', 'Quan tri vien co quyen cao nhat, quan ly toan bo he thong'),
+('Mod', 'Kiem duyet vien co quyen quan ly noi dung va nguoi dung'),
+('User', 'Nguoi dung thong thuong, co quyen mua hang va tuong tac co ban');

@@ -37,7 +37,7 @@ ALTER SYSTEM SET autovacuum_analyze_threshold = 50;
 -- Create indexes for better performance (these are now in individual schema files)
 -- But we can add some global indexes here if needed
 
--- Create a partial index for active products
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_active_search
-ON product USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')))
-WHERE is_deleted = FALSE AND status = 1;
+-- Note: Index for active products will be created after product table is created
+-- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_active_search
+-- ON product USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')))
+-- WHERE is_deleted = FALSE AND status = 1;
