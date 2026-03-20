@@ -69,6 +69,15 @@ export class ProductDetailComponent implements OnInit {
   reportingId: number | null = null;
   reportCategory: string = '';
   reportReason: string = '';
+  couponCode: string = '';
+
+  applyCoupon(): void {
+    if (!this.couponCode.trim()) {
+      alert('Vui lòng nhập mã giảm giá!');
+      return;
+    }
+    alert(`Đang kiểm tra mã: ${this.couponCode}. Tính năng này sẽ sớm ra mắt!`);
+  }
 
   reportProduct(): void {
     this.reportingType = 'product';
