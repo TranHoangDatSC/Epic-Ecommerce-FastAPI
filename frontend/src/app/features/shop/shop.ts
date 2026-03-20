@@ -157,9 +157,8 @@ export class ShopComponent implements OnInit {
     // If URL is relative (served by backend), prefix with base URL
     if (raw.startsWith('/')) {
       const base = environment.imageBaseUrl.replace(/\/+$/, '');
-      const trimmed = raw.replace(/^\/+/, '');
-      const withoutStatic = trimmed.replace(/^static\//, '');
-      return `${base}/${withoutStatic}`;
+      const trimmed = raw.startsWith('/') ? raw : `/${raw}`;
+      return `${base}${trimmed}`;
     }
 
     return raw;

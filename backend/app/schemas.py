@@ -487,7 +487,7 @@ class ProductApprovalRequest(BaseModel):
     """Product approval request"""
     product_id: Optional[int] = None
     status: int = Field(..., ge=0, le=2)  # 0: Pending, 1: Approved, 2: Rejected
-    reject_reason: Optional[str] = Field(None, max_length=500)
+    reason: Optional[str] = Field(None, max_length=500)
 
 
 class ViolationReportRequest(BaseModel):

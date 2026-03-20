@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 
 export interface ProductApprovalRequest {
   status: number;
-  reject_reason?: string;
+  reason?: string;
 }
 
 export interface ViolationReportRequest {
@@ -37,12 +37,12 @@ export class ModeratorService {
     return this.http.get<any[]>(`${this.apiUrl}/products/archived`);
   }
 
-  approveProduct(productId: number, status: number, rejectReason?: string): Observable<any> {
+  approveProduct(productId: number, status: number, reason?: string): Observable<any> {
     const body: ProductApprovalRequest = { status };
-    if (rejectReason) {
-      body.reject_reason = rejectReason;
+    if (reason) {
+      body.reason = reason;
     }
-    return this.http.put(`${this.apiUrl}/products/${productId}/change_state`, body);
+    return this.http.patch(`${this.apiUrl}/products/${productId}/status`, body);
   }
 
   // Violation reports

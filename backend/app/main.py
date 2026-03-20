@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base
-from app.api.routes import auth, users, categories, products, orders, moderator
+from app.api.v1 import auth, users, categories, products, orders, moderator
 import os
 
 # --- Helper để lấy IP Network ---
@@ -60,14 +60,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ==================== Static Files ====================
+# ==================== Media Files ====================
+ 
+# Create media directory if it doesn't exist
+media_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media")
+os.makedirs(media_dir, exist_ok=True)
+os.makedirs(os.path.join(media_dir, "products"), exist_ok=True)
+os.makedirs(os.path.join(media_dir, "users"), exist_ok=True)
 
-# Create uploads directory if it doesn't exist
-uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
-os.makedirs(uploads_dir, exist_ok=True)
-
-# Mount static files
-app.mount("/static", StaticFiles(directory=uploads_dir), name="static")
+# Mount media files
+app.mount("/media", StaticFiles(directory=media_dir), name="media")
 
 # ==================== Middleware ====================
 

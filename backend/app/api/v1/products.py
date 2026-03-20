@@ -137,9 +137,9 @@ async def create_product(
         db.add(product)
         db.flush()  # Get product_id without committing
 
-        # Get uploads directory
-        uploads_dir = Path(__file__).parent.parent.parent.parent / "uploads" / "products"
-        uploads_dir.mkdir(parents=True, exist_ok=True)
+        # Get media directory
+        media_dir = Path(__file__).parent.parent.parent.parent / "media" / "products"
+        media_dir.mkdir(parents=True, exist_ok=True)
 
         # Get current image count for this product
         existing_images_count = db.query(ProductImage).filter(ProductImage.product_id == product.product_id).count()
@@ -157,7 +157,7 @@ async def create_product(
             original_name = Path(file.filename).stem
             extension = Path(file.filename).suffix.lower()
             new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
-            file_path = uploads_dir / new_filename
+            file_path = media_dir / new_filename
 
             # Read file content
             content = await file.read()
@@ -167,7 +167,7 @@ async def create_product(
                 f.write(content)
 
             # Create database record
-            image_url = f"/static/products/{new_filename}"
+            image_url = f"/media/products/{new_filename}"
             is_primary = (i == 1)  # First image is primary
 
             product_image = ProductImage(
@@ -188,14 +188,14 @@ async def create_product(
     except Exception as e:
         db.rollback()
         # Clean up uploaded files if any
-        uploads_dir = Path(__file__).parent.parent.parent.parent / "uploads" / "products"
+        media_dir = Path(__file__).parent.parent.parent.parent / "media" / "products"
         for file in files:
             if hasattr(file, 'filename'):
                 original_name = Path(file.filename).stem
                 extension = Path(file.filename).suffix.lower()
                 for i in range(1, len(files) + 1):
                     new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
-                    file_path = uploads_dir / new_filename
+                    file_path = media_dir / new_filename
                     if file_path.exists():
                         file_path.unlink()
         raise HTTPException(

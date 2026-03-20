@@ -19,25 +19,25 @@ def get_pending_products(
     return crud_moderator.get_pending_products(db)
 
 
-@router.put("/products/{product_id}/change_state", response_model=schemas.ProductResponse)
-def change_product_state(
+@router.patch("/products/{product_id}/status", response_model=schemas.ProductResponse)
+def change_product_status(
     product_id: int,
     approval: schemas.ProductApprovalRequest,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_moderator)
 ):
-    """Change product state (0: pending, 1: approve, 2: reject)"""
+    """Change product status (0: PENDING, 1: APPROVED, 2: REJECTED)"""
     try:
         return crud_moderator.approve_product(
             db,
             product_id=product_id,
             status=approval.status,
-            reject_reason=approval.reject_reason,
+            reject_reason=approval.reason,
             moderator_id=current_user.user_id
         )
     except (NotFoundException, ValidationException) as e:
         status_code = status.HTTP_404_NOT_FOUND if isinstance(e, NotFoundException) else status.HTTP_400_BAD_REQUEST
-        detail = f"Product with ID {product_id} not found" if isinstance(e, NotFoundException) else str(e)
+        detail = str(e)
         raise HTTPException(status_code=status_code, detail=detail)
 
 

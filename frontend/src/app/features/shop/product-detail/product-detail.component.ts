@@ -44,14 +44,14 @@ export class ProductDetailComponent implements OnInit {
       product_images: [
         {
           image_id: 1,
-          image_url: '/static/products/1_1_dell_laptop.jpg',
+          image_url: '/media/products/1_1_dell_laptop.jpg',
           alt_text: 'Dell Inspiron 15 front view',
           is_primary: true,
           display_order: 1
         },
         {
           image_id: 2,
-          image_url: '/static/products/1_2_dell_laptop_side.jpg',
+          image_url: '/media/products/1_2_dell_laptop_side.jpg',
           alt_text: 'Dell Inspiron 15 side view',
           is_primary: false,
           display_order: 2
