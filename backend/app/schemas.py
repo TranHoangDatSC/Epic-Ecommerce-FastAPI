@@ -193,6 +193,12 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: Optional[datetime]
     is_approved: bool = False
+
+    @validator('is_approved', pre=True, always=True)
+    def set_is_approved(cls, v, values):
+        if 'status' in values:
+            return values['status'] == 1
+        return v
     product_images: List[ProductImageResponse] = []
 
     class Config:

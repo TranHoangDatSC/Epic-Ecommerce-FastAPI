@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { Product, Category } from '../../core/models';
@@ -33,10 +34,24 @@ export class ShopComponent implements OnInit {
 
   constructor(
     private productService: ProductService,
-    private categoryService: CategoryService
-  ) {}
+    private categoryService: CategoryService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {
+    // Reload data if navigating back to /shop (handles clicking header link again)
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      filter(event => (event as NavigationEnd).urlAfterRedirects === '/shop')
+    ).subscribe(() => {
+      this.initialLoad();
+    });
+  }
 
   ngOnInit() {
+    this.initialLoad();
+  }
+
+  private initialLoad() {
     this.loadCategories();
     this.loadProducts();
   }
@@ -45,6 +60,7 @@ export class ShopComponent implements OnInit {
     this.categoryService.getCategories().subscribe({
       next: (categories) => {
         this.categories = categories;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading categories:', error);
@@ -66,6 +82,7 @@ export class ShopComponent implements OnInit {
         this.computeCategoryCounts();
         this.applyFilters();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading products:', error);
