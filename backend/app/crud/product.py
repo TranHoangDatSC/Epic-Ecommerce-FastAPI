@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from app.crud.base import CRUDBase
-from app.models import Product
+from app.models import Product, Review
 from app.schemas import ProductCreate, ProductUpdate
 
 
@@ -13,6 +13,8 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         return (
             db.query(Product)
             .options(joinedload(Product.product_images))
+            .options(joinedload(Product.reviews).joinedload(Review.reviewer))
+            .options(joinedload(Product.seller))
             .filter(Product.product_id == product_id)
             .filter(Product.is_deleted == False)
             .first()

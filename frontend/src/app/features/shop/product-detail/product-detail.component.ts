@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Product, ProductImage } from '../../../core/models';
 import { environment } from '../../../../environments/environment';
+import { ProductService } from '../../../shared/services/product.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -17,50 +18,33 @@ export class ProductDetailComponent implements OnInit {
   secondaryImages: ProductImage[] = [];
   imageBaseUrl = environment.imageBaseUrl;
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    // Get product from route data or service
-    // For demo purposes, we'll assume product is loaded
-    this.loadProduct();
+    this.route.params.subscribe(params => {
+      const id = +params['id'];
+      if (id) {
+        this.loadProduct(id);
+      }
+    });
   }
 
-  private loadProduct(): void {
-    // This would typically call a service to fetch product by ID
-    // For this example, we'll create a mock product
-    const mockProduct: Product = {
-      product_id: 1,
-      title: 'Laptop cu Dell Inspiron 15',
-      description: 'Laptop Dell Inspiron 15 da qua su dung, cau hinh Core i5, RAM 8GB, SSD 256GB, man hinh 15.6 inch. Con bao hanh 6 thang.',
-      price: 8500000,
-      quantity: 3,
-      category_id: 1,
-      seller_id: 4,
-      status: 1,
-      view_count: 0,
-      is_deleted: false,
-      created_at: '2024-01-01T00:00:00Z',
-      is_approved: true,
-      product_images: [
-        {
-          image_id: 1,
-          image_url: '/media/products/1_1_dell_laptop.jpg',
-          alt_text: 'Dell Inspiron 15 front view',
-          is_primary: true,
-          display_order: 1
-        },
-        {
-          image_id: 2,
-          image_url: '/media/products/1_2_dell_laptop_side.jpg',
-          alt_text: 'Dell Inspiron 15 side view',
-          is_primary: false,
-          display_order: 2
-        }
-      ]
-    };
-
-    this.product = mockProduct;
-    this.setImages();
+  private loadProduct(id: number): void {
+    this.productService.getProduct(id).subscribe({
+      next: (product) => {
+        this.product = product;
+        this.setImages();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading product details:', error);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private setImages(): void {
@@ -76,5 +60,17 @@ export class ProductDetailComponent implements OnInit {
 
   setPrimaryImage(image: ProductImage): void {
     this.primaryImage = image;
+  }
+
+  reportProduct(): void {
+    if (confirm('Bạn có muốn báo cáo sản phẩm này không?')) {
+      alert('Đã gửi báo cáo sản phẩm. Cảm ơn bạn!');
+    }
+  }
+
+  reportReview(reviewId: number): void {
+    if (confirm('Bạn có muốn báo cáo đánh giá này không?')) {
+      alert(`Đã gửi báo cáo đánh giá #${reviewId}. Cảm ơn bạn!`);
+    }
   }
 }

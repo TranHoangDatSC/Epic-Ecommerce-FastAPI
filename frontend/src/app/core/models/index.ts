@@ -6,12 +6,15 @@ export enum Role {
 }
 
 export interface User {
-  id: number;
+  user_id: number;
   username: string;
   email: string;
-  role: Role;
-  createdAt: Date;
-  updatedAt: Date;
+  full_name: string;
+  phone_number?: string;
+  address?: string;
+  role?: Role;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface ProductImage {
@@ -20,6 +23,16 @@ export interface ProductImage {
   alt_text?: string;
   is_primary: boolean;
   display_order: number;
+}
+
+export interface Review {
+  review_id: number;
+  product_id: number;
+  buyer_id: number;
+  rating: number;
+  content: string;
+  created_at: string;
+  reviewer?: User;
 }
 
 export interface Product {
@@ -39,6 +52,7 @@ export interface Product {
   is_approved: boolean;
   product_images: ProductImage[];
   seller?: User;
+  reviews: Review[];
 }
 
 export interface Order {

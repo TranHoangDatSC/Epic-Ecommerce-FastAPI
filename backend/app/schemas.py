@@ -205,10 +205,23 @@ class ProductResponse(ProductBase):
         from_attributes = True
 
 
+class ReviewResponse(BaseModel):
+    review_id: int
+    product_id: int
+    buyer_id: int
+    rating: int
+    content: Optional[str]
+    created_at: datetime
+    reviewer: Optional[UserResponse] = None
+    
+    class Config:
+        from_attributes = True
+
 class ProductDetailResponse(ProductResponse):
     """Product detail response with images and seller info"""
     product_images: List[ProductImageResponse] = []
     seller: Optional['UserResponse'] = None
+    reviews: List[ReviewResponse] = []
 
 
 # ==================== Payment Method Schemas ====================
