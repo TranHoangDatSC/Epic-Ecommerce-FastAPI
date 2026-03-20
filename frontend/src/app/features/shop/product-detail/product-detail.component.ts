@@ -1,14 +1,17 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Product, ProductImage } from '../../../core/models';
 import { environment } from '../../../../environments/environment';
 import { ProductService } from '../../../shared/services/product.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.scss']
 })
@@ -62,15 +65,46 @@ export class ProductDetailComponent implements OnInit {
     this.primaryImage = image;
   }
 
+  reportingType: 'product' | 'review' | null = null;
+  reportingId: number | null = null;
+  reportReason: string = '';
+
   reportProduct(): void {
-    if (confirm('Bạn có muốn báo cáo sản phẩm này không?')) {
-      alert('Đã gửi báo cáo sản phẩm. Cảm ơn bạn!');
+    this.reportingType = 'product';
+    this.reportingId = this.product?.product_id || null;
+    this.reportReason = '';
+    const modalElement = document.getElementById('reportModal');
+    if (modalElement) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      modal.show();
     }
   }
 
   reportReview(reviewId: number): void {
-    if (confirm('Bạn có muốn báo cáo đánh giá này không?')) {
-      alert(`Đã gửi báo cáo đánh giá #${reviewId}. Cảm ơn bạn!`);
+    this.reportingType = 'review';
+    this.reportingId = reviewId;
+    this.reportReason = '';
+    const modalElement = document.getElementById('reportModal');
+    if (modalElement) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      modal.show();
     }
+  }
+
+  submitReport(): void {
+    if (!this.reportReason.trim()) {
+      alert('Vui lòng nhập lý do báo cáo!');
+      return;
+    }
+
+    const typeLabel = this.reportingType === 'product' ? 'Sản phẩm' : 'Đánh giá';
+    console.log(`Báo cáo ${this.reportingType} #${this.reportingId} với lý do: ${this.reportReason}`);
+    
+    // Simulate API call
+    setTimeout(() => {
+      alert(`Đã gửi báo cáo ${typeLabel}. Cảm ơn bạn đã hỗ trợ chúng tôi!`);
+      this.reportReason = '';
+      // Close modal... usually handled by [data-bs-dismiss]
+    }, 500);
   }
 }

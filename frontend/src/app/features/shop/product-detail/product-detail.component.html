@@ -28,7 +28,10 @@
                  class="img-fluid w-100 main-image"
                  onerror="this.src='https://via.placeholder.com/600x600?text=No+Image'">
             <button class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-3 shadow-sm report-badge" 
-                    (click)="reportProduct()" title="Báo cáo vi phạm">
+                    (click)="reportProduct()" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#reportModal"
+                    title="Báo cáo vi phạm">
               <i class="bi bi-flag-fill"></i>
             </button>
           </div>
@@ -53,7 +56,7 @@
           <div class="d-flex justify-content-between align-items-start">
             <div>
               <span class="badge bg-warning text-dark mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 0">CHỜ DUYỆT</span>
-              <span class="badge bg-success mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 1">SẴN HÀNG</span>
+              <span class="badge bg-success mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 1">SẴN SÀNG</span>
               <span class="badge bg-danger mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 2">ĐÃ TỪ CHỐI</span>
             </div>
           </div>
@@ -148,11 +151,57 @@
               <p class="text-muted mb-2">{{ review.content }}</p>
               <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">{{ review.created_at | date:'dd/MM/yyyy' }}</small>
-                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" (click)="reportReview(review.review_id)">
+                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" 
+                        (click)="reportReview(review.review_id)"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#reportModal">
                   <i class="bi bi-flag me-1"></i>Báo cáo
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title fw-bold" id="reportModalLabel">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i> Báo cáo vi phạm
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="alert alert-light border mb-4">
+              <small class="text-muted d-block mb-1">Đang báo cáo:</small>
+              <span class="fw-bold text-dark" *ngIf="reportingType === 'product'">
+                Sản phẩm: {{ product?.title }}
+              </span>
+              <span class="fw-bold text-dark" *ngIf="reportingType === 'review'">
+                Đánh giá (ID: #{{ reportingId }})
+              </span>
+            </div>
+
+            <div class="mb-3">
+              <label for="reportReason" class="form-label fw-bold">Lý do báo cáo <span class="text-danger">*</span></label>
+              <textarea class="form-control" 
+                        id="reportReason" 
+                        name="reportReason"
+                        rows="4" 
+                        [(ngModel)]="reportReason"
+                        placeholder="Vui lòng mô tả chi tiết lý do bạn muốn báo cáo nội dung này..."></textarea>
+              <div class="form-text mt-2 small text-muted">Báo cáo của bạn sẽ được đội ngũ kiểm duyệt xem xét trong thời gian sớm nhất.</div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-0">
+            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy</button>
+            <button type="button" 
+                    class="btn btn-danger px-4" 
+                    [disabled]="!reportReason.trim()"
+                    (click)="submitReport()"
+                    data-bs-dismiss="modal">Gửi báo cáo</button>
           </div>
         </div>
       </div>
