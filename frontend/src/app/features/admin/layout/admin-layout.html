@@ -1,0 +1,91 @@
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-section">
+        <i class="fa-solid fa-crown"></i>
+        <h3>ADMIN PANEL</h3>
+      </div>
+      <!-- <p class="subtitle">Control Center</p> -->
+    </div>
+
+    <nav class="sidebar-nav">
+       <!--Dash Board -->
+      <div class = "nav-section">
+        <li class="nav-item">
+          <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-link">
+          <i class="fas fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+  </div>
+      <!-- Quản lý nhân sự -->
+      <div class="nav-section">
+        <h4 class="section-title">     
+         Quản lý nhân sự
+        </h4>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <i class="fa-solid fa-user-shield"></i>
+              <span>Kiểm duyệt viên</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <!-- System Security-->
+      <div class="nav-section">
+        <h4 class="section-title">
+          Hệ thống
+        </h4>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <i class="fas fa-box-open"></i>
+              <span>Sản phẩm</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <i class="fas fa-bars"></i>
+              <span>Danh mục</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <i class="fas fa-id-card"></i>
+              <span>Hồ sơ admin</span>
+            </a>
+          </li>
+          <li class="nav-item logout-item">
+            <button class="nav-link logout-link" (click)="logout()">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Đăng xuất</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+      <!-- Logout Section -->
+    <!-- <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Đăng xuất</span>
+      </button>
+    </div> -->
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

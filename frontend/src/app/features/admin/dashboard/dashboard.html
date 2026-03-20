@@ -1,0 +1,102 @@
+<div class="dashboard-content">
+  <!-- HEADER -->
+  <header class="dashboard-header">
+    <div class ="header-left">
+    <h1>DASHBOARD TRỰC TUYẾN</h1>
+    <span class="update-time">
+      Cập nhật hệ thống: {{ currentTime }}
+    </span>
+  </div> 
+
+  <div class="header-right">
+    <div class="admin-info">
+      <span class="role">QUẢN TRỊ VIÊN</span>
+      <span class="name">Olshop Administrator</span>
+    </div>
+
+    <div class="avatar">
+      <i class="fa-solid fa-user-shield"></i>
+    </div>
+  </div>
+
+  </header>
+
+  <!-- CARDS -->
+  <section class="dashboard-cards">
+    <div class="card text-success">
+      <h3>Doanh thu tháng</h3>
+      <p>45.6M</p>
+      <small class="card-note">
+        <i class="fa-solid fa-arrow-up"></i>
+        +12.5% so với tháng trước</small>
+    </div>
+
+    <div class="card text-primary">
+      <h3>Sản phẩm mới</h3>
+      <p>152</p>
+      <small class="card-note">
+        <i class="fa-duotone fa-solid fa-box"></i>
+        Đang tăng trưởng tốt</small>
+    </div>
+
+    <div class="card text-warning">
+      <h3>Đơn hàng thành công</h3>
+      <p>89</p>
+      <small class="card-note">
+        <i class="fa-solid fa-circle-check"></i>
+        Tỷ lệ hủy 2%</small>
+    </div>
+
+    <div class="card text-danger">
+      <h3>Chờ kiểm duyệt</h3>
+      <p>12</p>
+      <small class="card-note">
+        <i class="fa-solid fa-clock"></i>
+        Cần xử lý ngay</small>
+    </div>
+</section>
+ 
+
+  <!-- CHARTS WRAPPER -->
+  <div class="charts-wrapper">
+
+    <!-- LINE CHART -->
+    <section class="chart-section large">
+
+      <div class="chart-header">
+        <h2 class="chart-title">
+          <i class="fa-solid fa-chart-line"></i>
+          Doanh thu 7 ngày gần nhất</h2>
+
+      <select (change)="onWeekChange($event)">
+        <option value="this">Tuần này</option>
+        <option value="last">Tuần trước</option>
+      </select>
+  </div>
+      <div class ="chart-body">
+      <canvas baseChart
+        [data]="lineData"
+        [options]="lineOptions"
+        [type]="'line'">
+      </canvas>
+      </div>
+    </section>
+
+    <!-- DOUGHNUT CHART -->
+    <section class="chart-section small">
+
+    <h2 class="chart-title">
+      <i class="fa-solid fa-chart-pie"></i>
+      Cơ cấu danh mục</h2>
+    <div class ="chart-body">
+     <canvas baseChart
+        [data]="pieData"
+        [options]="pieOptions"
+        [type]="'doughnut'">
+    </canvas>
+    </div>
+    </section>
+
+  </div>
+
+</div>

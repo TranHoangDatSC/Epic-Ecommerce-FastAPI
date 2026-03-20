@@ -18,7 +18,8 @@ export class App {
   constructor(private router: Router) {
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
       // Hide header/footer for moderator routes
-      this.showShell.set(!event.urlAfterRedirects.startsWith('/moderator'));
+      this.showShell.set(!event.urlAfterRedirects.startsWith('/moderator') &&
+      !event.urlAfterRedirects.startsWith('/admin'));
     });
   }
 }
