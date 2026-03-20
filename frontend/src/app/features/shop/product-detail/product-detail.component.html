@@ -164,44 +164,111 @@
       </div>
     </div>
     <!-- Report Modal -->
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal fade" id="reportModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header bg-danger text-white">
-            <h5 class="modal-title fw-bold" id="reportModalLabel">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i> Báo cáo vi phạm
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 shadow-lg overflow-hidden">
+          <div class="modal-header border-0 bg-white pt-4 px-4 pb-2">
+            <div class="d-flex align-items-center">
+              <div class="icon-box bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-shield-fill-exclamation fs-4"></i>
+              </div>
+              <div>
+                <h5 class="modal-title fw-bold text-dark" id="reportModalLabel">Báo cáo vi phạm</h5>
+                <p class="text-muted small mb-0">Giúp chúng tôi giữ cộng đồng an toàn</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
+
           <div class="modal-body p-4">
-            <div class="alert alert-light border mb-4">
-              <small class="text-muted d-block mb-1">Đang báo cáo:</small>
-              <span class="fw-bold text-dark" *ngIf="reportingType === 'product'">
-                Sản phẩm: {{ product?.title }}
-              </span>
-              <span class="fw-bold text-dark" *ngIf="reportingType === 'review'">
-                Đánh giá (ID: #{{ reportingId }})
-              </span>
+            <div class="alert bg-light border-0 rounded-3 mb-4 p-3 d-flex align-items-center">
+              <i class="bi bi-info-circle-fill text-primary me-3 fs-5"></i>
+              <div class="small">
+                <span class="text-muted d-block">Bạn đang báo cáo:</span>
+                <span class="fw-bold text-dark" *ngIf="reportingType === 'product'">
+                  Sản phẩm: {{ product?.title }}
+                </span>
+                <span class="fw-bold text-dark" *ngIf="reportingType === 'review'">
+                  Đánh giá (ID: #{{ reportingId }})
+                </span>
+              </div>
             </div>
 
-            <div class="mb-3">
-              <label for="reportReason" class="form-label fw-bold">Lý do báo cáo <span class="text-danger">*</span></label>
-              <textarea class="form-control" 
-                        id="reportReason" 
-                        name="reportReason"
-                        rows="4" 
-                        [(ngModel)]="reportReason"
-                        placeholder="Vui lòng mô tả chi tiết lý do bạn muốn báo cáo nội dung này..."></textarea>
-              <div class="form-text mt-2 small text-muted">Báo cáo của bạn sẽ được đội ngũ kiểm duyệt xem xét trong thời gian sớm nhất.</div>
+            <div class="report-options">
+              <label class="form-label fw-bold mb-3 d-flex align-items-center">
+                <i class="bi bi-list-check me-2 text-primary"></i>Chọn lý do báo cáo
+              </label>
+
+              <div class="list-group list-group-flush border-0">
+                <label class="list-group-item d-flex gap-3 py-3 border-0 rounded-3 mb-2 bg-light-hover cursor-pointer shadow-xs">
+                  <input class="form-check-input flex-shrink-0" type="radio" name="reportType" value="spam" [(ngModel)]="reportCategory">
+                  <span>
+                    <strong class="d-block text-dark">Spam hoặc quảng cáo</strong>
+                    <small class="d-block text-muted">Nội dung rác hoặc tin nhắn làm phiền</small>
+                  </span>
+                </label>
+                <label class="list-group-item d-flex gap-3 py-3 border-0 rounded-3 mb-2 bg-light-hover cursor-pointer shadow-xs">
+                  <input class="form-check-input flex-shrink-0" type="radio" name="reportType" value="inappropriate" [(ngModel)]="reportCategory">
+                  <span>
+                    <strong class="d-block text-dark">Nội dung không phù hợp</strong>
+                    <small class="d-block text-muted">Ngôn từ gây hấn, quấy rối hoặc bạo lực</small>
+                  </span>
+                </label>
+                <label class="list-group-item d-flex gap-3 py-3 border-0 rounded-3 mb-2 bg-light-hover cursor-pointer shadow-xs">
+                  <input class="form-check-input flex-shrink-0" type="radio" name="reportType" value="fraud" [(ngModel)]="reportCategory">
+                  <span>
+                    <strong class="d-block text-dark">Lừa đảo hoặc hàng giả</strong>
+                    <small class="d-block text-muted">Thông tin sản phẩm không đúng sự thật</small>
+                  </span>
+                </label>
+                <label class="list-group-item d-flex gap-3 py-3 border-0 rounded-3 mb-2 bg-light-hover cursor-pointer shadow-xs">
+                  <input class="form-check-input flex-shrink-0" type="radio" name="reportType" value="other" [(ngModel)]="reportCategory">
+                  <span>
+                    <strong class="d-block text-dark">Lý do khác</strong>
+                    <small class="d-block text-muted">Cung cấp thêm chi tiết bên dưới</small>
+                  </span>
+                </label>
+              </div>
+
+              <div class="mt-4 transition-area" *ngIf="reportCategory">
+                <label for="reportReason" class="form-label fw-bold small">Chi tiết thêm (tùy chọn)</label>
+                <textarea class="form-control bg-light border-0 rounded-3 shadow-none p-3" 
+                          id="reportReason" 
+                          name="reportReason"
+                          rows="3" 
+                          [(ngModel)]="reportReason"
+                          placeholder="Mô tả cụ thể hơn để chúng tôi dễ dàng xử lý..."></textarea>
+              </div>
             </div>
           </div>
-          <div class="modal-footer bg-light border-0">
-            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy</button>
+
+          <div class="modal-footer border-0 p-4 pt-2">
+            <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Đóng</button>
             <button type="button" 
-                    class="btn btn-danger px-4" 
-                    [disabled]="!reportReason.trim()"
+                    class="btn btn-danger fw-bold px-5 rounded-pill shadow-sm py-2 ms-2 report-submit-btn" 
+                    [disabled]="!reportCategory"
                     (click)="submitReport()"
-                    data-bs-dismiss="modal">Gửi báo cáo</button>
+                    data-bs-dismiss="modal">
+              Gửi báo cáo <i class="bi bi-send-fill ms-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Success Modal -->
+    <div class="modal fade" id="reportSuccessModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg text-center p-4">
+          <div class="modal-body">
+            <div class="success-icon mb-4">
+              <div class="icon-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 40px;">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+            </div>
+            <h4 class="fw-bold text-dark mb-3">Đã gửi báo cáo!</h4>
+            <p class="text-muted mb-4">Cảm ơn bạn đã đóng góp giúp môi trường mua sắm an toàn hơn. Chúng tôi sẽ xem xét ngay.</p>
+            <button type="button" class="btn btn-success w-100 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Đã hiểu</button>
           </div>
         </div>
       </div>

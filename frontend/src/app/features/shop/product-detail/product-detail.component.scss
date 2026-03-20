@@ -130,6 +130,38 @@
   }
 }
 
+.bg-light-hover {
+  transition: background-color 0.2s ease;
+  &:hover {
+    background-color: #f1f3f5 !important;
+  }
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.icon-box {
+  flex-shrink: 0;
+}
+
+.report-submit-btn {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border: none;
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+}
+
+.transition-area {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 991.98px) {
   .main-image-wrapper {
     min-height: auto;

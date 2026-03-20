@@ -67,11 +67,13 @@ export class ProductDetailComponent implements OnInit {
 
   reportingType: 'product' | 'review' | null = null;
   reportingId: number | null = null;
+  reportCategory: string = '';
   reportReason: string = '';
 
   reportProduct(): void {
     this.reportingType = 'product';
     this.reportingId = this.product?.product_id || null;
+    this.reportCategory = '';
     this.reportReason = '';
     const modalElement = document.getElementById('reportModal');
     if (modalElement) {
@@ -83,6 +85,7 @@ export class ProductDetailComponent implements OnInit {
   reportReview(reviewId: number): void {
     this.reportingType = 'review';
     this.reportingId = reviewId;
+    this.reportCategory = '';
     this.reportReason = '';
     const modalElement = document.getElementById('reportModal');
     if (modalElement) {
@@ -92,19 +95,27 @@ export class ProductDetailComponent implements OnInit {
   }
 
   submitReport(): void {
-    if (!this.reportReason.trim()) {
-      alert('Vui lòng nhập lý do báo cáo!');
+    if (!this.reportCategory) {
+      alert('Vui lòng chọn lý do báo cáo!');
       return;
     }
 
-    const typeLabel = this.reportingType === 'product' ? 'Sản phẩm' : 'Đánh giá';
-    console.log(`Báo cáo ${this.reportingType} #${this.reportingId} với lý do: ${this.reportReason}`);
+    const typeLabel = this.reportingType === 'product' ? 'Sản phẩm' : 'Đánh giá';
+    console.log(`Báo cáo ${this.reportingType} #${this.reportingId} | Loại: ${this.reportCategory} | Chi tiết: ${this.reportReason}`);
     
     // Simulate API call
     setTimeout(() => {
-      alert(`Đã gửi báo cáo ${typeLabel}. Cảm ơn bạn đã hỗ trợ chúng tôi!`);
+      // Clear data
+      this.reportCategory = '';
       this.reportReason = '';
-      // Close modal... usually handled by [data-bs-dismiss]
-    }, 500);
+
+      // Close the report modal explicitly if needed (though data-bs-dismiss on button handles it)
+      // Show Success Modal
+      const successModalElement = document.getElementById('reportSuccessModal');
+      if (successModalElement) {
+        const successModal = bootstrap.Modal.getOrCreateInstance(successModalElement);
+        successModal.show();
+      }
+    }, 300);
   }
 }
