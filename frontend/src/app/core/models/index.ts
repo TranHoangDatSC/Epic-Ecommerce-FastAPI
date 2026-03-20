@@ -49,6 +49,7 @@ export interface Product {
   is_deleted: boolean;
   created_at: string;
   updated_at?: string;
+  transfer_method: number;
   is_approved: boolean;
   product_images: ProductImage[];
   seller?: User;

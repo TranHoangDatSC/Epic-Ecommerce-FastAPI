@@ -1,66 +1,85 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { CartService, CartItem } from '../../../core/services/cart.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <h2>Shopping Cart</h2>
-      <div class="row">
-        <div class="col-md-8">
-          <div class="card mb-3">
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-md-2">
-                  <img src="https://via.placeholder.com/100" class="img-fluid" alt="Product">
-                </div>
-                <div class="col-md-4">
-                  <h5>Product Name</h5>
-                  <p class="text-muted">Category</p>
-                </div>
-                <div class="col-md-2">
-                  <div class="input-group">
-                    <button class="btn btn-outline-secondary btn-sm">-</button>
-                    <input type="number" class="form-control form-control-sm text-center" value="1" min="1">
-                    <button class="btn btn-outline-secondary btn-sm">+</button>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <span class="fw-bold">$99.99</span>
-                </div>
-                <div class="col-md-2">
-                  <button class="btn btn-danger btn-sm">Remove</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h5>Order Summary</h5>
-              <hr>
-              <div class="d-flex justify-content-between">
-                <span>Subtotal:</span>
-                <span>$99.99</span>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Shipping:</span>
-                <span>$10.00</span>
-              </div>
-              <hr>
-              <div class="d-flex justify-content-between fw-bold">
-                <span>Total:</span>
-                <span>$109.99</span>
-              </div>
-              <button class="btn btn-primary w-100 mt-3">Proceed to Checkout</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './cart.html',
+  styleUrls: ['./cart.scss']
 })
-export class CartComponent {}
+export class CartComponent implements OnInit {
+  cartItems: CartItem[] = [];
+  groupedItems: { method: number; items: CartItem[] }[] = [];
+  imageBaseUrl = environment.imageBaseUrl;
+
+  constructor(private cartService: CartService) {}
+
+  ngOnInit(): void {
+    this.cartService.cartItems$.subscribe(items => {
+      this.cartItems = items;
+      this.groupItems();
+    });
+  }
+
+  groupItems() {
+    const groups: Map<number, CartItem[]> = new Map();
+    this.cartItems.forEach(item => {
+      const method = item.product.transfer_method || 1;
+      if (!groups.has(method)) {
+        groups.set(method, []);
+      }
+      groups.get(method)!.push(item);
+    });
+
+    this.groupedItems = Array.from(groups.entries()).map(([method, items]) => ({
+      method,
+      items
+    }));
+  }
+
+  getTransferMethodLabel(method: number): string {
+    return method === 2 ? 'Nhận tại cửa hàng / Giao dịch trực tiếp' : 'Giao hàng tận nơi (Ship)';
+  }
+
+  getTransferMethodIcon(method: number): string {
+    return method === 2 ? 'bi-person-walking' : 'bi-truck';
+  }
+
+  getTransferMethodClass(method: number): string {
+    return method === 2 ? 'method-pickup' : 'method-shipping';
+  }
+
+  updateQuantity(productId: number, quantity: number) {
+    this.cartService.updateQuantity(productId, quantity);
+  }
+
+  removeItem(productId: number) {
+    this.cartService.removeFromCart(productId);
+  }
+
+  getSubtotal(): number {
+    return this.cartService.getTotalPrice();
+  }
+
+  getShippingFee(): number {
+    // Basic logic: free for pickup, flat fee for shipping
+    const hasShipping = this.cartItems.some(item => (item.product.transfer_method || 1) === 1);
+    return hasShipping ? 30000 : 0;
+  }
+
+  getTotal(): number {
+    return this.getSubtotal() + this.getShippingFee();
+  }
+
+  getFullImageUrl(imageUrl: string): string {
+    if (!imageUrl) return 'https://via.placeholder.com/100x100?text=No+Image';
+    const baseUrl = this.imageBaseUrl.replace(/\/$/, '');
+    const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    return `${baseUrl}${path}`;
+  }
+}

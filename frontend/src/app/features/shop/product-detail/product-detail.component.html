@@ -144,9 +144,10 @@
           </div>
         </div>
 
-        <!-- Call to action -->
         <div class="actions d-flex gap-2">
-          <button class="btn btn-primary btn-lg flex-grow-1 py-3 shadow-lg rounded-3 fw-bold" [disabled]="product.quantity <= 0">
+          <button class="btn btn-primary btn-lg flex-grow-1 py-3 shadow-lg rounded-3 fw-bold" 
+                  [disabled]="product.quantity <= 0" 
+                  (click)="addToCart()">
             <i class="bi bi-cart-plus-fill me-2"></i> THÊM VÀO GIỎ HÀNG
           </button>
           <button class="btn btn-outline-dark btn-lg px-4 py-3 shadow-sm rounded-3">

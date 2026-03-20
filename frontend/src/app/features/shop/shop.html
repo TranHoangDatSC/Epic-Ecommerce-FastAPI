@@ -134,7 +134,7 @@
               </div>
 
               <div class="card-footer bg-transparent border-0">
-                <button class="btn btn-success w-100" [disabled]="product.quantity === 0">
+                <button class="btn btn-success w-100" [disabled]="product.quantity === 0" (click)="addToCart(product)">
                   <i class="bi bi-cart-plus"></i>
                   {{ product.quantity > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
                 </button>

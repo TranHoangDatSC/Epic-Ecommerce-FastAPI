@@ -79,14 +79,12 @@ async def login(
     db: Session = Depends(get_db)
 ) -> TokenResponse:
     """
-    Login with username and password.
+    Login with email and password.
     
     Returns JWT access token for authentication.
     """
-    # Find user by username or email
-    user = db.query(User).filter(
-        (User.username == form_data.username) | (User.email == form_data.username)
-    ).first()
+    # Find user by email
+    user = db.query(User).filter(User.email == form_data.username).first()
     
     if not user:
         print(f"Auth failed: User '{form_data.username}' not found")
@@ -97,10 +95,10 @@ async def login(
         )
         
     if not verify_password(form_data.password, user.password_hash):
-        print(f"Auth failed: Incorrect password for user '{user.username}'")
+        print(f"Auth failed: Incorrect password for user '{user.email}'")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -119,7 +117,7 @@ async def login(
     access_token = create_access_token(
         data={
             "user_id": user.user_id,
-            "username": user.username,
+            "username": user.email,
             "role_ids": role_ids
         },
         expires_delta=access_token_expires

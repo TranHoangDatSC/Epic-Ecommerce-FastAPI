@@ -90,6 +90,7 @@ async def create_product(
     dimensions: str = Form(None),
     condition_rating: int = Form(None),
     warranty_months: int = Form(0),
+    transfer_method: int = Form(1),
     current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ) -> ProductResponse:
@@ -127,6 +128,7 @@ async def create_product(
         'dimensions': dimensions,
         'condition_rating': condition_rating,
         'warranty_months': warranty_months,
+        'transfer_method': transfer_method,
         'status': 0  # Pending
     }
 

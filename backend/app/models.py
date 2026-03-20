@@ -141,6 +141,7 @@ class Product(Base):
     dimensions = Column(String(50))  # e.g., "10x20x5 cm"
     condition_rating = Column(SmallInteger)  # 1-10 scale
     warranty_months = Column(Integer, default=0)
+    transfer_method = Column(SmallInteger, default=1, nullable=False) # 1: Shipping, 2: Meetup
 
     # Relationships
     seller = relationship("User", foreign_keys=[seller_id], back_populates="products")
@@ -156,6 +157,7 @@ class Product(Base):
         CheckConstraint('quantity >= 0', name='check_product_quantity'),
         CheckConstraint('status IN (0, 1, 2, 3)', name='check_product_status'),
         CheckConstraint('condition_rating BETWEEN 1 AND 10', name='check_condition_rating'),
+        CheckConstraint('transfer_method IN (1, 2)', name='check_transfer_method'),
         Index('idx_product_seller', 'seller_id', postgresql_where=(is_deleted == False)),
         Index('idx_product_category', 'category_id', postgresql_where=(is_deleted == False)),
         Index('idx_product_status', 'status', postgresql_where=(is_deleted == False)),

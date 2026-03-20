@@ -162,6 +162,7 @@ class ProductBase(BaseModel):
     dimensions: Optional[str] = None
     condition_rating: Optional[int] = Field(None, ge=1, le=10)
     warranty_months: int = 0
+    transfer_method: int = Field(1, ge=1, le=2) # 1: Shipping, 2: Meetup
 
 
 class ProductCreate(ProductBase):
@@ -180,6 +181,7 @@ class ProductUpdate(BaseModel):
     dimensions: Optional[str] = None
     condition_rating: Optional[int] = None
     warranty_months: Optional[int] = None
+    transfer_method: Optional[int] = None
 
 
 class ProductResponse(ProductBase):

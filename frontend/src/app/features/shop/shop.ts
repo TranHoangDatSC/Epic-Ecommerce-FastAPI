@@ -7,6 +7,7 @@ import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { Product, Category } from '../../core/models';
 import { environment } from '../../../environments/environment';
+import { CartService } from '../../core/services/cart.service';
 
 @Component({
   selector: 'app-shop',
@@ -35,6 +36,7 @@ export class ShopComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
+    private cartService: CartService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {
@@ -187,5 +189,10 @@ export class ShopComponent implements OnInit {
       return '0 ₫';
     }
     return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  }
+
+  addToCart(product: Product) {
+    this.cartService.addToCart(product);
+    alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
   }
 }

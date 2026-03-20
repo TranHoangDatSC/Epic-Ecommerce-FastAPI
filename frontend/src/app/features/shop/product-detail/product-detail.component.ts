@@ -5,6 +5,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Product, ProductImage } from '../../../core/models';
 import { environment } from '../../../../environments/environment';
 import { ProductService } from '../../../shared/services/product.service';
+import { CartService } from '../../../core/services/cart.service';
 
 declare var bootstrap: any;
 
@@ -24,6 +25,7 @@ export class ProductDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
+    private cartService: CartService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -58,7 +60,10 @@ export class ProductDetailComponent implements OnInit {
   }
 
   getFullImageUrl(imageUrl: string): string {
-    return `${this.imageBaseUrl}${imageUrl}`;
+    if (!imageUrl) return 'https://via.placeholder.com/600x600?text=No+Image';
+    const baseUrl = this.imageBaseUrl.replace(/\/$/, '');
+    const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    return `${baseUrl}${path}`;
   }
 
   setPrimaryImage(image: ProductImage): void {
@@ -126,5 +131,12 @@ export class ProductDetailComponent implements OnInit {
         successModal.show();
       }
     }, 300);
+  }
+
+  addToCart(): void {
+    if (this.product && this.product.quantity > 0) {
+      this.cartService.addToCart(this.product);
+      alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
+    }
   }
 }
