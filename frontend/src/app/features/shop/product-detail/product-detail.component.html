@@ -22,10 +22,11 @@
       <div class="col-lg-6">
         <div class="product-gallery">
           <!-- Main Display -->
-          <div class="main-image-wrapper mb-3 shadow-sm rounded overflow-hidden position-relative">
+          <div class="main-image-wrapper mb-3 shadow-sm rounded overflow-hidden position-relative border bg-white">
             <img [src]="getFullImageUrl(primaryImage?.image_url || '')"
                  [alt]="primaryImage?.alt_text || product.title"
                  class="img-fluid w-100 main-image"
+                 style="height: 500px; object-fit: contain;"
                  onerror="this.src='https://via.placeholder.com/600x600?text=No+Image'">
             <button class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-3 shadow-sm report-badge" 
                     (click)="reportProduct()" 
@@ -37,34 +38,35 @@
           </div>
 
           <!-- Thumbnails -->
-          <div class="thumbnail-list d-flex gap-2" *ngIf="product.product_images.length > 1">
+          <div class="thumbnail-list d-flex gap-2 justify-content-center" *ngIf="product.product_images.length > 1">
             <div *ngFor="let image of product.product_images"
-                 class="thumb-container rounded overflow-hidden shadow-sm"
+                 class="thumb-container rounded overflow-hidden shadow-sm border"
                  [class.active]="image === primaryImage"
-                 (click)="setPrimaryImage(image)">
+                 (click)="setPrimaryImage(image)"
+                 style="width: 80px; height: 80px; cursor: pointer;">
               <img [src]="getFullImageUrl(image.image_url)"
                    [alt]="image.alt_text || 'Thumbnail'"
-                   class="img-thumbnail-custom">
+                   class="w-100 h-100 object-fit-cover">
             </div>
           </div>
         </div>
 
-        <!-- Coupon Section (Now on the left) -->
+        <!-- Coupon Section -->
         <div class="coupon-section mt-4 p-4 bg-white rounded shadow-sm border border-dashed border-primary">
           <div class="d-flex align-items-center mb-3">
             <i class="bi bi-ticket-perforated-fill text-primary fs-5 me-2"></i>
-            <h5 class="fw-bold mb-0">Mã giảm giá (Coupon)</h5>
+            <h5 class="fw-bold mb-0">Mã giảm giá dành cho bạn</h5>
           </div>
           <div class="input-group mb-2 shadow-sm rounded overflow-hidden">
             <input type="text" class="form-control border-0 bg-light" placeholder="Nhập mã giảm giá..." [(ngModel)]="couponCode">
             <button class="btn btn-primary px-4 fw-bold border-0" type="button" (click)="applyCoupon()">Áp dụng</button>
           </div>
           <div class="available-vouchers d-flex flex-wrap gap-2 mt-3">
-            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle py-2 px-3 cursor-pointer" 
+            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle py-2 px-3 cursor-pointer transition-all hover-lift" 
                   (click)="couponCode = 'OLDSHOP50'">
               <i class="bi bi-tags me-1"></i>OLDSHOP50
             </span>
-            <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle py-2 px-3 cursor-pointer"
+            <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle py-2 px-3 cursor-pointer transition-all hover-lift"
                   (click)="couponCode = 'FREESHIP'">
               <i class="bi bi-truck me-1"></i>FREESHIP
             </span>
@@ -75,65 +77,95 @@
       <!-- Right Column: Product Info & Actions -->
       <div class="col-lg-6">
         <div class="product-header mb-4">
-          <div class="d-flex justify-content-between align-items-start">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <span class="badge bg-warning text-dark mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 0">CHỜ DUYỆT</span>
-              <span class="badge bg-success mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 1">SẴN SÀNG</span>
-              <span class="badge bg-danger mb-2 px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 2">ĐÃ TỪ CHỐI</span>
+              <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 0">CHỜ DUYỆT</span>
+              <span class="badge bg-success px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 1">SẴN SÀNG</span>
+              <span class="badge bg-danger px-3 py-2 rounded-pill shadow-sm" *ngIf="product.status === 2">ĐÃ TỪ CHỐI</span>
             </div>
           </div>
           
-          <h1 class="display-5 fw-bold text-dark mb-2">{{ product.title }}</h1>
-          <div class="d-flex align-items-center mb-3">
-             <div class="text-warning me-2">
+          <h1 class="display-6 fw-bold text-dark mb-3">{{ product.title }}</h1>
+          
+          <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+             <div class="text-warning me-3">
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-half"></i>
+                <span class="ms-2 text-dark fw-bold">4.5</span>
              </div>
-             <span class="text-muted small">({{ product.view_count }} lượt xem)</span>
+             <div class="vr me-3 opacity-10"></div>
+             <span class="text-muted small"><i class="bi bi-eye me-1"></i>{{ product.view_count }} lượt xem</span>
+             <div class="vr mx-3 opacity-10" *ngIf="product.reviews?.length"></div>
+             <span class="text-muted small" *ngIf="product.reviews?.length"><i class="bi bi-chat-left-dots me-1"></i>{{ product.reviews.length }} đánh giá</span>
           </div>
-          <div class="h2 text-success fw-bold mb-4">{{ product.price | currency:'VND':'symbol':'1.0-0' }}</div>
+          
+          <div class="price-box mb-4 bg-light bg-gradient p-3 rounded-3 border">
+            <div class="text-muted small mb-1">Giá bán hiện tại</div>
+            <div class="h2 text-primary fw-bold mb-0">{{ product.price | currency:'VND':'symbol':'1.0-0' }}</div>
+          </div>
         </div>
 
-        <div class="product-description-card card border-0 shadow-sm mb-4">
+        <div class="product-info-grid mb-4">
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="p-3 border rounded-3 bg-white h-100">
+                <div class="text-muted x-small mb-1 font-uppercase fw-bold">Danh mục</div>
+                <div class="fw-bold text-dark">Điện tử & Công nghệ</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 border rounded-3 bg-white h-100">
+                <div class="text-muted x-small mb-1 font-uppercase fw-bold">Tình trạng</div>
+                <div class="fw-bold text-dark">Hàng lướt (99%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-description-card card border-0 shadow-sm mb-4 bg-white overflow-hidden">
+          <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Mô tả sản phẩm</h5>
+          </div>
           <div class="card-body p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Mô tả sản phẩm</h5>
-            <p class="text-muted lh-lg mb-0 text-break">{{ product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.' }}</p>
+            <div class="description-content text-muted lh-lg mb-0 text-break" style="max-height: 300px; overflow-y: auto;">
+              {{ product.description || 'Chưa có mô tả chi tiết cho sản phẩm này. Hãy liên hệ người bán để biết thêm thông tin.' }}
+            </div>
           </div>
         </div>
 
-        <!-- Trust Indicators -->
-        <div class="trust-indicators d-flex justify-content-between mb-4 px-2">
-          <div class="indicator text-center">
-            <div class="icon text-success mb-1"><i class="bi bi-shield-check fs-4"></i></div>
-            <span class="x-small fw-bold">Bảo hành 6-12 tháng</span>
+        <!-- Stock Indicator -->
+        <div *ngIf="product.quantity < 10 && product.quantity > 0" class="mb-4">
+          <div class="alert bg-danger-subtle text-danger border border-danger-subtle rounded-3 py-2 px-3 d-flex align-items-center animate__animated animate__pulse animate__infinite">
+            <i class="bi bi-fire fs-5 me-2"></i>
+            <div>
+               <span class="fw-bold">Hàng hiếm!</span> Chỉ còn <span class="badge bg-danger ms-1">{{ product.quantity }}</span> sản phẩm trong kho.
+            </div>
           </div>
-          <div class="indicator text-center border-start border-end px-3">
-            <div class="icon text-primary mb-1"><i class="bi bi-arrow-counterclockwise fs-4"></i></div>
-            <span class="x-small fw-bold">7 ngày đổi trả</span>
+          <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-danger" role="progressbar" [style.width]="(product.quantity / 10 * 100) + '%'"></div>
           </div>
-          <div class="indicator text-center">
-            <div class="icon text-info mb-1"><i class="bi bi-truck fs-4"></i></div>
-            <span class="x-small fw-bold">Giao hàng cực nhanh</span>
-          </div>
+          <p class="text-muted small mt-2 ms-1" *ngIf="cartService.getProductQuantityInCart(product.product_id) > 0">
+            <i class="bi bi-cart-check-fill text-success me-1"></i>Bạn đang có <strong>{{ cartService.getProductQuantityInCart(product.product_id) }}</strong> trong giỏ hàng.
+          </p>
         </div>
 
         <!-- Seller Info Card -->
-        <div class="seller-card card border-0 shadow-sm mb-4 bg-light bg-gradient">
+        <div class="seller-card card border-0 shadow-sm mb-4 bg-white hover-shadow transition-all">
           <div class="card-body p-3">
             <div class="d-flex align-items-center">
-              <div class="avatar bg-white text-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+              <div class="avatar bg-primary-subtle text-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px;">
                 <i class="bi bi-person-badge fs-4"></i>
               </div>
               <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-start">
                   <div>
-                    <h6 class="mb-0 fw-bold text-dark">{{ product.seller?.full_name || 'Người bán hàng' }}</h6>
+                    <h6 class="mb-0 fw-bold text-dark">{{ product.seller?.full_name || 'Người bán uy tín' }}</h6>
                     <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>Hà Nội, Việt Nam</small>
                   </div>
-                  <button class="btn btn-sm btn-outline-primary px-3 rounded-pill">Xem Shop</button>
+                  <button class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold">Xem Shop</button>
                 </div>
                 <div class="d-flex gap-3 mt-2 text-muted x-small">
                   <span><i class="bi bi-star-fill text-warning me-1"></i>4.9/5</span>
@@ -144,53 +176,92 @@
           </div>
         </div>
 
-        <div class="actions d-flex gap-2">
-          <button class="btn btn-primary btn-lg flex-grow-1 py-3 shadow-lg rounded-3 fw-bold" 
-                  [disabled]="product.quantity <= 0" 
+        <div class="actions d-flex gap-3 mt-auto">
+          <button class="btn btn-primary btn-lg flex-grow-1 py-3 shadow rounded-3 fw-bold btn-add-cart transition-all d-flex align-items-center justify-content-center" 
+                  [disabled]="!canAddToCart()" 
                   (click)="addToCart()">
-            <i class="bi bi-cart-plus-fill me-2"></i> THÊM VÀO GIỎ HÀNG
+            <i class="bi" [class.bi-cart-plus-fill]="canAddToCart()" [class.bi-slash-circle]="!canAddToCart()"></i>
+            <span class="ms-2">{{ !canAddToCart() && product.quantity > 0 ? 'ĐÃ ĐẠT GIỚI HẠN TỒN KHO' : 'THÊM VÀO GIỎ HÀNG' }}</span>
           </button>
-          <button class="btn btn-outline-dark btn-lg px-4 py-3 shadow-sm rounded-3">
+          <button class="btn btn-outline-dark btn-lg px-4 py-3 shadow-sm rounded-3 hover-bg-dark hover-text-white transition-all">
             <i class="bi bi-share"></i>
           </button>
+          <button class="btn btn-outline-danger btn-lg px-4 py-3 shadow-sm rounded-3 hover-bg-danger hover-text-white transition-all">
+            <i class="bi bi-heart"></i>
+          </button>
         </div>
+
+        <p class="text-center text-muted small mt-3">
+          <i class="bi bi-shield-lock me-1"></i> Giao dịch an toàn & đảm bảo với OldShop
+        </p>
       </div>
     </div> <!-- End Row g-5 -->
 
-    <!-- Reviews Section -->
+    <!-- Tabs/Below Section -->
     <div class="row mt-5">
       <div class="col-12">
-        <div class="reviews-section p-5 bg-white rounded shadow-sm">
-          <h3 class="fw-bold mb-4 border-bottom pb-3">Đánh giá & Nhận xét</h3>
+        <div class="bg-white rounded shadow-sm overflow-hidden">
+          <ul class="nav nav-tabs px-4 pt-3 border-bottom-0 bg-light" id="productTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-bold border-0 bg-transparent py-3 px-4 position-relative" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">
+                Đánh giá ({{ product.reviews?.length || 0 }})
+                <div class="tab-indicator bg-primary position-absolute bottom-0 start-0 w-100" style="height: 3px;"></div>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-bold border-0 bg-transparent py-3 px-4" id="policy-tab" data-bs-toggle="tab" data-bs-target="#policy" type="button" role="tab">Chính sách hoàn trả</button>
+            </li>
+          </ul>
           
-          <div *ngIf="!product.reviews || product.reviews.length === 0" class="text-center py-5">
-            <i class="bi bi-chat-dots text-muted display-1"></i>
-            <p class="mt-3 text-muted fs-5">Hãy là người bình luận đầu tiên</p>
-            <button class="btn btn-outline-primary mt-2">Viết đánh giá ngay</button>
-          </div>
+          <div class="tab-content p-5" id="productTabContent">
+            <!-- Reviews Tab -->
+            <div class="tab-pane fade show active" id="reviews" role="tabpanel">
+              <div *ngIf="!product.reviews || product.reviews.length === 0" class="text-center py-5">
+                <i class="bi bi-chat-dots text-muted opacity-25 display-1"></i>
+                <p class="mt-3 text-muted fs-5">Hãy là người bình luận đầu tiên cho sản phẩm này</p>
+                <button class="btn btn-outline-primary mt-2 px-4 rounded-pill fw-bold">Viết đánh giá ngay</button>
+              </div>
 
-          <div *ngIf="product.reviews && product.reviews.length > 0" class="review-list">
-            <div *ngFor="let review of product.reviews" class="review-item mb-4 pb-4 border-bottom">
-              <div class="d-flex justify-content-between mb-2">
-                <div class="d-flex align-items-center">
-                  <div class="avatar-sm bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                    <i class="bi bi-person"></i>
+              <div *ngIf="product.reviews && product.reviews.length > 0" class="review-list">
+                <div *ngFor="let review of product.reviews" class="review-item mb-4 pb-4 border-bottom last-child-border-0">
+                  <div class="d-flex justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                        <i class="bi bi-person fs-5"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold text-dark">{{ review.reviewer?.full_name || 'Người dùng ẩn danh' }}</div>
+                        <small class="text-muted">{{ review.created_at | date:'dd/MM/yyyy' }}</small>
+                      </div>
+                    </div>
+                    <div class="text-warning">
+                      <i *ngFor="let s of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="s <= review.rating" [class.bi-star]="s > review.rating"></i>
+                    </div>
                   </div>
-                  <span class="fw-bold">{{ review.reviewer?.full_name || 'Người dùng ẩn' }}</span>
-                </div>
-                <div class="text-warning">
-                  <i *ngFor="let s of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="s <= review.rating" [class.bi-star]="s > review.rating"></i>
+                  <p class="text-muted mb-3 lh-base">{{ review.content }}</p>
+                  <div class="d-flex justify-content-end align-items-center">
+                    <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none x-small fw-bold" 
+                            (click)="reportReview(review.review_id)"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#reportModal">
+                      <i class="bi bi-flag me-1"></i>Báo cáo vi phạm
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p class="text-muted mb-2">{{ review.content }}</p>
-              <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">{{ review.created_at | date:'dd/MM/yyyy' }}</small>
-                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" 
-                        (click)="reportReview(review.review_id)"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#reportModal">
-                  <i class="bi bi-flag me-1"></i>Báo cáo
-                </button>
+            </div>
+
+            <!-- Policy Tab -->
+            <div class="tab-pane fade" id="policy" role="tabpanel">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <h5 class="fw-bold mb-3">Chính sách đổi trả</h5>
+                  <p class="text-muted">Bạn có thể yêu cầu trả hàng/hoàn tiền trong vòng 7 ngày kể từ khi nhận sản phẩm nếu sản phẩm không đúng mô tả hoặc gặp lỗi từ phía người bán.</p>
+                </div>
+                <div class="col-md-6">
+                  <h5 class="fw-bold mb-3">Quy trình xử lý</h5>
+                  <p class="text-muted">Chúng tôi sẽ xem xét yêu cầu và phản hồi trong vòng 24-48 giờ làm việc. Tiền sẽ được hoàn lại vào ví OldShop hoặc tài khoản ngân hàng của bạn sau khi người bán nhận lại hàng.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -202,7 +273,7 @@
     <!-- Report Modal -->
     <div class="modal fade" id="reportModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg overflow-hidden">
+        <div class="modal-content border-0 shadow-lg overflow-hidden rounded-4">
           <div class="modal-header border-0 bg-white pt-4 px-4 pb-2">
             <div class="d-flex align-items-center">
               <div class="icon-box bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
@@ -268,7 +339,7 @@
 
               <div class="mt-4 transition-area" *ngIf="reportCategory">
                 <label for="reportReason" class="form-label fw-bold small">Chi tiết thêm (tùy chọn)</label>
-                <textarea class="form-control bg-light border-0 rounded-3 shadow-none p-3" 
+                <textarea class="form-control bg-light-soft border rounded-3 shadow-none p-3" 
                           id="reportReason" 
                           name="reportReason"
                           rows="3" 
@@ -295,7 +366,7 @@
     <!-- Report Success Modal -->
     <div class="modal fade" id="reportSuccessModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg text-center p-4">
+        <div class="modal-content border-0 shadow-lg text-center p-4 rounded-4">
           <div class="modal-body">
             <div class="success-icon mb-4">
               <div class="icon-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 40px;">

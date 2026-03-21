@@ -94,6 +94,15 @@ export class CartService {
       return;
     }
 
+    const currentItems = this.cartItems.value;
+    const existingItem = currentItems.find(item => item.product.product_id === product.product_id);
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+
+    if (currentQuantityInCart + quantity > product.quantity) {
+      alert(`Chỉ còn ${product.quantity} sản phẩm trong kho! Bạn hiện đã có ${currentQuantityInCart} sản phẩm trong giỏ hàng.`);
+      return;
+    }
+
     const token = sessionStorage.getItem('token');
     if (!token) {
       this.router.navigate(['/auth/login']);
@@ -110,10 +119,11 @@ export class CartService {
       next: (response) => {
         // Reload cart from backend after successful add
         this.loadCartFromBackend();
+        alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
       },
       error: (error) => {
         console.error('Error adding item to cart:', error);
-        alert('Failed to add item to cart');
+        alert('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại sau.');
       }
     });
   }
@@ -127,6 +137,11 @@ export class CartService {
     const currentItems = this.cartItems.value;
     const item = currentItems.find(item => item.product.product_id === productId);
     if (!item || !item.cart_item_id) return;
+
+    if (quantity > item.product.quantity) {
+      alert(`Chỉ còn ${item.product.quantity} sản phẩm trong kho!`);
+      return;
+    }
 
     const headers = { 'Authorization': `Bearer ${token}` };
 
@@ -144,7 +159,10 @@ export class CartService {
 
       this.http.put(`${this.apiUrl}/items/${item.cart_item_id}`, cartItem, { headers }).subscribe({
         next: () => this.loadCartFromBackend(),
-        error: (error) => console.error('Error updating item:', error)
+        error: (error) => {
+          console.error('Error updating item:', error);
+          alert('Không thể cập nhật số lượng. Vui lòng thử lại sau.');
+        }
       });
     }
   }
@@ -177,5 +195,10 @@ export class CartService {
 
   getItemCount(): number {
     return this.cartItems.value.reduce((total, item) => total + item.quantity, 0);
+  }
+
+  getProductQuantityInCart(productId: number): number {
+    const item = this.cartItems.value.find(item => item.product.product_id === productId);
+    return item ? item.quantity : 0;
   }
 }

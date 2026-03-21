@@ -25,7 +25,7 @@ export class ProductDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
-    private cartService: CartService,
+    public cartService: CartService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -136,7 +136,12 @@ export class ProductDetailComponent implements OnInit {
   addToCart(): void {
     if (this.product && this.product.quantity > 0) {
       this.cartService.addToCart(this.product);
-      alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
     }
+  }
+
+  canAddToCart(): boolean {
+    if (!this.product) return false;
+    const inCart = this.cartService.getProductQuantityInCart(this.product.product_id);
+    return this.product.quantity > 0 && inCart < this.product.quantity;
   }
 }

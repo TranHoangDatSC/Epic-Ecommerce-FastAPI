@@ -193,6 +193,5 @@ export class ShopComponent implements OnInit {
 
   addToCart(product: Product) {
     this.cartService.addToCart(product);
-    alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
   }
 }
