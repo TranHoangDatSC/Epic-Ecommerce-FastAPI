@@ -6,6 +6,7 @@ import { Product, ProductImage } from '../../../core/models';
 import { environment } from '../../../../environments/environment';
 import { ProductService } from '../../../shared/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
+import { UIService } from '../../../core/services/ui.service';
 
 declare var bootstrap: any;
 
@@ -26,6 +27,7 @@ export class ProductDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private productService: ProductService,
     public cartService: CartService,
+    private uiService: UIService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -78,10 +80,14 @@ export class ProductDetailComponent implements OnInit {
 
   applyCoupon(): void {
     if (!this.couponCode.trim()) {
-      alert('Vui lòng nhập mã giảm giá!');
+      this.uiService.showError('Vui lòng nhập mã giảm giá!');
       return;
     }
-    alert(`Đang kiểm tra mã: ${this.couponCode}. Tính năng này sẽ sớm ra mắt!`);
+    this.uiService.showModal({
+      title: 'Mã giảm giá',
+      message: `Đang kiểm tra mã: ${this.couponCode}. Tính năng này sẽ sớm ra mắt!`,
+      type: 'info'
+    });
   }
 
   reportProduct(): void {
@@ -110,7 +116,7 @@ export class ProductDetailComponent implements OnInit {
 
   submitReport(): void {
     if (!this.reportCategory) {
-      alert('Vui lòng chọn lý do báo cáo!');
+      this.uiService.showError('Vui lòng chọn lý do báo cáo!');
       return;
     }
 

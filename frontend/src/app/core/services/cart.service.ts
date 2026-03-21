@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { UIService } from './ui.service';
 
 export interface CartItem {
   product: Product;
@@ -35,6 +36,7 @@ export class CartService {
   private authService = inject(AuthService);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private uiService = inject(UIService);
   private apiUrl = `${environment.apiUrl}/cart`;
 
   constructor() {
@@ -99,7 +101,7 @@ export class CartService {
     const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
 
     if (currentQuantityInCart + quantity > product.quantity) {
-      alert(`Chỉ còn ${product.quantity} sản phẩm trong kho! Bạn hiện đã có ${currentQuantityInCart} sản phẩm trong giỏ hàng.`);
+      this.uiService.showError(`Chỉ còn ${product.quantity} sản phẩm trong kho! Bạn hiện đã có ${currentQuantityInCart} sản phẩm trong giỏ hàng.`, 'Hết hàng!');
       return;
     }
 
@@ -119,11 +121,11 @@ export class CartService {
       next: (response) => {
         // Reload cart from backend after successful add
         this.loadCartFromBackend();
-        alert('Đã thêm sản phẩm vào giỏ hàng thành công!');
+        this.uiService.showSuccess('Đã thêm sản phẩm vào giỏ hàng thành công!');
       },
       error: (error) => {
         console.error('Error adding item to cart:', error);
-        alert('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại sau.');
+        this.uiService.showError('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại sau.');
       }
     });
   }
@@ -139,7 +141,7 @@ export class CartService {
     if (!item || !item.cart_item_id) return;
 
     if (quantity > item.product.quantity) {
-      alert(`Chỉ còn ${item.product.quantity} sản phẩm trong kho!`);
+      this.uiService.showError(`Chỉ còn ${item.product.quantity} sản phẩm trong kho!`, 'Thông báo giới hạn');
       return;
     }
 
@@ -161,7 +163,7 @@ export class CartService {
         next: () => this.loadCartFromBackend(),
         error: (error) => {
           console.error('Error updating item:', error);
-          alert('Không thể cập nhật số lượng. Vui lòng thử lại sau.');
+          this.uiService.showError('Không thể cập nhật số lượng. Vui lòng thử lại sau.');
         }
       });
     }
