@@ -1,5 +1,6 @@
 import { Injectable, inject, effect } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Product } from '../models';
 import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
@@ -9,6 +10,7 @@ import { environment } from '../../../environments/environment';
 export interface CartItem {
   product: Product;
   quantity: number;
+  cart_item_id?: number;
 }
 
 export interface CartResponse {
@@ -22,11 +24,6 @@ export interface CartResponse {
     added_at: string;
     product: Product;
   }>;
-}
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
 }
 
 @Injectable({
@@ -60,6 +57,10 @@ export class CartService {
     }
   }
 
+  private saveCart() {
+    localStorage.setItem('cart', JSON.stringify(this.cartItems.value));
+  }
+
   cartCount$ = this.cartItems$.pipe(
     map((items: CartItem[]) => this.authService.isLoggedIn() ? items.reduce((acc: number, item: CartItem) => acc + item.quantity, 0) : 0)
   );
@@ -74,7 +75,8 @@ export class CartService {
         // Convert backend cart items to frontend format
         const items: CartItem[] = cartData.cart_items.map(cartItem => ({
           product: cartItem.product,
-          quantity: cartItem.quantity
+          quantity: cartItem.quantity,
+          cart_item_id: cartItem.cart_item_id
         }));
         this.cartItems.next(items);
         this.saveCart(); // Save to localStorage for offline access
@@ -122,36 +124,27 @@ export class CartService {
     const token = sessionStorage.getItem('token');
     if (!token) return;
 
-    // Find cart item ID from current items
     const currentItems = this.cartItems.value;
     const item = currentItems.find(item => item.product.product_id === productId);
-    if (!item) return;
+    if (!item || !item.cart_item_id) return;
 
-    // For now, we'll reload from backend after update
-    // In a real app, you'd track cart_item_id
     const headers = { 'Authorization': `Bearer ${token}` };
-    const cartItem = {
-      product_id: productId,
-      quantity: quantity
-    };
 
     if (quantity <= 0) {
       // Remove item
-      this.http.delete(`${this.apiUrl}/items/${item.product.product_id}`, { headers }).subscribe({
+      this.http.delete(`${this.apiUrl}/items/${item.cart_item_id}`, { headers }).subscribe({
         next: () => this.loadCartFromBackend(),
         error: (error) => console.error('Error removing item:', error)
       });
     } else {
-      // Update quantity - for simplicity, we'll remove and re-add
-      // In production, you'd use PUT /cart/items/{cart_item_id}
-      this.http.delete(`${this.apiUrl}/items/${item.product.product_id}`, { headers }).subscribe({
-        next: () => {
-          this.http.post(`${this.apiUrl}/items`, cartItem, { headers }).subscribe({
-            next: () => this.loadCartFromBackend(),
-            error: (error) => console.error('Error updating item:', error)
-          });
-        },
-        error: (error) => console.error('Error removing item for update:', error)
+      const cartItem = {
+        product_id: productId,
+        quantity: quantity
+      };
+
+      this.http.put(`${this.apiUrl}/items/${item.cart_item_id}`, cartItem, { headers }).subscribe({
+        next: () => this.loadCartFromBackend(),
+        error: (error) => console.error('Error updating item:', error)
       });
     }
   }
@@ -162,8 +155,12 @@ export class CartService {
     const token = sessionStorage.getItem('token');
     if (!token) return;
 
+    const currentItems = this.cartItems.value;
+    const item = currentItems.find(item => item.product.product_id === productId);
+    if (!item || !item.cart_item_id) return;
+
     const headers = { 'Authorization': `Bearer ${token}` };
-    this.http.delete(`${this.apiUrl}/items/${productId}`, { headers }).subscribe({
+    this.http.delete(`${this.apiUrl}/items/${item.cart_item_id}`, { headers }).subscribe({
       next: () => this.loadCartFromBackend(),
       error: (error) => console.error('Error removing item:', error)
     });

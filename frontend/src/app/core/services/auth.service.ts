@@ -29,9 +29,20 @@ export class AuthService {
   private checkAuth() {
     const token = sessionStorage.getItem('token');
     const user = sessionStorage.getItem('user');
+
     if (token && user) {
       this.currentUser.set(JSON.parse(user));
       this.isLoggedIn.set(true);
+    } else if (token && !user) {
+      // Có token nhưng chưa có user -> fetch profile
+      this.getUserProfile().subscribe({
+        next: () => {
+          this.isLoggedIn.set(true);
+        },
+        error: () => {
+          this.logout();
+        }
+      });
     } else {
       this.currentUser.set(null);
       this.isLoggedIn.set(false);
@@ -47,16 +58,28 @@ export class AuthService {
       tap(res => {
         sessionStorage.setItem('token', res.access_token);
         this.isLoggedIn.set(true);
-        this.getUserProfile().subscribe();
+        this.getUserProfile().subscribe({
+          error: () => {
+            // Nếu fail, logout để tránh trạng thái login không nhất quán
+            this.logout();
+          }
+        });
       })
     );
   }
 
   getUserProfile(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/me`).pipe(
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('Token not found');
+    }
+
+    const headers = { 'Authorization': `Bearer ${token}` };
+    return this.http.get<any>(`${this.apiUrl}/me`, { headers }).pipe(
       tap(user => {
         sessionStorage.setItem('user', JSON.stringify(user));
         this.currentUser.set(user);
+        this.isLoggedIn.set(true);
       })
     );
   }
