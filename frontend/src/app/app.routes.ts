@@ -39,6 +39,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/moderator/moderator.routes').then(m => m.moderatorRoutes)
   },
   {
+    path: 'contact',
+    loadComponent: () => import('./features/contact/contact').then((m) => m.ContactComponent),
+  },
+  {
     path: '**',
     redirectTo: '/home'
   }

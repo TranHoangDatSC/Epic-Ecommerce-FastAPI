@@ -21,10 +21,10 @@ import { CartItem } from '../../../core/services/cart.service';
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link" routerLink="/home">Home</a>
+              <a class="nav-link d-flex align-items-center" routerLink="/home"><i class="bi bi-house-door me-1"></i>Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" routerLink="/shop">Shop</a>
+              <a class="nav-link d-flex align-items-center" routerLink="/shop"><i class="bi bi-bag me-1"></i>Shop</a>
             </li>
             <!-- Customer Navigation -->
             <li class="nav-item">
@@ -34,6 +34,12 @@ import { CartItem } from '../../../core/services/cart.service';
                 <span class="badge rounded-pill bg-danger border border-light ms-1" *ngIf="(cartCount$ | async) !== 0">
                   {{ cartCount$ | async }}
                 </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link d-flex align-items-center" routerLink="/contact">
+                <i class="bi bi-telephone me-1"></i>
+                Contact
               </a>
             </li>
             <li class="nav-item" *ngIf="user()?.role === 'CUSTOMER'">
@@ -108,9 +114,19 @@ import { CartItem } from '../../../core/services/cart.service';
     .navbar-brand {
       font-weight: bold;
       font-size: 1.5rem;
+      color: #fff !important;
     }
     .nav-link {
       font-weight: 500;
+      color: rgba(255, 255, 255, 0.95) !important;
+      transition: all 0.2s ease-in-out;
+    }
+    .nav-link:hover {
+      color: #fff !important;
+      transform: translateY(-1px);
+    }
+    .nav-link i {
+      font-size: 1.1rem;
     }
   `]
 })

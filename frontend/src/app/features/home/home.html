@@ -14,7 +14,7 @@
     <div class="container text-center"> <div class="row justify-content-center">
         <div class="col-lg-8 hero-text-box">
           @if (isLoggedIn()) {
-            <h1 class="hero-title">Chào mừng trở lại, {{ currentUser() }}!</h1>
+            <h1 class="hero-title">Chào mừng trở lại,<br> {{ currentUser()?.full_name || currentUser()?.username }}!</h1>
             <p class="hero-subtitle">Hệ thống đang có 500+ sản phẩm mới phù hợp với bạn.</p>
             <div class="hero-actions justify-content-center">
               <a routerLink="/customer/cart" class="btn btn-primary btn-lg">Xem giỏ hàng</a>
@@ -106,7 +106,7 @@
           <!-- Chat Message -->
           <div class="message-bubble">
             @if (isLoggedIn()) {
-              <p>Xin chào <strong>{{ currentUser() }}</strong>, hệ thống đang có <strong>500+ sản phẩm mới</strong> phù hợp với sở thích của bạn. Bạn muốn tìm gì?</p>
+              <p>Xin chào <strong>{{ currentUser()?.full_name || currentUser()?.username }}</strong>, hệ thống đang có <strong>500+ sản phẩm mới</strong> phù hợp với sở thích của bạn. Bạn muốn tìm gì?</p>
             } @else {
               <p>Chào mừng bạn đến với <strong>Oldshop</strong>! Đăng nhập để nhận ưu đãi riêng cho bạn và khám phá hàng ngàn sản phẩm chất lượng.</p>
             }
