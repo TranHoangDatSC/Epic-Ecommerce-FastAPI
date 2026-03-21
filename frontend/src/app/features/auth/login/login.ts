@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../shared/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [],
+  imports: [ReactiveFormsModule, CommonModule],
   template: `
     <div class="modal fade" id="loginModal" tabindex="-1">
       <div class="modal-dialog">
@@ -13,16 +17,16 @@ import { Component } from '@angular/core';
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form>
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
               <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email">
+                <input type="email" class="form-control" id="email" formControlName="email">
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password">
+                <input type="password" class="form-control" id="password" formControlName="password">
               </div>
-              <button type="submit" class="btn btn-primary w-100">Login</button>
+              <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid">Login</button>
             </form>
           </div>
         </div>
@@ -35,4 +39,37 @@ import { Component } from '@angular/core';
     }
   `]
 })
-export class LoginComponent {}
+export class LoginComponent {
+  loginForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      this.authService.login(this.loginForm.value).subscribe({
+        next: (response: any) => {
+          console.log('Login successful', response);
+          this.authService.setToken(response.access_token);
+          // Decode token to get user data (simple decode, in production use proper JWT library)
+          const payload = JSON.parse(atob(response.access_token.split('.')[1]));
+          this.authService.setUserData(payload);
+          const role = payload.role_ids[0];
+          if (role === 2) {
+            this.router.navigate(['/moderator/dashboard']);
+          } else {
+            this.router.navigate(['/customer/cart']);
+          }
+        },
+        error: (error) => {
+          console.error('Login failed', error);
+          alert('Login failed: ' + (error.error?.detail || 'Unknown error'));
+        }
+      });
+    }
+  }
+}

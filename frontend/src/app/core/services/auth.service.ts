@@ -1,4 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -14,6 +15,7 @@ export interface LoginResponse {
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private router = inject(Router);
   private apiUrl = `${environment.apiUrl}/auth`;
   
   // State
@@ -25,11 +27,14 @@ export class AuthService {
   }
 
   private checkAuth() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const user = sessionStorage.getItem('user');
     if (token && user) {
       this.currentUser.set(JSON.parse(user));
       this.isLoggedIn.set(true);
+    } else {
+      this.currentUser.set(null);
+      this.isLoggedIn.set(false);
     }
   }
 
@@ -40,7 +45,7 @@ export class AuthService {
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, formData).pipe(
       tap(res => {
-        localStorage.setItem('token', res.access_token);
+        sessionStorage.setItem('token', res.access_token);
         this.isLoggedIn.set(true);
         this.getUserProfile().subscribe();
       })
@@ -50,17 +55,18 @@ export class AuthService {
   getUserProfile(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/me`).pipe(
       tap(user => {
-        localStorage.setItem('user', JSON.stringify(user));
+        sessionStorage.setItem('user', JSON.stringify(user));
         this.currentUser.set(user);
       })
     );
   }
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
-    window.location.reload();
+    // Auto redirect to home on logout
+    this.router.navigate(['/home']);
   }
 }

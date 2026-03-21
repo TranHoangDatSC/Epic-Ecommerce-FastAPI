@@ -75,35 +75,37 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ) -> TokenResponse:
     """
     Login with email and password.
-    
-    Returns JWT access token for authentication.
+
+    Note: OAuth2 password flow uses field name "username" in the form, but we
+    treat that value as email for this app.
     """
-    # Find user by email
-    user = db.query(User).filter(User.email == form_data.username).first()
-    
+    # Find user by email (OAuth2 form uses username field)
+    email = form_data.username
+    user = db.query(User).filter(User.email == email).first()
+
     if not user:
-        print(f"Auth failed: User '{form_data.username}' not found")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        
-    if not verify_password(form_data.password, user.password_hash):
-        print(f"Auth failed: Incorrect password for user '{user.email}'")
+        print(f"Auth failed: User '{email}' not found")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    if not verify_password(form_data.password, user.password_hash):
+        print(f"Auth failed: Incorrect password for user '{email}'")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if user.is_deleted or not user.is_active:
-        print(f"Auth failed: User '{user.username}' is inactive or deleted")
+        print(f"Auth failed: User '{user.email}' is inactive or deleted")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account is inactive"

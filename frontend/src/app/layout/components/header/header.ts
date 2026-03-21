@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { CartService } from '../../../core/services/cart.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { map } from 'rxjs/operators';
@@ -28,7 +28,7 @@ import { CartItem } from '../../../core/services/cart.service';
             </li>
             <!-- Customer Navigation -->
             <li class="nav-item">
-              <a class="nav-link d-flex align-items-center" routerLink="/customer/cart">
+              <a class="nav-link d-flex align-items-center" href="#" (click)="goToCart($event)">
                 <i class="bi bi-cart3 me-1"></i>
                 Cart
                 <span class="badge rounded-pill bg-danger border border-light ms-1" *ngIf="(cartCount$ | async) !== 0">
@@ -65,15 +65,8 @@ import { CartItem } from '../../../core/services/cart.service';
             <li class="nav-item" *ngIf="!isLoggedIn()">
               <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
             </li>
-            <li class="nav-item dropdown" *ngIf="isLoggedIn()">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                {{ user()?.full_name || 'My Account' }}
-              </a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" routerLink="/customer/profile">Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" (click)="logout()">Logout</a></li>
-              </ul>
+            <li class="nav-item" *ngIf="isLoggedIn()">
+              <a class="nav-link" href="#" (click)="logout(); $event.preventDefault()">Đăng xuất</a>
             </li>
           </ul>
         </div>
@@ -124,6 +117,7 @@ import { CartItem } from '../../../core/services/cart.service';
 export class HeaderComponent {
   private cartService = inject(CartService);
   private authService = inject(AuthService);
+  private router = inject(Router);
   
   isLoggedIn = this.authService.isLoggedIn;
   user = this.authService.currentUser;
@@ -141,6 +135,16 @@ export class HeaderComponent {
         document.getElementById('closeLoginModal')?.click();
         this.email = '';
         this.password = '';
+        // Redirect based on role
+        const user = this.authService.currentUser();
+        if (user && user.roles && user.roles.length > 0) {
+          const roleId = user.roles[0].role_id;
+          if (roleId === 2) {
+            this.router.navigate(['/moderator/dashboard']);
+          } else {
+            this.router.navigate(['/customer/cart']);
+          }
+        }
       },
       error: (err: any) => {
         alert(err.error?.detail || 'Login failed');
@@ -150,5 +154,18 @@ export class HeaderComponent {
 
   logout() {
     this.authService.logout();
+  }
+
+  goToCart(event: Event) {
+    event.preventDefault();
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate(['/customer/cart']);
+    } else {
+      // Show login modal
+      const modal = document.getElementById('loginModal');
+      if (modal) {
+        (window as any).bootstrap.Modal.getOrCreateInstance(modal).show();
+      }
+    }
   }
 }

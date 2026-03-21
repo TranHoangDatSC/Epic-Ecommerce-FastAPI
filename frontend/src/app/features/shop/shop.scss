@@ -1,4 +1,6 @@
-﻿// Shop Component Styles
+﻿@use "sass:color";
+
+// Shop Component Styles
 
 $brand-primary: #ff6b00;
 $brand-primary-dark: #e05500;
@@ -64,7 +66,7 @@ $brand-border: #e9ecef;
   transition: all 0.3s ease;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(45deg, darken($brand-secondary, 8%), darken($brand-secondary-dark, 8%));
+    background: linear-gradient(45deg, color.adjust($brand-secondary, $lightness: -8%), color.adjust($brand-secondary-dark, $lightness: -8%));
     transform: translateY(-2px);
     box-shadow: 0 5px 16px rgba(28, 220, 125, 0.4);
   }
@@ -83,7 +85,7 @@ $brand-border: #e9ecef;
   transition: all 0.3s ease;
 
   &:hover {
-    background: linear-gradient(45deg, darken($brand-primary, 6%), darken($brand-primary-dark, 6%));
+    background: linear-gradient(45deg, color.adjust($brand-primary, $lightness: -6%), color.adjust($brand-primary-dark, $lightness: -6%));
     transform: translateY(-2px);
     box-shadow: 0 5px 16px rgba(255, 107, 0, 0.4);
   }

@@ -22,9 +22,13 @@
           } @else {
             <h1 class="hero-title">NÂNG TẦM TRẢI NGHIỆM MUA BÁN ĐỒ CŨ</h1>
             <p class="hero-subtitle">Chất lượng đảm bảo • Thanh toán an toàn • Giao hàng toàn quốc</p>
-            <div class="hero-actions justify-content-center">
+            <div class="hero-actions justify-content-center" *ngIf="!isLoggedIn()">
               <a routerLink="/shop" class="btn btn-primary btn-lg">Khám phá ngay</a>
               <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" class="btn btn-outline-light btn-lg">Đăng nhập</a>
+            </div>
+            <div class="hero-actions justify-content-center" *ngIf="isLoggedIn()">
+              <a routerLink="/shop" class="btn btn-primary btn-lg">Khám phá ngay</a>
+              <button class="btn btn-outline-light btn-lg" (click)="logoutHero()">Đăng xuất</button>
             </div>
           }
         </div>

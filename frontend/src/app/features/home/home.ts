@@ -1,6 +1,7 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
 
 /**
  * Home Component - Professional E-commerce Landing Page
@@ -14,12 +15,14 @@ import { CommonModule } from '@angular/common';
   styleUrl: './home.scss'
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+
   // ===== AUTHENTICATION STATE =====
   /** User authentication state */
-  isLoggedIn = signal(false);
+  isLoggedIn = this.authService.isLoggedIn;
 
   /** Current logged-in user's full name */
-  currentUser = signal<string>('');
+  currentUser = this.authService.currentUser;
 
   // ===== CAROUSEL STATE =====
   /** Current slide index for product carousel */
@@ -44,6 +47,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.startAutoSlide();
     this.loadUserData();
+  }
+
+  logoutHero() {
+    this.authService.logout();
   }
 
   /**
@@ -103,24 +110,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ===== AUTHENTICATION METHODS =====
   /**
-   * Load user data from localStorage/AuthService
-   * Sets isLoggedIn and currentUser signals
+   * No need to sync from localStorage; AuthService manages session state using sessionStorage.
    */
   private loadUserData() {
-    try {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        this.isLoggedIn.set(true);
-        this.currentUser.set(user.fullName || user.username || 'Người dùng');
-      } else {
-        this.isLoggedIn.set(false);
-        this.currentUser.set('');
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      this.isLoggedIn.set(false);
-      this.currentUser.set('');
-    }
+    // intentionally empty; AuthService signals handle current login status
   }
 }
