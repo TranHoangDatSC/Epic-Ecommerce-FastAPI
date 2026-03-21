@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { CartService, CartItem } from '../../../core/services/cart.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -17,9 +18,19 @@ export class CartComponent implements OnInit {
   groupedItems: { method: number; items: CartItem[] }[] = [];
   imageBaseUrl = environment.imageBaseUrl;
 
-  constructor(private cartService: CartService) {}
+  constructor(
+    private cartService: CartService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    // Cart service will automatically load from backend when logged in
     this.cartService.cartItems$.subscribe(items => {
       this.cartItems = items;
       this.groupItems();

@@ -4,7 +4,7 @@ from typing import List
 from app.database import get_db
 from app.models import User, Product, ProductImage
 from app.schemas import ProductResponse, ProductDetailResponse, ProductCreate, ProductUpdate
-from app.core.dependencies import check_admin, check_moderator, check_user_role
+from app.core.dependencies import check_admin, check_moderator, check_user_role, get_current_user_optional
 from app.crud.product import crud_product
 from app.crud.category import crud_category
 import os
@@ -19,7 +19,8 @@ async def list_products(
     limit: int = Query(100, ge=1, le=1000),
     category_id: int = Query(None),
     search: str = Query(None),
-    sort_by: str = Query("created_at", regex="^(created_at|price|rating)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|price|rating)$"),
+    current_user: User = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ) -> list[ProductResponse]:
     """
@@ -53,7 +54,11 @@ async def list_products(
             limit=limit,
             order_by=sort_by
         )
-    
+
+    # Nếu user đã đăng nhập, không hiển thị sản phẩm do chính họ bán
+    if current_user:
+        products = [p for p in products if p.seller_id != current_user.user_id]
+
     return products
 
 

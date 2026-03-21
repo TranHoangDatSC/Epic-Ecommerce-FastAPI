@@ -125,9 +125,7 @@ export class HeaderComponent {
   email = '';
   password = '';
 
-  cartCount$ = this.cartService.cartItems$.pipe(
-    map((items: CartItem[]) => items.reduce((acc: number, item: CartItem) => acc + item.quantity, 0))
-  );
+  cartCount$ = this.cartService.cartCount$;
 
   login() {
     this.authService.login(this.email, this.password).subscribe({

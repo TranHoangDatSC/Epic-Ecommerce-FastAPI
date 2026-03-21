@@ -29,11 +29,23 @@ export class ProductService {
       if (params.sort_by) httpParams = httpParams.set('sort_by', params.sort_by);
     }
 
-    return this.http.get<Product[]>(this.apiUrl, { params: httpParams });
+    const token = sessionStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return this.http.get<Product[]>(this.apiUrl, { params: httpParams, headers });
   }
 
   getProduct(id: number): Observable<Product> {
-    return this.http.get<Product>(`${this.apiUrl}/${id}`);
+    const token = sessionStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return this.http.get<Product>(`${this.apiUrl}/${id}`, { headers });
   }
 
   createProduct(formData: FormData): Observable<Product> {
@@ -55,6 +67,12 @@ export class ProductService {
       if (params.limit !== undefined) httpParams = httpParams.set('limit', params.limit.toString());
     }
 
-    return this.http.get<Product[]>(`${this.apiUrl}/seller/my-products`, { params: httpParams });
+    const token = sessionStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return this.http.get<Product[]>(`${this.apiUrl}/seller/my-products`, { params: httpParams, headers });
   }
 }

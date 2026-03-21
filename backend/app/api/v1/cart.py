@@ -15,6 +15,7 @@ async def get_cart(
     current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> ShoppingCartResponse:
+    """Get user's shopping cart"""
     cart = crud_cart.get_or_create_by_user_id(db, current_user.user_id)
     return cart
 
