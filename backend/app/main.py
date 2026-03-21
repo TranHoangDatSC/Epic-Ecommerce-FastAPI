@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base
-from app.api.v1 import auth, users, categories, products, orders, moderator
+from app.api.v1 import auth, users, categories, products, orders, moderator, cart
 import os
 
 # --- Helper để lấy IP Network ---
@@ -104,6 +104,7 @@ app.include_router(categories.router, prefix=settings.API_V1_STR)
 app.include_router(products.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
 app.include_router(moderator.router, prefix=settings.API_V1_STR)
+app.include_router(cart.router, prefix=settings.API_V1_STR)
 
 # Compatibility routes for clients calling /api/* (no /v1). These are not shown in the OpenAPI schema.
 app.include_router(auth.router, prefix="/api", include_in_schema=False)
@@ -112,6 +113,7 @@ app.include_router(categories.router, prefix="/api", include_in_schema=False)
 app.include_router(products.router, prefix="/api", include_in_schema=False)
 app.include_router(orders.router, prefix="/api", include_in_schema=False)
 app.include_router(moderator.router, prefix="/api", include_in_schema=False)
+app.include_router(cart.router, prefix="/api", include_in_schema=False)
 
 # ==================== Error Handlers ====================
 

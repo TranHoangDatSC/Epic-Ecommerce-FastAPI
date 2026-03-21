@@ -64,9 +64,14 @@ async def register(
     user = crud_user.create(db=db, obj_in=user_in)
     
     # Assign default role_id = 3
-    from app.models import UserRole
+    from app.models import UserRole, ShoppingCart
     user_role = UserRole(user_id=user.user_id, role_id=3)
     db.add(user_role)
+    
+    # Create shopping cart for new user
+    shopping_cart = ShoppingCart(user_id=user.user_id)
+    db.add(shopping_cart)
+    
     db.commit()
     db.refresh(user)
     

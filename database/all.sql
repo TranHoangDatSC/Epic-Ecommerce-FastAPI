@@ -627,6 +627,11 @@ INSERT INTO order_detail (order_id, product_id, price_at_purchase, quantity) VAL
 INSERT INTO transaction (order_id, user_id, payment_method_id, amount, transaction_status, reference_number) VALUES
 (1, 3, 1, 7680000.00, 1, 'TXN_' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS') || '_' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0'));
 
+-- Shopping carts for users with role_id = 3
+INSERT INTO shopping_cart (user_id, last_updated) VALUES
+(3, CURRENT_TIMESTAMP),  -- user1
+(4, CURRENT_TIMESTAMP);  -- user2
+
 -- ==============================================================================
 -- 5. FINAL SETUP
 -- ==============================================================================

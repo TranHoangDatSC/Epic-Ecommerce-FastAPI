@@ -69,6 +69,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         query = (
             db.query(Product)
             .options(joinedload(Product.product_images))
+            .options(joinedload(Product.seller))
             .filter(Product.status == 1)  # Approved
             .filter(Product.is_deleted == False)
         )
@@ -93,6 +94,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         return (
             db.query(Product)
             .options(joinedload(Product.product_images))
+            .options(joinedload(Product.seller))
             .filter(Product.is_deleted == False)
             .filter(Product.status == 1)  # Only approved
             .filter(

@@ -201,10 +201,20 @@ def seed_data():
         ])
         db.commit()
 
+        # Create shopping carts for users with role_id = 3
+        from app.models import ShoppingCart
+        shopping_carts = [
+            ShoppingCart(user_id=user1.user_id),
+            ShoppingCart(user_id=user2.user_id)
+        ]
+        db.add_all(shopping_carts)
+        db.commit()
+
         print("✅ Database seeded successfully!")
         print(f"Created {db.query(Product).count()} products")
         print(f"Created {db.query(Category).count()} categories")
         print(f"Created {db.query(User).count()} users")
+        print(f"Created {db.query(ShoppingCart).count()} shopping carts")
 
     except Exception as e:
         print(f"❌ Error seeding data: {e}")
