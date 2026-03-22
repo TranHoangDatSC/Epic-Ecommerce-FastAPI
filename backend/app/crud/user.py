@@ -27,6 +27,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             full_name=obj_in.full_name,
             phone_number=obj_in.phone_number,
             address=obj_in.address,
+            role_id=obj_in.role_id or 3,
             random_key=obj_in.username,  # Could be replaced with actual random key generation
         )
         db.add(db_obj)

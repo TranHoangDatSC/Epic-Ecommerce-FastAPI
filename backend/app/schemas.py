@@ -60,6 +60,7 @@ class UserResponse(UserBase):
     last_login: Optional[datetime]
     email_verified: bool
     trust_score: Optional[float] = None
+    role: Optional['RoleResponse'] = None
 
     class Config:
         from_attributes = True

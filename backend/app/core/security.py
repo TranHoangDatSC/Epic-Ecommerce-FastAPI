@@ -106,9 +106,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def get_current_moderator(current_user: models.User = Depends(get_current_user)) -> models.User:
     """Get current user and verify they are a moderator (Admin or Mod)"""
     # Check if user has role_id 1 (Admin) or 2 (Mod)
-    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
-
-    if 1 not in user_role_ids and 2 not in user_role_ids:
+    if current_user.role_id not in (1, 2):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions - Admin or Mod role required"
@@ -119,9 +117,7 @@ def get_current_moderator(current_user: models.User = Depends(get_current_user))
 
 def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
     """Get current user and verify they are an admin (Role ID 1)"""
-    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
-
-    if 1 not in user_role_ids:
+    if current_user.role_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required"

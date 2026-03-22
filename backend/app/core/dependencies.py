@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.core.security import decode_token
 from app.models import User
@@ -24,7 +24,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = db.query(User).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,7 +48,7 @@ async def get_current_user_optional(
     if token_data is None:
         return None
     
-    user = db.query(User).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         return None
     

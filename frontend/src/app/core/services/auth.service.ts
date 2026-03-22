@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface LoginResponse {
@@ -49,21 +49,16 @@ export class AuthService {
     }
   }
 
-  login(email: string, password: string): Observable<LoginResponse> {
+  login(email: string, password: string): Observable<any> {
     const formData = new FormData();
     formData.append('username', email); // OAuth2 expects 'username' field
     formData.append('password', password);
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, formData).pipe(
-      tap(res => {
+      switchMap(res => {
         sessionStorage.setItem('token', res.access_token);
         this.isLoggedIn.set(true);
-        this.getUserProfile().subscribe({
-          error: () => {
-            // Nếu fail, logout để tránh trạng thái login không nhất quán
-            this.logout();
-          }
-        });
+        return this.getUserProfile();
       })
     );
   }

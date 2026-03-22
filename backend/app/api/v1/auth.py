@@ -63,11 +63,6 @@ async def register(
     # Create new user
     user = crud_user.create(db=db, obj_in=user_in)
     
-    # Assign default role_id = 3
-    from app.models import UserRole, ShoppingCart
-    user_role = UserRole(user_id=user.user_id, role_id=3)
-    db.add(user_role)
-    
     # Create shopping cart for new user
     shopping_cart = ShoppingCart(user_id=user.user_id)
     db.add(shopping_cart)
@@ -117,7 +112,7 @@ async def login(
         )
     
     # Get user roles
-    role_ids = [role.role_id for role in user.user_roles]
+    role_ids = [user.role_id]
     
     # Create access token
     access_token_expires = timedelta(minutes=30)  # Default 30 minutes

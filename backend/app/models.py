@@ -49,8 +49,10 @@ class User(Base):
     password_reset_token = Column(String(255))
     password_reset_expires = Column(DateTime)
     trust_score = Column(DECIMAL(5,2), default=0.0, nullable=True)
+    role_id = Column(Integer, ForeignKey("role.role_id"), default=3, nullable=False)
 
     # Relationships
+    role = relationship("Role", backref="users")
     # link to roles assigned to this user.
     # foreign_keys not required since UserRole now only references User once.
     user_roles = relationship(
