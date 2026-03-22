@@ -6,7 +6,7 @@ from app.schemas import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.core.dependencies import get_current_user, check_admin, check_moderator
 from app.crud.category import crud_category
 
-router = APIRouter(prefix="/categories", tags=["categories"])
+router = APIRouter(prefix="/categories", tags=["Category Management"])
 
 @router.get("", response_model=list[CategoryResponse])
 async def list_categories(
@@ -176,7 +176,56 @@ async def delete_category(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
         )
+        
+    # Check 1: category must be inactive
+    if category.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Phải vô hiệu hóa (Disable) danh mục trước khi thực hiện xóa mềm"
+        )
+        
+    # Check 2: Check if category has products
+    if crud_category.has_products(db, category_id=category_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể xóa danh mục đang chứa sản phẩm"
+        )
     
     category.is_deleted = True
     db.add(category)
     db.commit()
+
+
+@router.delete("/{category_id}/hard-delete", status_code=status.HTTP_204_NO_CONTENT)
+async def hard_delete_category(
+    category_id: int,
+    admin_user: User = Depends(check_admin),
+    db: Session = Depends(get_db)
+) -> None:
+    """
+    Permanently delete a category (Admin only).
+    
+    Hard deletes the category from the database.
+    """
+    category = crud_category.get_by_id_with_deleted(db, category_id=category_id)
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+    if not category.is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Danh mục phải nằm trong trạng thái xóa mềm trước khi xóa vĩnh viễn"
+        )
+        
+    # Check if category has products
+    if crud_category.has_products(db, category_id=category_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể xóa vĩnh viễn danh mục đang chứa sản phẩm"
+        )
+    
+    crud_category.hard_delete(db, category_id=category_id)

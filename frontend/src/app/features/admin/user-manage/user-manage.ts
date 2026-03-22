@@ -1,70 +1,67 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AdminService } from '../../../shared/services/admin.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-user-manage',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <h2>User Management</h2>
-      <div class="card">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>John Doe</td>
-                  <td>john@example.com</td>
-                  <td><span class="badge bg-primary">Customer</span></td>
-                  <td><span class="badge bg-success">Active</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-warning me-1">Suspend</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>Jane Smith</td>
-                  <td>jane@example.com</td>
-                  <td><span class="badge bg-info">Seller</span></td>
-                  <td><span class="badge bg-success">Active</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-warning me-1">Suspend</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>Bob Johnson</td>
-                  <td>bob@example.com</td>
-                  <td><span class="badge bg-secondary">Moderator</span></td>
-                  <td><span class="badge bg-warning">Suspended</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-success me-1">Activate</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule],
+  templateUrl: './user-manage.html',
+  styleUrl: './user-manage.scss'
 })
-export class UserManageComponent {}
+export class UserManageComponent implements OnInit {
+  users: any[] = [];
+  skip = 0;
+  limit = 20;
+  isLoading = false;
+
+  constructor(private adminService: AdminService) {}
+
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    this.isLoading = true;
+    this.adminService.getUsers(this.skip, this.limit).subscribe({
+      next: (data) => {
+        this.users = data;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading users:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  toggleBan(user: any) {
+    const reason = prompt('Reason for action:');
+    if (!reason) return;
+
+    if (user.is_active) {
+      this.adminService.banUser(user.user_id, reason).subscribe(() => this.loadUsers());
+    } else {
+      this.adminService.unbanUser(user.user_id, reason).subscribe(() => this.loadUsers());
+    }
+  }
+
+  deleteUser(userId: number) {
+    if (confirm('Are you sure you want to delete this user?')) {
+      this.adminService.deleteUser(userId).subscribe(() => this.loadUsers());
+    }
+  }
+
+  nextPage() {
+    this.skip += this.limit;
+    this.loadUsers();
+  }
+
+  prevPage() {
+    if (this.skip >= this.limit) {
+      this.skip -= this.limit;
+      this.loadUsers();
+    }
+  }
+}

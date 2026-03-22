@@ -115,3 +115,17 @@ def get_current_moderator(current_user: models.User = Depends(get_current_user))
         )
 
     return current_user
+
+
+def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Get current user and verify they are an admin (Role ID 1)"""
+    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
+
+    if 1 not in user_role_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required"
+        )
+
+    return current_user
+

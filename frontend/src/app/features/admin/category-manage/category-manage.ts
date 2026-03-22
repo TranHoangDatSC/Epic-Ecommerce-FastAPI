@@ -1,71 +1,84 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AdminService } from '../../../shared/services/admin.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-category-manage',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Category Management</h2>
-        <button class="btn btn-primary">Add New Category</button>
-      </div>
-      <div class="card">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Products Count</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>Electronics</td>
-                  <td>Electronic devices and accessories</td>
-                  <td>25</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>Clothing</td>
-                  <td>Fashion and apparel</td>
-                  <td>18</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>Books</td>
-                  <td>Books and publications</td>
-                  <td>0</td>
-                  <td><span class="badge bg-secondary">Inactive</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button class="btn btn-sm btn-outline-success me-1">Activate</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule],
+  templateUrl: './category-manage.html',
+  styleUrl: './category-manage.scss'
 })
-export class CategoryManageComponent {}
+export class CategoryManageComponent implements OnInit {
+  categories: any[] = [];
+  isLoading = false;
+  showModal = false;
+  editingCategory: any = null;
+  categoryForm = {
+    name: '',
+    description: '',
+    parent_id: null as number | null,
+    is_active: true
+  };
+
+  constructor(private adminService: AdminService) {}
+
+  ngOnInit(): void {
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.isLoading = true;
+    this.adminService.getCategories(false).subscribe({
+      next: (data) => {
+        this.categories = data;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  openModal(category: any = null) {
+    this.editingCategory = category;
+    if (category) {
+      this.categoryForm = {
+        name: category.name,
+        description: category.description,
+        parent_id: category.parent_id,
+        is_active: category.is_active !== undefined ? category.is_active : true
+      };
+    } else {
+      this.categoryForm = { name: '', description: '', parent_id: null, is_active: true };
+    }
+    this.showModal = true;
+  }
+
+  closeModal() {
+    this.showModal = false;
+    this.editingCategory = null;
+  }
+
+  saveCategory() {
+    if (this.editingCategory) {
+      this.adminService.updateCategory(this.editingCategory.category_id, this.categoryForm).subscribe(() => {
+        this.loadCategories();
+        this.closeModal();
+      });
+    } else {
+      this.adminService.createCategory(this.categoryForm).subscribe(() => {
+        this.loadCategories();
+        this.closeModal();
+      });
+    }
+  }
+
+  deleteCategory(id: number) {
+    if (confirm('Are you sure you want to delete this category? (Soft delete)')) {
+      this.adminService.deleteCategory(id).subscribe(() => this.loadCategories());
+    }
+  }
+}

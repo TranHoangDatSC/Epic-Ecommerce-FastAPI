@@ -22,8 +22,10 @@ export class App {
 
   constructor(private router: Router, private uiService: UIService) {
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
-      // Hide header/footer for moderator routes
-      this.showShell.set(!event.urlAfterRedirects.startsWith('/moderator'));
+      // Hide header/footer for moderator and admin routes
+      const isSpecialRoute = event.urlAfterRedirects.startsWith('/moderator') || 
+                            event.urlAfterRedirects.startsWith('/admin');
+      this.showShell.set(!isSpecialRoute);
     });
 
     this.uiService.modal$.subscribe(config => {

@@ -76,6 +76,30 @@ class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
             .all()
         )
 
+    def has_products(self, db: Session, category_id: int) -> bool:
+        """Check if category has any products attached"""
+        from app.models import Product
+        count = db.query(Product).filter(Product.category_id == category_id).count()
+        return count > 0
+
+    def get_by_id_with_deleted(self, db: Session, category_id: int) -> Optional[Category]:
+        """Get category by ID including soft-deleted ones"""
+        return (
+            db.query(Category)
+            .filter(Category.category_id == category_id)
+            .first()
+        )
+
+    def hard_delete(self, db: Session, category_id: int) -> bool:
+        """Permanently delete a category from DB"""
+        db_obj = self.get_by_id_with_deleted(db, category_id)
+        if not db_obj:
+            return False
+        
+        db.delete(db_obj)
+        db.commit()
+        return True
+
 
 # Create CRUD instance
 crud_category = CRUDCategory(Category)

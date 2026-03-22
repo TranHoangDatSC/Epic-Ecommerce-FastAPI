@@ -1,0 +1,9 @@
+{
+  "name": "oldshop-ecommerce",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd frontend && npm start",
+    "install:all": "cd frontend && npm install",
+    "backend": "cd backend && python -m app.main"
+  }
+}

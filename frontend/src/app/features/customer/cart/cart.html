@@ -60,7 +60,7 @@
                     <td class="ps-4 py-4">
                       <div class="d-flex align-items-center">
                         <div class="product-thumb rounded-3 shadow-sm border overflow-hidden me-3" style="width: 80px; height: 80px;">
-                          <img [src]="getFullImageUrl(item.product.product_images?.[0]?.image_url || '')" 
+                          <img [src]="getFullImageUrl(item.product.product_images[0]?.image_url || '')" 
                                [alt]="item.product.title" 
                                class="img-fluid w-100 h-100 object-fit-cover transition-scale-hover">
                         </div>

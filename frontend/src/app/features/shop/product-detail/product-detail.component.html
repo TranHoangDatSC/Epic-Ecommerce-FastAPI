@@ -98,8 +98,8 @@
              </div>
              <div class="vr me-3 opacity-10"></div>
              <span class="text-muted small"><i class="bi bi-eye me-1"></i>{{ product.view_count }} lượt xem</span>
-             <div class="vr mx-3 opacity-10" *ngIf="product.reviews?.length"></div>
-             <span class="text-muted small" *ngIf="product.reviews?.length"><i class="bi bi-chat-left-dots me-1"></i>{{ product.reviews.length }} đánh giá</span>
+             <div class="vr mx-3 opacity-10" *ngIf="product.reviews.length"></div>
+             <span class="text-muted small" *ngIf="product.reviews.length"><i class="bi bi-chat-left-dots me-1"></i>{{ product.reviews.length }} đánh giá</span>
           </div>
           
           <div class="price-box mb-4 bg-light bg-gradient p-3 rounded-3 border">
@@ -204,7 +204,7 @@
           <ul class="nav nav-tabs px-4 pt-3 border-bottom-0 bg-light" id="productTabs" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active fw-bold border-0 bg-transparent py-3 px-4 position-relative" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">
-                Đánh giá ({{ product.reviews?.length || 0 }})
+                Đánh giá ({{ product.reviews.length || 0 }})
                 <div class="tab-indicator bg-primary position-absolute bottom-0 start-0 w-100" style="height: 3px;"></div>
               </button>
             </li>
@@ -293,7 +293,7 @@
               <div class="small">
                 <span class="text-muted d-block">Bạn đang báo cáo:</span>
                 <span class="fw-bold text-dark" *ngIf="reportingType === 'product'">
-                  Sản phẩm: {{ product?.title }}
+                  Sản phẩm: {{ product.title }}
                 </span>
                 <span class="fw-bold text-dark" *ngIf="reportingType === 'review'">
                   Đánh giá (ID: #{{ reportingId }})
