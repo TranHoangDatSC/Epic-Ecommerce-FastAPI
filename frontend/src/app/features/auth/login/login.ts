@@ -58,11 +58,20 @@ export class LoginComponent {
           // Decode token to get user data (simple decode, in production use proper JWT library)
           const payload = JSON.parse(atob(response.access_token.split('.')[1]));
           this.authService.setUserData(payload);
-          const role = payload.role_ids[0];
-          if (role === 2) {
-            this.router.navigate(['/moderator/dashboard']);
+          
+          let roleIds: number[] = [];
+          if (Array.isArray(payload.role_ids)) {
+            roleIds = payload.role_ids;
+          } else if (payload.role_id !== undefined) {
+            roleIds = [payload.role_id];
+          }
+
+          if (roleIds.includes(1)) {
+            window.location.href = '/admin/dashboard';
+          } else if (roleIds.includes(2)) {
+            window.location.href = '/moderator/dashboard';
           } else {
-            this.router.navigate(['/customer/cart']);
+            window.location.href = '/';
           }
         },
         error: (error) => {

@@ -17,7 +17,13 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, credentials);
+    const body = new URLSearchParams();
+    body.set('username', credentials.email);
+    body.set('password', credentials.password);
+    
+    return this.http.post(`${this.apiUrl}/login`, body.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
   }
 
   register(userData: any): Observable<any> {
