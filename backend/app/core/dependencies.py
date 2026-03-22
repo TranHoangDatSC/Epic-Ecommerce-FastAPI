@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.core.security import decode_token
 from app.models import User
@@ -15,6 +15,14 @@ async def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user from JWT token"""
+
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token_data = decode_token(token)
     
     if token_data is None:
@@ -24,7 +32,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = db.query(User).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,7 +56,7 @@ async def get_current_user_optional(
     if token_data is None:
         return None
     
-    user = db.query(User).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         return None
     
@@ -80,7 +88,7 @@ def check_admin(user: User = Depends(get_current_user)) -> User:
     if 1 not in user_roles:  # 1 = Admin
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin role required"
+            detail="Cút! Chỉ Admin mới được vào đây!"
         )
     return user
 
@@ -91,7 +99,7 @@ def check_moderator(user: User = Depends(get_current_user)) -> User:
     if 2 not in user_roles and 1 not in user_roles:  # 2 = Moderator, 1 = Admin
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Moderator role required"
+            detail="Cút! Chỉ Kiểm duyệt viên mới được vào đây."
         )
     return user
 

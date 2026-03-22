@@ -1,13 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  expires_in: number;
 }
 
 @Injectable({
@@ -17,8 +16,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private apiUrl = `${environment.apiUrl}/auth`;
-  
-  // State
+
   currentUser = signal<any>(null);
   isLoggedIn = signal(false);
 
@@ -29,53 +27,33 @@ export class AuthService {
   private checkAuth() {
     const token = sessionStorage.getItem('token');
     const user = sessionStorage.getItem('user');
-
     if (token && user) {
-      this.currentUser.set(JSON.parse(user));
+      const parsedUser = JSON.parse(user);
+      this.currentUser.set(parsedUser);
       this.isLoggedIn.set(true);
-    } else if (token && !user) {
-      // Có token nhưng chưa có user -> fetch profile
+    } else if (token) {
       this.getUserProfile().subscribe({
-        next: () => {
-          this.isLoggedIn.set(true);
-        },
-        error: () => {
-          this.logout();
-        }
+        error: () => this.logout()
       });
-    } else {
-      this.currentUser.set(null);
-      this.isLoggedIn.set(false);
     }
   }
 
-  login(email: string, password: string): Observable<LoginResponse> {
+  login(email: string, password: string): Observable<any> {
     const formData = new FormData();
-    formData.append('username', email); // OAuth2 expects 'username' field
+    formData.append('username', email);
     formData.append('password', password);
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, formData).pipe(
       tap(res => {
         sessionStorage.setItem('token', res.access_token);
-        this.isLoggedIn.set(true);
-        this.getUserProfile().subscribe({
-          error: () => {
-            // Nếu fail, logout để tránh trạng thái login không nhất quán
-            this.logout();
-          }
-        });
-      })
+      }),
+      switchMap(() => this.getUserProfile())
     );
   }
 
   getUserProfile(): Observable<any> {
     const token = sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('Token not found');
-    }
-
-    const headers = { 'Authorization': `Bearer ${token}` };
-    return this.http.get<any>(`${this.apiUrl}/me`, { headers }).pipe(
+    return this.http.get<any>(`${this.apiUrl}/me`).pipe(
       tap(user => {
         sessionStorage.setItem('user', JSON.stringify(user));
         this.currentUser.set(user);
@@ -84,12 +62,24 @@ export class AuthService {
     );
   }
 
+  isAuthenticated(): boolean {
+    return !!sessionStorage.getItem('token');
+  }
+
+  getUserRole(): number | null {
+    const user = this.currentUser();
+    const data = user ? user : JSON.parse(sessionStorage.getItem('user') || '{}');
+    const role = data.role_id ?? 
+                data.role ?? 
+                (Array.isArray(data.role_ids) ? data.role_ids[0] : null);
+
+    return role ? Number(role) : null;
+  }
+
   logout() {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
+    sessionStorage.clear();
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
-    // Auto redirect to home on logout
-    this.router.navigate(['/home']);
+    this.router.navigate(['/auth/login']);
   }
 }

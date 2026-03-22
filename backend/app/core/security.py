@@ -44,23 +44,27 @@ def create_access_token(
     return encoded_jwt
 
 
+# backend/app/core/security.py (Dòng 62)
+
 def decode_token(token: str) -> Optional[TokenData]:
-    """Decode JWT token and return token data"""
     try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
-        )
-        user_id: int = payload.get("user_id")
-        username: str = payload.get("username")
-        role_ids: list = payload.get("role_ids", [])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("user_id")
+        username = payload.get("username")
         
-        if user_id is None or username is None:
+        # LOGIC MỚI: Lấy 1 cái role_id thôi
+        # Nếu payload có role_id thì lấy, không thì check role_ids cũ
+        role_id = payload.get("role_id")
+        if role_id is None:
+            role_ids = payload.get("role_ids", [])
+            role_id = role_ids[0] if role_ids else 3 # Mặc định là 3 (User)
+
+        if user_id is None:
             return None
             
-        return TokenData(user_id=user_id, username=username, role_ids=role_ids)
-    except JWTError:
+        # QUAN TRỌNG: Truyền role_id (số ít) vào đây
+        return TokenData(user_id=user_id, username=username, role_id=role_id)
+    except Exception:
         return None
 
 
@@ -106,9 +110,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def get_current_moderator(current_user: models.User = Depends(get_current_user)) -> models.User:
     """Get current user and verify they are a moderator (Admin or Mod)"""
     # Check if user has role_id 1 (Admin) or 2 (Mod)
-    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
-
-    if 1 not in user_role_ids and 2 not in user_role_ids:
+    if current_user.role_id not in (1, 2):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions - Admin or Mod role required"
@@ -119,9 +121,7 @@ def get_current_moderator(current_user: models.User = Depends(get_current_user))
 
 def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
     """Get current user and verify they are an admin (Role ID 1)"""
-    user_role_ids = [ur.role.role_id for ur in current_user.user_roles]
-
-    if 1 not in user_role_ids:
+    if current_user.role_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required"

@@ -63,11 +63,6 @@ async def register(
     # Create new user
     user = crud_user.create(db=db, obj_in=user_in)
     
-    # Assign default role_id = 3
-    from app.models import UserRole, ShoppingCart
-    user_role = UserRole(user_id=user.user_id, role_id=3)
-    db.add(user_role)
-    
     # Create shopping cart for new user
     shopping_cart = ShoppingCart(user_id=user.user_id)
     db.add(shopping_cart)
@@ -80,9 +75,8 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-) -> TokenResponse:
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)):
     """
     Login with email and password.
 
@@ -117,7 +111,7 @@ async def login(
         )
     
     # Get user roles
-    role_ids = [role.role_id for role in user.user_roles]
+    role_ids = [user.role_id]
     
     # Create access token
     access_token_expires = timedelta(minutes=30)  # Default 30 minutes
@@ -125,9 +119,9 @@ async def login(
         data={
             "user_id": user.user_id,
             "username": user.email,
-            "role_ids": role_ids
+            "role_id": user.role_id  # Trả về số nguyên 1, 2 hoặc 3
         },
-        expires_delta=access_token_expires
+        expires_delta=timedelta(minutes=30)
     )
     
     # Update last login
@@ -146,8 +140,12 @@ from app.core.dependencies import get_current_user
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(
-    current_user: User = Depends(get_current_user)
-) -> UserResponse:
-    """Return the authenticated user's profile"""
+async def get_me(current_user: User = Depends(get_current_user)):
+    # Debug: In ra xem thằng user này có gì mà sập
+    print(f"DEBUG USER: {current_user.__dict__}") 
+    
+    # Nếu model User của ný không có role_id, hãy lấy từ quan hệ role (nếu có)
+    if not hasattr(current_user, 'role_id') or current_user.role_id is None:
+        current_user.role_id = 3 # Gán tạm để cứu đói
+        
     return current_user

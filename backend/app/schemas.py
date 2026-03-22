@@ -17,7 +17,7 @@ class TokenData(BaseModel):
     """Token data payload"""
     user_id: int
     username: str
-    role_ids: List[int]
+    role_id: int
 
 
 # ==================== User Schemas ====================
@@ -53,6 +53,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     """User response schema"""
     user_id: int
+    role_id: Optional[int] = 3
     is_active: bool
     is_deleted: bool
     created_at: datetime
@@ -60,6 +61,7 @@ class UserResponse(UserBase):
     last_login: Optional[datetime]
     email_verified: bool
     trust_score: Optional[float] = None
+    role: Optional['RoleResponse'] = None
 
     class Config:
         from_attributes = True

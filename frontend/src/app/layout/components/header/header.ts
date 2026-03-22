@@ -145,15 +145,16 @@ export class HeaderComponent {
 
   login() {
     this.authService.login(this.email, this.password).subscribe({
-      next: () => {
+      next: (user) => {
         document.getElementById('closeLoginModal')?.click();
         this.email = '';
         this.password = '';
         // Redirect based on role
-        const user = this.authService.currentUser();
-        if (user && user.roles && user.roles.length > 0) {
-          const roleId = user.roles[0].role_id;
-          if (roleId === 2) {
+        if (user && user.role) {
+          const roleId = user.role.role_id;
+          if (roleId === 1) {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (roleId === 2) {
             this.router.navigate(['/moderator/dashboard']);
           } else {
             this.router.navigate(['/customer/cart']);
