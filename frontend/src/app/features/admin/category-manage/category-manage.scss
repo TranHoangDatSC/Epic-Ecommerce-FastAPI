@@ -45,6 +45,32 @@
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+
+  .btn-primary-custom {
+    background: rgba(99, 179, 237, 0.15) !important;
+    color: #63b3ed !important; 
+    border: 1px solid rgba(99, 179, 237, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+    
+    &:hover {
+      background: #63b3ed !important;
+      color: #1a202c !important; 
+      box-shadow: 0 0 12px rgba(99, 179, 237, 0.4);
+    }
+  }
+
+  .btn-danger-custom {
+    background: rgba(245, 101, 101, 0.15) !important; 
+    color: #fc8181 !important; 
+    border: 1px solid rgba(245, 101, 101, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+
+    &:hover {
+      background: #f56565 !important;
+      color: white !important;
+      box-shadow: 0 0 12px rgba(245, 101, 101, 0.4);
+    }
+  }
 }
 
 // Modal styles
