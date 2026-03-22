@@ -65,6 +65,7 @@ class User(Base):
     shopping_cart = relationship("ShoppingCart", back_populates="user", uselist=False, cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="reviewer")
     transactions = relationship("Transaction", back_populates="user")
+    feedbacks = relationship("SystemFeedback", back_populates="user")
 
     __table_args__ = (
         Index('idx_user_username_active', 'username', postgresql_where=(is_deleted == False)),
@@ -410,4 +411,26 @@ class ViolationLog(Base):
     __table_args__ = (
         Index('idx_violation_log_user', 'user_id'),
         Index('idx_violation_log_created_at', 'created_at'),
+    )
+
+
+class SystemFeedback(Base):
+    """SystemFeedback model - stores user/guest feedback and contact messages"""
+    __tablename__ = "system_feedback"
+
+    feedback_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=True, index=True)
+    guest_email = Column(String(255), nullable=True)
+    subject = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    status = Column(SmallInteger, default=0) # 0: Pending, 1: Reviewed, 2: Resolved
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = relationship("User", back_populates="feedbacks")
+
+    __table_args__ = (
+        Index('idx_system_feedback_user', 'user_id'),
+        Index('idx_system_feedback_status', 'status'),
+        Index('idx_system_feedback_created_at', 'created_at'),
     )

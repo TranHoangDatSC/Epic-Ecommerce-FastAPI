@@ -538,3 +538,35 @@ class ViolationLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ==================== System Feedback & Admin Schemas ====================
+
+class SystemFeedbackCreate(BaseModel):
+    """System feedback creation schema"""
+    guest_email: Optional[EmailStr] = None
+    subject: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+
+
+class SystemFeedbackResponse(BaseModel):
+    """System feedback response schema"""
+    feedback_id: int
+    user_id: Optional[int]
+    guest_email: Optional[str]
+    subject: str
+    content: str
+    status: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdminDashboardStats(BaseModel):
+    """Admin dashboard stats schema"""
+    total_users: int
+    total_revenue: Decimal
+    pending_products: int
+    total_orders: int
+

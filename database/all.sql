@@ -339,6 +339,36 @@ CREATE INDEX idx_system_log_user ON system_log(user_id);
 CREATE INDEX idx_system_log_action ON system_log(action);
 CREATE INDEX idx_system_log_created_at ON system_log(created_at);
 
+-- Violation logs table
+CREATE TABLE violation_log (
+    log_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    reason VARCHAR(500) NOT NULL,
+    action_taken VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
+);
+
+-- Indexes for violation logs
+CREATE INDEX idx_violation_log_user ON violation_log(user_id);
+CREATE INDEX idx_violation_log_created_at ON violation_log(created_at);
+
+-- System feedback table
+CREATE TABLE system_feedback (
+    feedback_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES "user"(user_id) ON DELETE SET NULL,
+    guest_email VARCHAR(255),
+    subject VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    status SMALLINT DEFAULT 0, -- 0: Pending, 1: Reviewed, 2: Resolved
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for system feedback
+CREATE INDEX idx_system_feedback_user ON system_feedback(user_id);
+CREATE INDEX idx_system_feedback_status ON system_feedback(status);
+CREATE INDEX idx_system_feedback_created_at ON system_feedback(created_at);
+
 -- ==============================================================================
 -- 3. FUNCTIONS AND TRIGGERS
 -- ==============================================================================
@@ -469,28 +499,24 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- Audit functions
 CREATE OR REPLACE FUNCTION log_system_action(
     p_user_id INT,
-    p_action_type VARCHAR(50),
-    p_table_name VARCHAR(50),
-    p_record_id INT DEFAULT NULL,
-    p_description TEXT DEFAULT NULL
+    p_action VARCHAR(100),
+    p_resource_type VARCHAR(50),
+    p_resource_id INT DEFAULT NULL,
+    p_details TEXT DEFAULT NULL
 )
 RETURNS VOID AS $$
 DECLARE
     client_ip INET;
-    user_agent TEXT;
 BEGIN
     BEGIN
         client_ip := inet_client_addr();
-        user_agent := current_setting('request.header.user-agent', TRUE);
     EXCEPTION
         WHEN OTHERS THEN
             client_ip := NULL;
-            user_agent := NULL;
     END;
-    INSERT INTO system_log (user_id, action_type, table_name, record_id, description, log_time)
-    VALUES (p_user_id, UPPER(trim(p_action_type)), LOWER(trim(p_table_name)), p_record_id,
-        CASE WHEN p_description IS NOT NULL THEN trim(p_description) WHEN client_ip IS NOT NULL THEN 'IP: ' || client_ip::TEXT ELSE 'System action' END,
-        CURRENT_TIMESTAMP);
+    INSERT INTO system_log (user_id, action, resource_type, resource_id, details, ip_address, created_at)
+    VALUES (p_user_id, UPPER(trim(p_action)), LOWER(trim(p_resource_type)), p_resource_id,
+        trim(p_details), client_ip::VARCHAR(45), CURRENT_TIMESTAMP);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -518,25 +544,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE OR REPLACE FUNCTION get_audit_trail(p_table_name VARCHAR(50), p_record_id INT, p_limit INT DEFAULT 50)
-RETURNS TABLE (log_id BIGINT, user_id INT, username VARCHAR(50), action_type VARCHAR(50), description TEXT, log_time TIMESTAMP) AS $$
+CREATE OR REPLACE FUNCTION get_audit_trail(p_resource_type VARCHAR(50), p_resource_id INT, p_limit INT DEFAULT 50)
+RETURNS TABLE (log_id BIGINT, user_id INT, username VARCHAR(50), action VARCHAR(100), details TEXT, created_at TIMESTAMP) AS $$
 BEGIN
     RETURN QUERY
-    SELECT sl.log_id, sl.user_id, u.username, sl.action_type, sl.description, sl.log_time
+    SELECT sl.log_id, sl.user_id, u.username, sl.action, sl.details, sl.created_at
     FROM system_log sl
     LEFT JOIN "user" u ON sl.user_id = u.user_id
-    WHERE sl.table_name = LOWER(trim(p_table_name)) AND sl.record_id = p_record_id
-    ORDER BY sl.log_time DESC
+    WHERE sl.resource_type = LOWER(trim(p_resource_type)) AND sl.resource_id = p_resource_id
+    ORDER BY sl.created_at DESC
     LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE OR REPLACE FUNCTION clean_old_audit_logs(p_days_old INT DEFAULT 90)
+CREATE OR REPLACE FUNCTION clean_old_audit_logs(p_days_old INT DEFAULT 180)
 RETURNS INTEGER AS $$
 DECLARE
     deleted_count INTEGER;
 BEGIN
-    DELETE FROM system_log WHERE log_time < CURRENT_TIMESTAMP - INTERVAL '1 day' * p_days_old;
+    DELETE FROM system_log WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '1 day' * p_days_old;
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     PERFORM log_system_action(NULL, 'MAINTENANCE', 'system_log', NULL, 'Cleaned ' || deleted_count || ' audit log entries older than ' || p_days_old || ' days');
     RETURN deleted_count;
@@ -571,15 +597,15 @@ INSERT INTO user_role (user_id, role_id) VALUES
 (1, 1), (2, 2), (3, 3), (4, 3);
 
 -- Categories
-INSERT INTO category (category_name, description, sort_order, icon_url) VALUES
-('Đồ điện tử', 'Electronic devices and gadgets', 1, 'electronics.png'),
-('Trang trí', 'Decorative items for home', 2, 'decor.png'),
-('Quần áo', 'Clothing and apparel', 3, 'clothing.png'),
-('Thời trang', 'Fashion accessories', 4, 'fashion.png'),
-('Đồ chơi', 'Toys and games', 5, 'toys.png'),
-('Đồ gia dụng', 'Household items', 6, 'household.png'),
-('Sách cũ', 'Used books and literature', 7, 'books.png'),
-('Phụ kiện', 'Accessories and miscellaneous', 8, 'accessories.png');
+INSERT INTO category (name, description) VALUES
+('Đồ điện tử', 'Electronic devices and gadgets'),
+('Trang trí', 'Decorative items for home'),
+('Quần áo', 'Clothing and apparel'),
+('Thời trang', 'Fashion accessories'),
+('Đồ chơi', 'Toys and games'),
+('Đồ gia dụng', 'Household items'),
+('Sách cũ', 'Used books and literature'),
+('Phụ kiện', 'Accessories and miscellaneous');
 
 -- Payment methods
 INSERT INTO payment_method (method_name, is_online) VALUES
