@@ -4,7 +4,7 @@ from typing import List, Optional
 from app import models, schemas
 from app.database import get_db
 from app.crud.moderator import moderator as crud_moderator
-from app.core.security import get_current_user, get_current_moderator
+from app.core.dependencies import get_current_user, get_current_moderator
 from app.core.exceptions import NotFoundException, ValidationException
 
 router = APIRouter(prefix="/moderator", tags=["moderator"])

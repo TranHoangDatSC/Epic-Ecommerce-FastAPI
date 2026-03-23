@@ -144,22 +144,13 @@ export class HeaderComponent {
   cartCount$ = this.cartService.cartCount$;
 
   login() {
-    this.authService.login(this.email, this.password).subscribe({
-      next: (user) => {
+    const returnUrl = this.router.url || '/home';
+
+    this.authService.login(this.email, this.password, returnUrl).subscribe({
+      next: () => {
         document.getElementById('closeLoginModal')?.click();
         this.email = '';
         this.password = '';
-        // Redirect based on role
-        if (user && user.role) {
-          const roleId = user.role.role_id;
-          if (roleId === 1) {
-            this.router.navigate(['/admin/dashboard']);
-          } else if (roleId === 2) {
-            this.router.navigate(['/moderator/dashboard']);
-          } else {
-            this.router.navigate(['/customer/cart']);
-          }
-        }
       },
       error: (err: any) => {
         alert(err.error?.detail || 'Login failed');

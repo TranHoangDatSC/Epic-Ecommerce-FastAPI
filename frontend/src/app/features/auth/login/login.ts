@@ -51,28 +51,13 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
-      this.authService.login(this.loginForm.value).subscribe({
-        next: (response: any) => {
-          console.log('Login successful', response);
-          this.authService.setToken(response.access_token);
-          // Decode token to get user data (simple decode, in production use proper JWT library)
-          const payload = JSON.parse(atob(response.access_token.split('.')[1]));
-          this.authService.setUserData(payload);
-          
-          let roleIds: number[] = [];
-          if (Array.isArray(payload.role_ids)) {
-            roleIds = payload.role_ids;
-          } else if (payload.role_id !== undefined) {
-            roleIds = [payload.role_id];
-          }
+      const returnUrl = this.router.url || '/home';
 
-          if (roleIds.includes(1)) {
-            window.location.href = '/admin/dashboard';
-          } else if (roleIds.includes(2)) {
-            window.location.href = '/moderator/dashboard';
-          } else {
-            window.location.href = '/';
-          }
+      this.authService.login(this.loginForm.value.email, this.loginForm.value.password, returnUrl).subscribe({
+        next: () => {
+          console.log('Login successful');
+          this.loginForm.reset();
+          document.getElementById('closeLoginModal')?.click();
         },
         error: (error) => {
           console.error('Login failed', error);

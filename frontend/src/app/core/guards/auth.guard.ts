@@ -17,16 +17,35 @@ export const authGuard: CanActivateFn = (route, state) => {
 export const adminGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  
-  const role = authService.getUserRole();
-  const isAuthenticated = authService.isAuthenticated();
-  console.log('[Guard] Role check:', role);
 
-  if (isAuthenticated && role === 1) {
+  const role = Number(authService.getUserRole());
+
+  if (role === 1) {
     return true;
   }
-  console.warn('Truy cập bị chặn: Không phải Admin!');
-  router.navigate(['/auth/login']); 
+
+  router.navigate(['/home']);
+  return false;
+};
+
+export const moderatorGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const isAuthenticated = authService.isAuthenticated();
+  const role = Number(authService.getUserRole());
+
+  if (!isAuthenticated) {
+    router.navigate(['/auth/login']);
+    return false;
+  }
+
+  if (role === 1 || role === 2) {
+    return true;
+  }
+
+  alert('Bạn không có quyền truy cập trang moderator.');
+  router.navigate(['/home']);
   return false;
 };
 

@@ -107,25 +107,52 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
-def get_current_moderator(current_user: models.User = Depends(get_current_user)) -> models.User:
-    """Get current user and verify they are a moderator (Admin or Mod)"""
-    # Check if user has role_id 1 (Admin) or 2 (Mod)
-    if current_user.role_id not in (1, 2):
+def get_current_moderator(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> models.User:
+    """Get current user from DB and verify they are a moderator (Admin or Mod)"""
+    db_user = db.query(models.User).filter(
+        models.User.user_id == current_user.user_id,
+        models.User.is_deleted == False
+    ).first()
+
+    if not db_user or not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account not active or not found"
+        )
+
+    if db_user.role_id not in (1, 2):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions - Admin or Mod role required"
         )
 
-    return current_user
+    return db_user
 
 
-def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
-    """Get current user and verify they are an admin (Role ID 1)"""
-    if current_user.role_id != 1:
+def get_current_admin(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> models.User:
+    """Get current user from DB and verify they are an admin (Role ID 1)"""
+    db_user = db.query(models.User).filter(
+        models.User.user_id == current_user.user_id,
+        models.User.is_deleted == False
+    ).first()
+
+    if not db_user or not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin role required"
+            detail="Account not active or not found"
         )
 
-    return current_user
+    if db_user.role_id != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cút ngay!"
+        )
+
+    return db_user
 

@@ -68,11 +68,8 @@ async def get_current_user_optional(
 def check_user_role(required_roles: List[int]):
     """Check if user has one of the required roles"""
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        user_roles = [role.role_id for role in current_user.user_roles]
-        
-        for role_id in required_roles:
-            if role_id in user_roles:
-                return current_user
+        if current_user.role_id in required_roles:
+            return current_user
         
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -84,8 +81,7 @@ def check_user_role(required_roles: List[int]):
 
 def check_admin(user: User = Depends(get_current_user)) -> User:
     """Check if user is admin (role_id = 1)"""
-    user_roles = [role.role_id for role in user.user_roles]
-    if 1 not in user_roles:  # 1 = Admin
+    if user.role_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cút! Chỉ Admin mới được vào đây!"
@@ -95,13 +91,17 @@ def check_admin(user: User = Depends(get_current_user)) -> User:
 
 def check_moderator(user: User = Depends(get_current_user)) -> User:
     """Check if user is moderator or admin (role_id = 2 or 1)"""
-    user_roles = [role.role_id for role in user.user_roles]
-    if 2 not in user_roles and 1 not in user_roles:  # 2 = Moderator, 1 = Admin
+    if user.role_id not in [1, 2]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cút! Chỉ Kiểm duyệt viên mới được vào đây."
+            detail="Cút! Chỉ Moderator hoặc Admin mới được vào đây!"
         )
     return user
+
+
+# Aliases for backward compatibility
+get_current_admin = check_admin
+get_current_moderator = check_moderator
 
 
 def check_seller(user: User = Depends(get_current_user)) -> User:

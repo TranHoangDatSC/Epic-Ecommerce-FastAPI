@@ -26,19 +26,30 @@ export class AuthService {
 
   private checkAuth() {
     const token = sessionStorage.getItem('token');
-    const user = sessionStorage.getItem('user');
-    if (token && user) {
-      const parsedUser = JSON.parse(user);
-      this.currentUser.set(parsedUser);
-      this.isLoggedIn.set(true);
-    } else if (token) {
-      this.getUserProfile().subscribe({
-        error: () => this.logout()
-      });
+    const cachedUser = sessionStorage.getItem('user');
+
+    if (!token) {
+      this.currentUser.set(null);
+      this.isLoggedIn.set(false);
+      return;
     }
+
+    if (cachedUser) {
+      try {
+        this.currentUser.set(JSON.parse(cachedUser));
+        this.isLoggedIn.set(true);
+      } catch {
+        sessionStorage.removeItem('user');
+      }
+    }
+
+    // Luôn refresh user từ API /me để tránh dữ liệu cũ trong sessionStorage
+    this.getUserProfile().subscribe({
+      error: () => this.logout()
+    });
   }
 
-  login(email: string, password: string): Observable<any> {
+  login(email: string, password: string, returnUrl: string = '/home'): Observable<any> {
     const formData = new FormData();
     formData.append('username', email);
     formData.append('password', password);
@@ -47,7 +58,17 @@ export class AuthService {
       tap(res => {
         sessionStorage.setItem('token', res.access_token);
       }),
-      switchMap(() => this.getUserProfile())
+      switchMap(() => this.getUserProfile()),
+      tap((user) => {
+        const roleId = Number(user.role_id);
+        if (roleId === 1) {
+          this.router.navigate(['/admin/dashboard']);
+        } else if (roleId === 2) {
+          this.router.navigate(['/moderator/dashboard']);
+        } else {
+          this.router.navigate(['/home']);
+        }
+      })
     );
   }
 
@@ -69,11 +90,12 @@ export class AuthService {
   getUserRole(): number | null {
     const user = this.currentUser();
     const data = user ? user : JSON.parse(sessionStorage.getItem('user') || '{}');
-    const role = data.role_id ?? 
-                data.role ?? 
-                (Array.isArray(data.role_ids) ? data.role_ids[0] : null);
 
-    return role ? Number(role) : null;
+    if (data && data.role_id !== undefined && data.role_id !== null) {
+      return Number(data.role_id);
+    }
+
+    return null;
   }
 
   logout() {

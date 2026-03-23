@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, guestGuard, authGuard } from './core/guards/auth.guard'; // Thêm authGuard vào đây
+import { adminGuard, guestGuard, authGuard, moderatorGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -26,6 +26,12 @@ export const routes: Routes = [
     path: 'admin', 
     canActivate: [adminGuard], 
     loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes) 
+  },
+  // Nhóm Moderator
+  {
+    path: 'moderator',
+    canActivate: [moderatorGuard],
+    loadChildren: () => import('./features/moderator/moderator.routes').then(m => m.moderatorRoutes)
   },
 
   { path: 'contact', loadComponent: () => import('./features/contact/contact').then((m) => m.ContactComponent) },
