@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -10,6 +11,8 @@ import { RouterModule, Router } from '@angular/router';
   styleUrl: './admin-layout.scss'
 })
 export class AdminLayoutComponent {
+  private authService = inject(AuthService);
+
   navSections = [
     {
       title: 'HỆ THỐNG',
@@ -38,8 +41,6 @@ export class AdminLayoutComponent {
   constructor(private router: Router) {}
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this.router.navigate(['/auth/login']);
+    this.authService.logout();
   }
 }

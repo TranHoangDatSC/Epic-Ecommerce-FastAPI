@@ -80,6 +80,6 @@ export class AuthService {
     sessionStorage.clear();
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/home']);
   }
 }
