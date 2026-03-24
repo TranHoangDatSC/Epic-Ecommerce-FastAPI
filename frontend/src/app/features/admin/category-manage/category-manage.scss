@@ -9,6 +9,12 @@
   justify-content: center;
   font-size: 1.5rem;
   color: #48bb78;
+
+  &.trash-icon {
+    background: linear-gradient(135deg, #2d1810 0%, #451a03 100%);
+    border-color: #92400e;
+    color: #f59e0b;
+  }
 }
 
 .cat-name {
@@ -69,6 +75,37 @@
       background: #f56565 !important;
       color: white !important;
       box-shadow: 0 0 12px rgba(245, 101, 101, 0.4);
+    }
+  }
+
+  .btn-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+
+    &:hover {
+      background: #f59e0b !important;
+      color: #1a202c !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+  }
+}
+
+// Nav tabs styles
+.nav-tabs {
+  .nav-link {
+    transition: all 0.3s ease;
+
+    &.active {
+      background: rgba(72, 187, 120, 0.1) !important;
+      color: #48bb78 !important;
+      border-bottom: 2px solid #48bb78 !important;
+    }
+
+    &:hover:not(.active) {
+      color: #e2e8f0 !important;
+      background: rgba(255, 255, 255, 0.05) !important;
     }
   }
 }

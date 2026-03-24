@@ -12,7 +12,8 @@ router = APIRouter(prefix="/categories", tags=["Category Management"])
 async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    active_only: bool = Query(True),
+    active_only: bool = Query(False),
+    include_deleted: bool = Query(False),
     db: Session = Depends(get_db)
 ) -> list[CategoryResponse]:
     """
@@ -21,8 +22,12 @@ async def list_categories(
     - **skip**: Number of records to skip
     - **limit**: Maximum number of records to return
     - **active_only**: Filter by active status
+    - **include_deleted**: Include soft deleted categories
     """
-    query = db.query(Category).filter(Category.is_deleted == False)
+    query = db.query(Category)
+    
+    if not include_deleted:
+        query = query.filter(Category.is_deleted == False)
     
     if active_only:
         query = query.filter(Category.is_active == True)
@@ -229,3 +234,35 @@ async def hard_delete_category(
         )
     
     crud_category.hard_delete(db, category_id=category_id)
+
+
+@router.post("/{category_id}/restore", response_model=CategoryResponse)
+async def restore_category(
+    category_id: int,
+    admin_user: User = Depends(check_admin),
+    db: Session = Depends(get_db)
+) -> CategoryResponse:
+    """
+    Restore a soft deleted category (Admin only).
+    
+    Restores the category from trash.
+    """
+    category = crud_category.get_by_id_with_deleted(db, category_id=category_id)
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+    if not category.is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Danh mục không ở trạng thái xóa mềm"
+        )
+    
+    category.is_deleted = False
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category

@@ -14,6 +14,20 @@
 
   <!-- Table Container -->
   <div class="admin-table-container position-relative">
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3" style="border-bottom: 1px solid #374151;">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'active'" (click)="switchTab('active')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
+          <i class="bi bi-tag-fill me-2"></i>Đang hoạt động
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'trash'" (click)="switchTab('trash')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
+          <i class="bi bi-trash3 me-2"></i>Thùng rác
+        </a>
+      </li>
+    </ul>
+
     <div *ngIf="isLoading" class="loading-overlay">
       <div class="spinner-border" style="color: #48bb78;" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -34,8 +48,8 @@
           <tr *ngFor="let cat of categories">
             <td>
               <div class="d-flex align-items-center gap-3">
-                <div class="cat-icon">
-                  <i class="bi bi-tag-fill"></i>
+                <div class="cat-icon" [class.trash-icon]="activeTab === 'trash'">
+                  <i class="bi" [class]="activeTab === 'trash' ? 'bi-trash3' : 'bi-tag-fill'"></i>
                 </div>
                 <div>
                   <div class="cat-name">{{ cat.name }}</div>
@@ -54,14 +68,23 @@
             <td>
               <span *ngIf="cat.is_active" class="badge bg-success">Hiển thị</span>
               <span *ngIf="!cat.is_active" class="badge bg-danger">Đã ẩn</span>
+              <span *ngIf="activeTab === 'trash'" class="badge bg-warning text-dark ms-2">
+                <i class="bi bi-trash3 me-1"></i>Đã xóa
+              </span>
             </td>
             <td>
               <div class="action-buttons">
-                <button (click)="openModal(cat)" class="btn btn-primary-custom btn-sm">
+                <button *ngIf="activeTab === 'active'" (click)="openModal(cat)" class="btn btn-primary-custom btn-sm">
                   <i class="bi bi-pencil-square"></i> Chọn
                 </button>
-                <button (click)="deleteCategory(cat.category_id)" class="btn btn-danger-custom btn-sm">
+                <button *ngIf="activeTab === 'active'" (click)="deleteCategory(cat.category_id)" class="btn btn-danger-custom btn-sm">
                   <i class="bi bi-trash3"></i>
+                </button>
+                <button *ngIf="activeTab === 'trash'" (click)="restoreCategory(cat.category_id)" class="btn btn-warning btn-sm">
+                  <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                </button>
+                <button *ngIf="activeTab === 'trash'" (click)="hardDeleteCategory(cat.category_id)" class="btn btn-danger-custom btn-sm">
+                  <i class="bi bi-x-circle"></i> Xóa vĩnh viễn
                 </button>
               </div>
             </td>
@@ -96,7 +119,7 @@
               <label class="form-label dark-theme">Mô tả</label>
               <textarea class="form-control dark-theme" [(ngModel)]="categoryForm.description" rows="4" placeholder="Nhập mô tả chi tiết..."></textarea>
             </div>
-            <div class="col-12">
+            <div class="col-12" *ngIf="editingCategory">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="isActiveCat" [(ngModel)]="categoryForm.is_active">
                 <label class="form-check-label text-white" for="isActiveCat">Hiển thị danh mục này</label>

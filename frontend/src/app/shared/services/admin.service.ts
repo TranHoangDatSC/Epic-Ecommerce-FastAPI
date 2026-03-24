@@ -50,8 +50,10 @@ export class AdminService {
   }
 
   // Category Management
-  getCategories(activeOnly: boolean = false): Observable<any[]> {
-    let params = new HttpParams().set('active_only', activeOnly.toString());
+  getCategories(activeOnly: boolean = false, includeDeleted: boolean = false): Observable<any[]> {
+    let params = new HttpParams()
+      .set('active_only', activeOnly.toString())
+      .set('include_deleted', includeDeleted.toString());
     return this.http.get<any[]>(`${this.apiUrl}/categories`, { params });
   }
 
@@ -65,5 +67,13 @@ export class AdminService {
 
   deleteCategory(categoryId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/categories/${categoryId}`);
+  }
+
+  hardDeleteCategory(categoryId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/categories/${categoryId}/hard-delete`);
+  }
+
+  restoreCategory(categoryId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/categories/${categoryId}/restore`, {});
   }
 }

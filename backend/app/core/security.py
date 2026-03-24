@@ -148,6 +148,8 @@ def get_current_admin(
             detail="Account not active or not found"
         )
 
+    print(f"Checking Admin: {current_user.email} - Role: {current_user.role_id}")
+
     if db_user.role_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

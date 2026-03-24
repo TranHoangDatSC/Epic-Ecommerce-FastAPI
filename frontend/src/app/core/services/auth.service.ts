@@ -91,11 +91,11 @@ export class AuthService {
     const user = this.currentUser();
     const data = user ? user : JSON.parse(sessionStorage.getItem('user') || '{}');
 
-    if (data && data.role_id !== undefined && data.role_id !== null) {
-      return Number(data.role_id);
+    if (!data || data.role_id === undefined || data.role_id === null) {
+      return null;
     }
 
-    return null;
+    return Number(data.role_id);
   }
 
   logout() {
