@@ -153,12 +153,54 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         db.refresh(user)
         return user
 
-    def get_violation_logs(self, db: Session, *, user_id: Optional[int] = None) -> List[models.ViolationLog]:
-        """Get violation logs, optionally filtered by user"""
-        query = db.query(models.ViolationLog)
-        if user_id:
-            query = query.filter(models.ViolationLog.user_id == user_id)
-        return query.order_by(models.ViolationLog.created_at.desc()).all()
+    def get_moderators(self, db: Session) -> List[models.User]:
+        """Get all moderators (role_id=2)"""
+        return db.query(models.User).join(models.UserRole).filter(
+            and_(
+                models.UserRole.role_id == 2,
+                models.User.is_deleted == False
+            )
+        ).distinct().all()
+
+    def toggle_moderator_status(
+        self,
+        db: Session,
+        *,
+        user_id: int,
+        is_active: bool,
+        reason: str,
+        admin_id: int
+    ) -> models.User:
+        """Activate/deactivate a moderator account (only for role_id=2 users)."""
+        user = db.query(models.User).filter(
+            and_(models.User.user_id == user_id, models.User.is_deleted == False)
+        ).first()
+
+        if not user:
+            raise NotFoundException("User not found")
+
+        # Only allow changing status for users with role_id=2 (Moderator role)
+        if not any(ur.role_id == 2 for ur in user.user_roles):
+            raise ValidationException("Can only change status for users with Moderator role (role_id=2)")
+
+        # If no state change, do nothing (idempotent)
+        if user.is_active == is_active:
+            action = "ACTIVATE" if is_active else "DEACTIVATE"
+            raise ValidationException(f"Moderator is already {action.lower()}")
+
+        user.is_active = is_active
+        action_taken = "ACTIVATE_MODERATOR" if is_active else "DEACTIVATE_MODERATOR"
+
+        violation_log = models.ViolationLog(
+            user_id=user_id,
+            reason=reason,
+            action_taken=action_taken
+        )
+        db.add(violation_log)
+
+        db.commit()
+        db.refresh(user)
+        return user
 
 
 moderator = CRUDModerator(models.Product)

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from app.models import User, Order, Product, SystemFeedback
 from app.schemas import AdminDashboardStats, SystemFeedbackResponse
 from typing import List, Optional
@@ -37,18 +37,45 @@ def get_users_list(db: Session, skip: int = 0, limit: int = 20) -> List[User]:
     """Get list of users with pagination"""
     return db.query(User).filter(User.is_deleted == False).offset(skip).limit(limit).all()
 
-def create_feedback(db: Session, feedback_in: SystemFeedbackResponse, user_id: Optional[int] = None) -> SystemFeedback:
-    """Create a new system feedback/contact message"""
-    # Note: feedback_in is SystemFeedbackCreate in reality, but we use dict() anyway
-    db_feedback = SystemFeedback(
-        user_id=user_id,
-        guest_email=getattr(feedback_in, 'guest_email', None),
-        subject=feedback_in.subject,
-        content=feedback_in.content,
-        status=0
+def create_moderator(db: Session, moderator_data: dict, admin_id: int) -> User:
+    """Create a new moderator user"""
+    from app.core.security import get_password_hash
+    from app.models import UserRole
+    from app.core.utils import generate_random_key
+
+    # Check if username or email already exists
+    existing_user = db.query(User).filter(
+        or_(User.username == moderator_data['username'], User.email == moderator_data['email'])
+    ).first()
+
+    if existing_user:
+        if existing_user.username == moderator_data['username']:
+            raise ValueError("Username already exists")
+        else:
+            raise ValueError("Email already exists")
+
+    # Create new user with moderator role
+    hashed_password = get_password_hash(moderator_data['password'])
+    new_user = User(
+        username=moderator_data['username'],
+        email=moderator_data['email'],
+        password_hash=hashed_password,
+        random_key=generate_random_key(),
+        full_name=moderator_data['full_name'],
+        phone_number=moderator_data.get('phone_number'),
+        address=moderator_data.get('address'),
+        is_active=True,
+        role_id=2  # Moderator role
     )
-    db.add(db_feedback)
+
+    db.add(new_user)
+    db.flush()  # Get user_id without committing
+
+    # Add moderator role to user_roles table
+    user_role = UserRole(user_id=new_user.user_id, role_id=2)
+    db.add(user_role)
+
     db.commit()
-    db.refresh(db_feedback)
-    return db_feedback
+    db.refresh(new_user)
+    return new_user
 
