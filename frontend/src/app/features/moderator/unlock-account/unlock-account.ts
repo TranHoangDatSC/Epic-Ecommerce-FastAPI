@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ModeratorService } from '../../../shared/services/moderator.service';
 
 interface UserDetail {
   user_id: number;
+  username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   role_id: number;
   is_active: boolean;
   created_at?: string;
@@ -22,60 +22,57 @@ interface UserDetail {
   styleUrl: './unlock-account.scss'
 })
 export class UnlockAccountComponent implements OnInit {
-  userId: number | null = null;
-  lookupId: number | null = null;
-  user: UserDetail | null = null;
+  users: UserDetail[] = [];
   isLoading = false;
   message: string | null = null;
 
   constructor(
-    private route: ActivatedRoute,
     private router: Router,
     private moderatorService: ModeratorService
   ) {}
 
   ngOnInit() {
-    this.userId = Number(this.route.snapshot.paramMap.get('userId')) || null;
-    if (this.userId) {
-      this.lookupId = this.userId;
-      this.loadUser();
-    }
+    this.loadUsers();
   }
 
-  loadUser() {
-    const resolutionId = this.lookupId || this.userId;
-    if (!resolutionId) {
-      this.user = null;
-      return;
-    }
-
+  loadUsers() {
     this.isLoading = true;
-    this.moderatorService.getUser(resolutionId).subscribe({
-      next: (user) => {
-        this.user = user as UserDetail;
+    this.message = null;
+    this.moderatorService.getUsers().subscribe({
+      next: (users) => {
+        this.users = users as UserDetail[];
         this.isLoading = false;
-        this.message = null;
       },
       error: (err) => {
-        console.error('Failed to load user:', err);
-        this.message = 'Không thể tải thông tin người dùng.';
-        this.user = null;
+        console.error('Error loading users:', err);
+        this.message = 'Không thể tải danh sách người dùng.';
+        this.users = [];
         this.isLoading = false;
       }
     });
   }
 
-  unlockAccount() {
-    if (!this.userId) return;
+  toggleUserStatus(user: UserDetail) {
     this.isLoading = true;
-    this.moderatorService.unbanUser(this.userId, 'Unbanned by moderator').subscribe({
+    this.message = null;
+
+    const reason = user.is_active ? 'Locked by moderator' : 'Unlocked by moderator';
+    const request$ = user.is_active
+      ? this.moderatorService.banUser(user.user_id, reason)
+      : this.moderatorService.unbanUser(user.user_id, reason);
+
+    request$.subscribe({
       next: () => {
-        this.message = 'Tài khoản đã được mở khóa thành công.';
-        this.loadUser();
+        this.message = user.is_active
+          ? 'Tài khoản đã bị khóa thành công.'
+          : 'Tài khoản đã được mở khóa thành công.';
+        this.loadUsers();
       },
       error: (err) => {
-        console.error('Failed to unlock user:', err);
-        this.message = 'Mở khóa tài khoản không thành công.';
+        console.error('Error changing user status:', err);
+        this.message = user.is_active
+          ? 'Khóa tài khoản không thành công.'
+          : 'Mở khóa tài khoản không thành công.';
         this.isLoading = false;
       }
     });

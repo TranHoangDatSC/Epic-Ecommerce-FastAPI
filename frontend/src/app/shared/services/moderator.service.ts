@@ -80,6 +80,10 @@ export class ModeratorService {
     return this.http.post(`${this.apiUrl}/users/${userId}/unban`, body);
   }
 
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users`);
+  }
+
   getUser(userId: number): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/users/${userId}`);
   }

@@ -85,8 +85,10 @@ def ban_user(
             moderator_id=current_user.user_id
         )
         return {"message": "User deactivated successfully"}
-    except (NotFoundException, ValidationException) as e:
-        raise e
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValidationException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/users/{user_id}/unban")
@@ -106,8 +108,19 @@ def unban_user(
             moderator_id=current_user.user_id
         )
         return {"message": "User activated successfully"}
-    except (NotFoundException, ValidationException) as e:
-        raise e
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValidationException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/users", response_model=List[schemas.UserResponse])
+def get_users(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_moderator)
+):
+    """Get all users with role_id=3 for moderator management."""
+    return crud_moderator.get_users_by_role(db, role_id=3)
 
 
 @router.post("/users/{user_id}/lock-unlock")

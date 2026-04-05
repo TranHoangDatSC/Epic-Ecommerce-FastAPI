@@ -41,6 +41,15 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
             and_(models.Product.status == 0, models.Product.is_deleted == False)
         ).all()
 
+    def get_users_by_role(self, db: Session, *, role_id: int) -> List[models.User]:
+        """Get active users by role_id through user_role mapping."""
+        return db.query(models.User).join(models.UserRole).filter(
+            and_(
+                models.UserRole.role_id == role_id,
+                models.User.is_deleted == False
+            )
+        ).distinct().all()
+
     def handle_violation_report(self, db: Session, *, review_id: int, moderator_id: int) -> models.Review:
         """Handle violation report for a review"""
         review = db.query(models.Review).filter(

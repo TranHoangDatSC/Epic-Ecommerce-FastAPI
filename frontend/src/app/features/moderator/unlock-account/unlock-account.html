@@ -5,68 +5,62 @@
   </div>
 
   <div class="unlock-body">
-    <div class="lookup">
-      <label for="userId">Tìm tài khoản theo ID</label>
-      <div class="lookup-row">
-        <input
-          id="userId"
-          type="number"
-          class="form-control"
-          [(ngModel)]="lookupId"
-          placeholder="Nhập user ID"
-        />
-        <button class="btn btn-primary" (click)="loadUser()" [disabled]="!lookupId || isLoading">
-          Tìm
-        </button>
-      </div>
-    </div>
-
     <div *ngIf="message" class="alert alert-info">{{ message }}</div>
 
     <div *ngIf="isLoading" class="loading">
       <div class="spinner-border" role="status"></div>
-      <span>Đang tải...</span>
+      <span>Đang tải danh sách người dùng...</span>
     </div>
 
-    <div *ngIf="!isLoading && user" class="user-card">
-      <div class="user-header">
-        <div>
-          <h3>{{ user.first_name }} {{ user.last_name }}</h3>
-          <p class="user-meta">ID: {{ user.user_id }} • {{ user.email }}</p>
-        </div>
-        <span class="status" [ngClass]="user.is_active ? 'active' : 'banned'">
-          {{ user.is_active ? 'Đang hoạt động' : 'Đã khóa' }}
-        </span>
-      </div>
-
-      <div class="user-details">
-        <div>
-          <strong>Role ID:</strong> {{ user.role_id }}
-        </div>
-        <div *ngIf="user.created_at">
-          <strong>Tham gia từ:</strong> {{ user.created_at | date:'dd/MM/yyyy' }}
-        </div>
-      </div>
-
-      <div class="actions">
-        <button
-          class="btn btn-primary"
-          (click)="unlockAccount()"
-          [disabled]="isLoading || user.is_active">
-          <i class="fas fa-unlock me-2"></i>
-          {{ user.is_active ? 'Đã mở khóa' : 'Mở khóa tài khoản' }}
-        </button>
-
-        <button class="btn btn-secondary" (click)="goBack()">
-          <i class="fas fa-arrow-left me-2"></i>
-          Quay lại Dashboard
-        </button>
+    <div *ngIf="!isLoading && users.length > 0" class="user-table">
+      <div class="table-responsive">
+        <table class="table table-dark-custom align-middle mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên</th>
+              <th>Email</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>#{{ user.user_id }}</td>
+              <td>
+                <div class="fw-bold">{{ user.username }}</div>
+                <div class="text-muted small">{{ user.full_name }}</div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span [class]="user.is_active ? 'badge bg-success' : 'badge bg-danger'">
+                  {{ user.is_active ? 'Đang hoạt động' : 'Đã khóa' }}
+                </span>
+              </td>
+              <td>
+                <button
+                  class="btn btn-sm"
+                  [ngClass]="user.is_active ? 'btn-warning' : 'btn-success'"
+                  (click)="toggleUserStatus(user)"
+                  [disabled]="isLoading">
+                  {{ user.is_active ? 'Khóa' : 'Mở khóa' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <div *ngIf="!isLoading && !user" class="no-user">
-      <p>Không tìm thấy tài khoản.</p>
-      <button class="btn btn-secondary" (click)="goBack()">Quay lại</button>
+    <div *ngIf="!isLoading && users.length === 0" class="alert alert-secondary">
+      Không có người dùng role_id = 3 nào.
+    </div>
+
+    <div class="actions mt-4">
+      <button class="btn btn-secondary" (click)="goBack()">
+        <i class="fas fa-arrow-left me-2"></i>
+        Quay lại Dashboard
+      </button>
     </div>
   </div>
 </div>
