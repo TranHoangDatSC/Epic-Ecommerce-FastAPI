@@ -12,10 +12,20 @@ import { AdminService } from '../../../shared/services/admin.service';
 })
 export class ModeratorManageComponent implements OnInit {
   moderators: any[] = [];
+  skip = 0;
+  limit = 4;
   isLoading = false;
   showModal = false;
+  showStatusModal = false;
   editingModerator: any = null;
-  activeTab: 'active' | 'trash' = 'active';
+  statusModalModerator: any = null;
+  statusReason = '';
+  statusAction: 'lock' | 'unlock' = 'lock';
+  activeTab: 'active' | 'locked' = 'active';
+
+  get pagedModerators(): any[] {
+    return this.moderators.slice(this.skip, this.skip + this.limit);
+  }
 
   moderatorForm = {
     username: '',
@@ -39,11 +49,11 @@ export class ModeratorManageComponent implements OnInit {
     this.isLoading = true;
     this.moderators = [];
 
-    const includeDeleted = this.activeTab === 'trash';
+    const includeDeleted = this.activeTab === 'locked';
 
     this.adminService.getModerators(includeDeleted).subscribe({
       next: (data: any) => {
-        if (this.activeTab === 'trash') {
+        if (this.activeTab === 'locked') {
           this.moderators = data.filter((mod: any) => mod.is_deleted === true);
         } else {
           this.moderators = data
@@ -53,6 +63,11 @@ export class ModeratorManageComponent implements OnInit {
               return a.is_active ? -1 : 1;
             });
         }
+
+        if (this.skip >= this.moderators.length) {
+          this.skip = 0;
+        }
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -64,9 +79,22 @@ export class ModeratorManageComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'active' | 'trash'): void {
+  switchTab(tab: 'active' | 'locked'): void {
     this.activeTab = tab;
+    this.skip = 0;
     this.loadModerators();
+  }
+
+  nextPage(): void {
+    if (this.skip + this.limit < this.moderators.length) {
+      this.skip += this.limit;
+    }
+  }
+
+  prevPage(): void {
+    if (this.skip >= this.limit) {
+      this.skip -= this.limit;
+    }
   }
 
   openModal(moderator: any = null): void {
@@ -125,17 +153,36 @@ export class ModeratorManageComponent implements OnInit {
     });
   }
 
-  toggleStatus(moderator: any): void {
-    const action = moderator.is_active ? 'lock' : 'unlock';
-    const reason = prompt('Lý do ' + (moderator.is_active ? 'khóa' : 'mở khóa') + ' moderator:');
-    if (!reason) {
+  openStatusModal(moderator: any): void {
+    this.statusModalModerator = moderator;
+    this.statusAction = moderator.is_active ? 'lock' : 'unlock';
+    this.statusReason = '';
+    this.showStatusModal = true;
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.statusModalModerator = null;
+    this.statusReason = '';
+  }
+
+  saveStatusChange(): void {
+    if (!this.statusModalModerator) {
       return;
     }
 
-    this.adminService.toggleModeratorStatus(moderator.user_id, action as 'lock' | 'unlock', reason).subscribe({
+    if (!this.statusReason.trim()) {
+      alert('Vui lòng nhập lý do.');
+      return;
+    }
+
+    this.adminService.toggleModeratorStatus(
+      this.statusModalModerator.user_id,
+      this.statusAction,
+      this.statusReason.trim()
+    ).subscribe({
       next: () => {
-        moderator.is_active = !moderator.is_active;
-        moderator.is_deleted = action === 'lock';
+        this.closeStatusModal();
         this.loadModerators();
       },
       error: (err: any) => {

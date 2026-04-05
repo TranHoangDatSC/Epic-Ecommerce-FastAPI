@@ -22,8 +22,8 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" [class.active]="activeTab === 'trash'" (click)="switchTab('trash')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
-          <i class="bi bi-trash3 me-2"></i>Thùng rác
+        <a class="nav-link" [class.active]="activeTab === 'locked'" (click)="switchTab('locked')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
+          <i class="bi bi-lock-fill me-2"></i>Bị khóa
         </a>
       </li>
     </ul>
@@ -45,11 +45,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let moderator of moderators">
+          <tr *ngFor="let moderator of pagedModerators">
             <td>
               <div class="d-flex align-items-center gap-3">
-                <div class="cat-icon" [class.trash-icon]="activeTab === 'trash'">
-                  <i class="bi" [class]="activeTab === 'trash' ? 'bi-trash3' : 'bi-person-fill'"></i>
+                <div class="cat-icon" [class.trash-icon]="activeTab === 'locked'">
+                  <i class="bi" [class]="activeTab === 'locked' ? 'bi-lock-fill' : 'bi-person-fill'"></i>
                 </div>
                 <div>
                   <div class="cat-name">{{ moderator.username }}</div>
@@ -64,29 +64,39 @@
             <td>
               <span *ngIf="moderator.is_active" class="badge bg-success">Hoạt động</span>
               <span *ngIf="!moderator.is_active" class="badge bg-danger">Đã khóa</span>
-              <span *ngIf="activeTab === 'trash'" class="badge bg-warning text-dark ms-2">
-                <i class="bi bi-trash3 me-1"></i>Đã xóa mềm
+              <span *ngIf="activeTab === 'locked'" class="badge bg-warning text-dark ms-2">
+                <i class="bi bi-lock-fill me-1"></i>Bị khóa
               </span>
             </td>
             <td>
               <div class="action-buttons">
-                <button *ngIf="activeTab === 'active'" (click)="openModal(moderator)" class="btn btn-primary-custom btn-sm">
+                <!-- <button *ngIf="activeTab === 'active'" (click)="openModal(moderator)" class="btn btn-primary-custom btn-sm">
                   <i class="bi bi-pencil-square"></i> Chỉnh sửa
-                </button>
-                <button *ngIf="activeTab === 'active'" (click)="toggleStatus(moderator)" class="btn btn-danger-custom btn-sm">
+                </button> -->
+                <button *ngIf="activeTab === 'active'" (click)="openStatusModal(moderator)" class="btn btn-danger-custom btn-sm">
                   <i class="bi bi-lock"></i> Khóa
                 </button>
-                <button *ngIf="activeTab === 'trash'" (click)="toggleStatus(moderator)" class="btn btn-warning btn-sm">
-                  <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                <button *ngIf="activeTab === 'locked'" (click)="openStatusModal(moderator)" class="btn btn-success btn-sm">
+                  <i class="bi bi-unlock"></i> Mở khóa
                 </button>
-                <button *ngIf="activeTab === 'trash'" (click)="hardDeleteModerator(moderator.user_id)" class="btn btn-danger-custom btn-sm">
+                <!-- <button *ngIf="activeTab === 'locked'" (click)="hardDeleteModerator(moderator.user_id)" class="btn btn-danger-custom btn-sm">
                   <i class="bi bi-x-circle"></i> Xóa vĩnh viễn
-                </button>
+                </button> -->
               </div>
             </td>
           </tr>
         </tbody>
       </table>
+
+      <div *ngIf="moderators.length > limit" class="pagination-controls">
+        <div class="pagination-info">
+          Đang hiển thị <strong class="text-white">{{ pagedModerators.length }}</strong> trên tổng <strong class="text-white">{{ moderators.length }}</strong> moderator.
+        </div>
+        <div class="pagination-buttons">
+          <button class="pagination-btn" (click)="prevPage()" [disabled]="skip === 0">Previous</button>
+          <button class="pagination-btn" (click)="nextPage()" [disabled]="skip + limit >= moderators.length">Next</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -130,6 +140,32 @@
           <button type="button" class="btn btn-outline-custom" (click)="closeModal()">Hủy bỏ</button>
           <button type="button" class="btn text-white px-4 py-2" style="background: #48bb78; border:none; border-radius: 8px; font-weight: 600;" (click)="saveModerator()">
             Lưu Thay Đổi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" [class.show]="showStatusModal" [style.display]="showStatusModal ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.7);">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+      <div class="modal-content dark-theme">
+        <div class="modal-header dark-theme">
+          <h5 class="modal-title fw-bold">
+            {{ statusAction === 'lock' ? 'Khóa Moderator' : 'Mở khóa Moderator' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeStatusModal()"></button>
+        </div>
+        <div class="modal-body dark-theme">
+          <p class="mb-3">Vui lòng nhập lý do để {{ statusAction === 'lock' ? 'khóa' : 'mở khóa' }} moderator.</p>
+          <div class="mb-3">
+            <label class="form-label dark-theme">Lý do</label>
+            <textarea class="form-control dark-theme" rows="4" [(ngModel)]="statusReason" placeholder="Nhập lý do..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer dark-theme">
+          <button type="button" class="btn btn-outline-custom" (click)="closeStatusModal()">Hủy bỏ</button>
+          <button type="button" class="btn text-white px-4 py-2" style="background: #48bb78; border:none; border-radius: 8px; font-weight: 600;" (click)="saveStatusChange()">
+            Xác nhận
           </button>
         </div>
       </div>
