@@ -45,7 +45,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let cat of categories">
+          <tr *ngFor="let cat of pagedCategories">
             <td>
               <div class="d-flex align-items-center gap-3">
                 <div class="cat-icon" [class.trash-icon]="activeTab === 'trash'">
@@ -91,6 +91,16 @@
           </tr>
         </tbody>
       </table>
+
+      <div *ngIf="categories.length > limit" class="pagination-controls">
+        <div class="pagination-info">
+          Đang hiển thị <strong class="text-white">{{ pagedCategories.length }}</strong> trên tổng <strong class="text-white">{{ categories.length }}</strong> danh mục.
+        </div>
+        <div class="pagination-buttons">
+          <button class="pagination-btn" (click)="prevPage()" [disabled]="skip === 0">Previous</button>
+          <button class="pagination-btn" (click)="nextPage()" [disabled]="skip + limit >= categories.length">Next</button>
+        </div>
+      </div>
     </div>
   </div>
 

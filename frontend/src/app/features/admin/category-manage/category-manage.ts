@@ -12,10 +12,16 @@ import { FormsModule } from '@angular/forms';
 })
 export class CategoryManageComponent implements OnInit {
   categories: any[] = [];
+  skip = 0;
+  limit = 5;
   isLoading = false;
   showModal = false;
   editingCategory: any = null;
   activeTab: 'active' | 'trash' = 'active';
+
+  get pagedCategories(): any[] {
+    return this.categories.slice(this.skip, this.skip + this.limit);
+  }
   
   categoryForm = {
     name: '',
@@ -56,6 +62,10 @@ export class CategoryManageComponent implements OnInit {
               return a.is_active ? -1 : 1;
             });
         }
+
+        if (this.skip >= this.categories.length) {
+          this.skip = 0;
+        }
         
         this.isLoading = false;
         // FIX: Ép Angular vẽ lại giao diện ngay lập tức
@@ -71,7 +81,20 @@ export class CategoryManageComponent implements OnInit {
 
   switchTab(tab: 'active' | 'trash') {
     this.activeTab = tab;
+    this.skip = 0;
     this.loadCategories();
+  }
+
+  nextPage(): void {
+    if (this.skip + this.limit < this.categories.length) {
+      this.skip += this.limit;
+    }
+  }
+
+  prevPage(): void {
+    if (this.skip >= this.limit) {
+      this.skip -= this.limit;
+    }
   }
 
   openModal(category: any = null) {
