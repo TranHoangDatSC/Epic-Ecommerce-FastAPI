@@ -5,6 +5,7 @@ from app.crud.base import CRUDBase
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
 from app.core.security import hash_password
+from app.core.utils import generate_unique_key
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -19,7 +20,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         return db.query(User).filter(User.email == email).first()
 
     def create(self, db: Session, obj_in: UserCreate) -> User:
-        """Create user with hashed password"""
+        """Create user with hashed password (caller must handle commit)"""
         db_obj = User(
             username=obj_in.username,
             email=obj_in.email,
@@ -28,11 +29,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             phone_number=obj_in.phone_number,
             address=obj_in.address,
             role_id=obj_in.role_id or 3,
-            random_key=obj_in.username,  # Could be replaced with actual random key generation
+            random_key=generate_unique_key('user'),
         )
         db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
+        db.flush()  # Get user_id without committing
         return db_obj
 
     def get_active_users(

@@ -24,6 +24,19 @@ export class AdminService {
     return this.http.get<any[]>(`${this.apiUrl}/admin/users`, { params });
   }
 
+  getModerators(includeDeleted: boolean = false): Observable<any[]> {
+    let params = new HttpParams().set('include_deleted', includeDeleted.toString());
+    return this.http.get<any[]>(`${this.apiUrl}/admin/moderators`, { params });
+  }
+
+  createModerator(moderator: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/admin/moderators`, moderator);
+  }
+
+  toggleModeratorStatus(userId: number, action: 'lock' | 'unlock', reason: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/admin/moderators/${userId}/status`, { action, reason });
+  }
+
   banUser(userId: number, reason: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/moderator/users/${userId}/ban`, { reason });
   }

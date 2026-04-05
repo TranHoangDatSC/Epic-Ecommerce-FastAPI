@@ -153,14 +153,16 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         db.refresh(user)
         return user
 
-    def get_moderators(self, db: Session) -> List[models.User]:
-        """Get all moderators (role_id=2)"""
-        return db.query(models.User).join(models.UserRole).filter(
-            and_(
-                models.UserRole.role_id == 2,
-                models.User.is_deleted == False
-            )
-        ).distinct().all()
+    def get_moderators(self, db: Session, include_deleted: bool = False) -> List[models.User]:
+        """Get all moderators (role_id=2). Include soft deleted if requested."""
+        query = db.query(models.User).join(models.UserRole).filter(
+            models.UserRole.role_id == 2
+        )
+
+        if not include_deleted:
+            query = query.filter(models.User.is_deleted == False)
+
+        return query.distinct().all()
 
     def toggle_moderator_status(
         self,
@@ -172,9 +174,7 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         admin_id: int
     ) -> models.User:
         """Activate/deactivate a moderator account (only for role_id=2 users)."""
-        user = db.query(models.User).filter(
-            and_(models.User.user_id == user_id, models.User.is_deleted == False)
-        ).first()
+        user = db.query(models.User).filter(models.User.user_id == user_id).first()
 
         if not user:
             raise NotFoundException("User not found")
@@ -189,6 +189,7 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
             raise ValidationException(f"Moderator is already {action.lower()}")
 
         user.is_active = is_active
+        user.is_deleted = not is_active
         action_taken = "ACTIVATE_MODERATOR" if is_active else "DEACTIVATE_MODERATOR"
 
         violation_log = models.ViolationLog(

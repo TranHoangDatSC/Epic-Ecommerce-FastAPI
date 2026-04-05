@@ -50,7 +50,7 @@ def test_moderator_endpoints():
     print("\n--- Test 2: Create New Moderator ---")
     new_mod_data = {
         "username": "test_mod_api",
-        "email": "test_mod_api@oldshop.com",
+        "email": "test_mod_api@gmail.com",
         "password": "test123",
         "full_name": "Test Moderator API",
         "phone_number": "0987654321",
@@ -93,9 +93,6 @@ def test_moderator_endpoints():
             print(f"✅ Moderator status updated: Active = {updated_mod.get('is_active')}")
         else:
             print(f"❌ Error: {response.text}")
-
-if __name__ == "__main__":
-    test_moderator_endpoints()
 
 if __name__ == "__main__":
     test_moderator_endpoints()

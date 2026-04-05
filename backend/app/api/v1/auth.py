@@ -6,7 +6,7 @@ from app.database import get_db
 from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.core.security import verify_password, create_access_token
 from app.crud.user import crud_user
-from app.models import User
+from app.models import User, ShoppingCart
 from fastapi.security import OAuth2PasswordRequestForm
 router = APIRouter(prefix="/auth", tags=["auth"])
 

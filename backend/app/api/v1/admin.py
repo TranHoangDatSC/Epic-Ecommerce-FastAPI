@@ -56,11 +56,12 @@ def list_users(
 
 @router.get("/moderators", response_model=List[schemas.UserResponse])
 def list_moderators(
+    include_deleted: bool = Query(False),
     db: Session = Depends(get_db),
     admin: models.User = Depends(get_current_admin)
 ):
     """List all moderators (Admin only)"""
-    return crud_moderator.get_moderators(db)
+    return crud_moderator.get_moderators(db, include_deleted=include_deleted)
 
 
 @router.post("/moderators", response_model=schemas.UserResponse)
@@ -70,16 +71,97 @@ def create_moderator(
     admin: models.User = Depends(get_current_admin)
 ):
     """Create a new moderator (Admin only)"""
+    import traceback
+    import logging
+
+    logger = logging.getLogger(__name__)
+    
     try:
-        # Set role_id to 2 for moderator
-        moderator_dict = moderator_data.model_dump()
+        # Log incoming request
+        logger.info(f"Admin {admin.email} (ID: {admin.user_id}) attempting to create moderator")
+        
+        # Validate admin is active
+        if not admin.is_active or admin.is_deleted:
+            logger.warning(f"Inactive admin {admin.email} attempted to create moderator")
+            raise ValueError("Your admin account is not active")
+
+        # Validate required fields for moderator
+        if not moderator_data.username:
+            logger.warning("Moderator creation failed: username is required")
+            raise ValueError("Username is required for moderator creation")
+
+        if not moderator_data.email:
+            logger.warning("Moderator creation failed: email is required")
+            raise ValueError("Email is required for moderator creation")
+
+        if not moderator_data.password:
+            logger.warning("Moderator creation failed: password is required")
+            raise ValueError("Password is required for moderator creation")
+
+        if not moderator_data.full_name:
+            logger.warning("Moderator creation failed: full_name is required")
+            raise ValueError("Full name is required for moderator creation")
+
+        # Convert schema to dict and add role
+        try:
+            moderator_dict = moderator_data.model_dump()
+        except Exception as e:
+            logger.error(f"Error converting moderator data to dict: {str(e)}")
+            raise ValueError(f"Error processing moderator data: {str(e)}")
+
         moderator_dict['role_id'] = 2
-        new_moderator = crud_admin.create_moderator(db, moderator_dict, admin.user_id)
-        return schemas.UserResponse.model_validate(new_moderator)
+
+        # Log sanitized data (without password)
+        log_data = {k: v for k, v in moderator_dict.items() if k != 'password'}
+        logger.info(f"Creating moderator with data: {log_data}")
+
+        # Create moderator
+        try:
+            new_moderator = crud_admin.create_moderator(db, moderator_dict, admin.user_id)
+            logger.info(f"Successfully created moderator: {new_moderator.username} (ID: {new_moderator.user_id})")
+        except ValueError as e:
+            # ValueError from CRUD layer (validation error)
+            logger.warning(f"Validation error creating moderator: {str(e)}")
+            raise
+        except Exception as e:
+            # Other database or unexpected errors
+            logger.error(f"Unexpected error in CRUD layer: {type(e).__name__}: {str(e)}")
+            traceback.print_exc()
+            raise ValueError(f"Database error: {str(e)}")
+
+        # Validate response can be created
+        try:
+            response = schemas.UserResponse.model_validate(new_moderator)
+            logger.info(f"Successfully validated moderator response for user ID: {new_moderator.user_id}")
+            return response
+        except Exception as e:
+            logger.error(f"Error validating moderator response: {str(e)}")
+            raise ValueError(f"Error preparing response: {str(e)}")
+
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        # Validation error - return 400
+        error_detail = str(e)
+        logger.warning(f"Moderator creation validation error: {error_detail}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=error_detail
+        )
+    
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create moderator")
+        # Catch any other unexpected errors
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        logger.error(f"Unexpected error in create_moderator endpoint: {error_msg}")
+        traceback.print_exc()
+        logger.error(f"Full traceback above")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Internal server error - {error_msg}"
+        )
+
 
 
 @router.patch("/moderators/{user_id}/status", response_model=schemas.UserResponse)

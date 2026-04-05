@@ -80,6 +80,11 @@ export class ModeratorService {
     return this.http.post(`${this.apiUrl}/users/${userId}/unban`, body);
   }
 
+  lockUnlockUser(userId: number, action: 'lock' | 'unlock', reason: string): Observable<any> {
+    const body = { action, reason };
+    return this.http.post(`${this.apiUrl}/users/${userId}/lock-unlock`, body);
+  }
+
   getUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/users`);
   }

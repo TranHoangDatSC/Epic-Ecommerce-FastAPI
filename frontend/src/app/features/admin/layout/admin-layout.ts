@@ -25,7 +25,7 @@ export class AdminLayoutComponent {
       title: 'QUẢN LÝ THÔNG TIN',
       icon: 'bi bi-grid-fill',
       items: [
-        { path: 'user-manage', label: 'Người dùng', icon: 'bi bi-people' },
+        { path: 'moderator-manage', label: 'Quản lý kiểm duyệt viên', icon: 'bi bi-people' },
         { path: 'category-manage', label: 'Danh mục sản phẩm', icon: 'bi bi-tags' }
       ]
     },

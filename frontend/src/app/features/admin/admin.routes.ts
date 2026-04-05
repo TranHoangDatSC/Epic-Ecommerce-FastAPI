@@ -15,8 +15,8 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./dashboard/dashboard').then(m => m.AdminDashboardComponent)
       },
       {
-        path: 'user-manage',
-        loadComponent: () => import('./user-manage/user-manage').then(m => m.UserManageComponent)
+        path: 'moderator-manage',
+        loadComponent: () => import('./moderator-manage/moderator-manage').then(m => m.ModeratorManageComponent)
       },
       {
         path: 'category-manage',
