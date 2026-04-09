@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject , ChangeDetectorRef} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,6 +6,8 @@ import { CartService, CartItem } from '../../../core/services/cart.service';
 import { ContactService, ContactInfo } from '../../../shared/services/contact.service';
 import { OrderService, PaymentMethod, OrderCreate } from '../../../shared/services/order.service';
 import { UIService } from '../../../core/services/ui.service';
+
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-checkout',
@@ -20,10 +22,12 @@ export class CheckoutComponent implements OnInit {
   private orderService = inject(OrderService);
   private uiService = inject(UIService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   cartItems: CartItem[] = [];
   addresses: ContactInfo[] = [];
   paymentMethods: PaymentMethod[] = [];
+  imageBaseUrl = environment.imageBaseUrl;
   
   selectedAddressId: number | null = null;
   selectedPaymentMethodId: number | null = null;
@@ -71,10 +75,12 @@ export class CheckoutComponent implements OnInit {
           this.selectedPaymentMethodId = data[0].payment_method_id;
         }
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading payment methods:', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -88,11 +94,15 @@ export class CheckoutComponent implements OnInit {
   }
 
   selectAddress(id: number | undefined): void {
-    if (id) this.selectedAddressId = id;
+    if (id) {
+      this.selectedAddressId = id;
+      this.cdr.detectChanges();
+    }
   }
 
   selectPaymentMethod(id: number): void {
     this.selectedPaymentMethodId = id;
+    this.cdr.detectChanges();
   }
 
   placeOrder(): void {
@@ -133,5 +143,12 @@ export class CheckoutComponent implements OnInit {
         this.isSubmitting = false;
       }
     });
+  }
+
+  getFullImageUrl(imageUrl: string): string {
+    if (!imageUrl) return 'https://via.placeholder.com/100x100?text=No+Image';
+    const baseUrl = this.imageBaseUrl.replace(/\/$/, '');
+    const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    return `${baseUrl}${path}`;
   }
 }

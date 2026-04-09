@@ -1,317 +1,122 @@
-.checkout-container {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    min-height: 100vh;
-    padding-bottom: 5rem;
-    color: #f8fafc;
-    font-family: 'Inter', sans-serif;
-
-    // Header Styles
-    .checkout-header {
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(10px);
-        padding: 3rem 0;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-        .page-title {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #60a5fa, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        .breadcrumb {
-            .breadcrumb-item {
-                a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
-                a:hover { color: #60a5fa; }
-                &.active { color: #f8fafc; }
-                &::before { color: #475569; }
-            }
-        }
-    }
-
-    // Main Sections
-    .checkout-section {
-        background: rgba(30, 41, 59, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 2rem;
-        transition: transform 0.3s, box-shadow 0.3s;
-
-        &:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 1rem;
-
-            .header-title {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                font-size: 1.25rem;
-                font-weight: 700;
-                color: #e2e8f0;
-
-                i { color: #60a5fa; font-size: 1.5rem; }
-            }
-        }
-    }
-
-    // Address Cards
-    .address-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-
-        .address-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 1.5rem;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-            &.active {
-                border-color: #60a5fa;
-                background: rgba(96, 165, 250, 0.1);
-                box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
-            }
-
-            .card-status {
-                position: absolute;
-                top: 1rem;
-                right: 1rem;
-                background: #60a5fa;
-                color: #fff;
-                font-size: 0.7rem;
-                padding: 0.2rem 0.6rem;
-                border-radius: 20px;
-                text-transform: uppercase;
-                font-weight: 700;
-            }
-
-            .user-name { font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem; }
-            .phone-number { color: #94a3b8; margin-bottom: 0.5rem; }
-            .address-detail { font-size: 0.9rem; margin-bottom: 0.2rem; }
-            .area { font-size: 0.85rem; color: #64748b; }
-
-            .check-icon {
-                position: absolute;
-                bottom: 1rem;
-                right: 1rem;
-                color: #60a5fa;
-                font-size: 1.5rem;
-            }
-        }
-    }
-
-    // Payment Cards
-    .payment-options {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-
-        .payment-card {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 1.25rem;
-            cursor: pointer;
-            transition: all 0.3s;
-
-            &.active {
-                border-color: #a855f7;
-                background: rgba(168, 85, 247, 0.1);
-
-                .check-indicator {
-                    border-color: #a855f7;
-                    &::after { transform: scale(1); }
-                }
-            }
-
-            .method-icon {
-                width: 50px;
-                height: 50px;
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.5rem;
-                color: #60a5fa;
-            }
-
-            .method-info {
-                flex-grow: 1;
-                .method-name { display: block; font-weight: 700; color: #f1f5f9; }
-                .method-desc { font-size: 0.85rem; color: #94a3b8; }
-            }
-
-            .check-indicator {
-                width: 24px;
-                height: 24px;
-                border: 2px solid rgba(255, 255, 255, 0.2);
-                border-radius: 50%;
-                position: relative;
-
-                &::after {
-                    content: '';
-                    position: absolute;
-                    top: 4px;
-                    left: 4px;
-                    width: 12px;
-                    height: 12px;
-                    background: #a855f7;
-                    border-radius: 50%;
-                    transform: scale(0);
-                    transition: transform 0.2s;
-                }
-            }
-        }
-    }
-
-    // Summary Card
-    .summary-card {
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 24px;
-        padding: 2.5rem;
-        top: 2rem;
-
-        .summary-title {
-            font-weight: 800;
-            margin-bottom: 2rem;
-            font-size: 1.5rem;
-        }
-
-        .items-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 2rem;
-
-            .order-item {
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                margin-bottom: 1.25rem;
-
-                .item-img {
-                    position: relative;
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 12px;
-                    overflow: visible;
-
-                    img {
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                        border-radius: 12px;
-                    }
-
-                    .item-qty {
-                        position: absolute;
-                        top: -8px;
-                        right: -8px;
-                        background: #3b82f6;
-                        color: white;
-                        font-size: 0.75rem;
-                        width: 20px;
-                        height: 20px;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-weight: 700;
-                    }
-                }
-
-                .item-name { font-size: 0.9rem; margin-bottom: 0.2rem; flex-grow: 1; }
-                .item-price { font-weight: 700; color: #e2e8f0; }
-            }
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-            color: #94a3b8;
-
-            &.total {
-                font-size: 1.25rem;
-                color: #f8fafc;
-                margin-top: 1.5rem;
-
-                .total-price {
-                    font-weight: 900;
-                    color: #60a5fa;
-                    font-size: 1.75rem;
-                }
-            }
-        }
-
-        .btn-checkout-primary {
-            background: linear-gradient(to right, #2563eb, #7c3aed);
-            border: none;
-            padding: 1rem;
-            border-radius: 14px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            transition: all 0.3s;
-
-            &:hover:not(:disabled) {
-                transform: scale(1.02);
-                filter: brightness(1.2);
-                box-shadow: 0 0 30px rgba(96, 165, 250, 0.4);
-            }
-
-            &:disabled {
-                opacity: 0.5;
-                filter: grayscale(1);
-            }
-        }
-    }
-
-    .order-notes {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #fff;
-        border-radius: 12px;
-        &:focus {
-            background: rgba(15, 23, 42, 0.6);
-            border-color: #60a5fa;
-            box-shadow: none;
-        }
-    }
+.checkout-wrapper {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  position: relative;
+  overflow-x: hidden;
 }
 
-// Custom Scrollbar
+.bg-light-soft {
+  background-color: rgba(248, 249, 250, 0.5);
+}
+
+.shadow-xs {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05) !important;
+}
+
+.shadow-text-xs {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.letter-spacing-1 {
+  letter-spacing: 1px;
+}
+
+.x-small {
+  font-size: 0.75rem;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.address-item, .payment-item {
+  border: 1px solid #dee2e6;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  
+  &:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  &.border-primary {
+    border-width: 2px !important;
+  }
+  
+  &.border-warning {
+    border-width: 2px !important;
+  }
+}
+
+.summary-card {
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  .card-header {
+    background: linear-gradient(135deg, #212529 0%, #343a40 100%);
+  }
+}
+
+.btn-checkout {
+  position: relative;
+  overflow: hidden;
+  .reflection {
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: rotate(25deg);
+    transition: all 0.8s ease;
+  }
+  &:hover {
+    .reflection {
+      left: 150%;
+    }
+  }
+}
+
+.hover-lift-lg {
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(13, 110, 253, 0.3) !important;
+  }
+}
+
+.text-price {
+  font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .custom-scrollbar {
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-track { background: transparent; }
-    &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 10px;
+  }
 }
 
-// Loading Spinner
-.loading-overlay {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    gap: 1.5rem;
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.icon-circle {
+  transition: all 0.3s ease;
+  &:hover {
+    transform: rotate(15deg) scale(1.1);
+  }
 }

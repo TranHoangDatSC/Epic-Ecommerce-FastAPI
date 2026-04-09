@@ -1,168 +1,203 @@
-<div class="checkout-container">
-    <div class="checkout-header">
-        <div class="container">
-            <h1 class="page-title">Thanh toán đơn hàng</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a routerLink="/">Trang chủ</a></li>
-                    <li class="breadcrumb-item"><a routerLink="/cart">Giỏ hàng</a></li>
-                    <li class="breadcrumb-item active">Thanh toán</li>
-                </ol>
-            </nav>
-        </div>
+<div class="checkout-wrapper py-5 min-vh-100 bg-light-soft">
+  <div class="container">
+    <!-- Page Header -->
+    <div class="row mb-5 align-items-center">
+      <div class="col-md-6">
+        <h1 class="display-6 fw-bold text-dark mb-1">Thanh toán</h1>
+        <p class="text-muted fs-5 mb-0">Hoàn tất đơn hàng của bạn để sở hữu những món đồ yêu thích</p>
+      </div>
+      <div class="col-md-6 text-md-end">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-md-end mb-0">
+            <li class="breadcrumb-item"><a routerLink="/" class="text-decoration-none text-muted">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a routerLink="/cart" class="text-decoration-none text-muted">Giỏ hàng</a></li>
+            <li class="breadcrumb-item active text-primary fw-bold" aria-current="page">Thanh toán</li>
+          </ol>
+        </nav>
+      </div>
     </div>
 
-    <div class="container main-content" *ngIf="!isLoading; else loadingTemplate">
-        <div class="row g-4">
-            <!-- Left Side: Information -->
-            <div class="col-lg-8">
-                <!-- Shipping Address Section -->
-                <div class="checkout-section mb-4">
-                    <div class="section-header">
-                        <div class="header-title">
-                            <i class="bi bi-geo-alt"></i>
-                            <span>Địa chỉ nhận hàng</span>
-                        </div>
-                        <button class="btn btn-sm btn-outline-primary">+ Thêm địa chỉ mới</button>
-                    </div>
-                    <div class="section-body">
-                        <div class="address-grid">
-                            <div 
-                                *ngFor="let addr of addresses" 
-                                class="address-card" 
-                                [class.active]="selectedAddressId === addr.contact_id"
-                                (click)="selectAddress(addr.contact_id)"
-                            >
-                                <div class="card-status" *ngIf="addr.is_default">Mặc định</div>
-                                <div class="card-content">
-                                    <h6 class="user-name">{{ addr.full_name }}</h6>
-                                    <p class="phone-number">{{ addr.phone_number }}</p>
-                                    <p class="address-detail">{{ addr.address }}</p>
-                                    <p class="area">{{ addr.ward }}, {{ addr.district }}, {{ addr.province }}</p>
-                                </div>
-                                <div class="check-icon" *ngIf="selectedAddressId === addr.contact_id">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div *ngIf="addresses.length === 0" class="empty-address">
-                            <i class="bi bi-house-door"></i>
-                            <p>Bạn chưa có địa chỉ nhận hàng nào. Vui lòng thêm địa chỉ mới.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Payment Method Section -->
-                <div class="checkout-section mb-4">
-                    <div class="section-header">
-                        <div class="header-title">
-                            <i class="bi bi-credit-card"></i>
-                            <span>Phương thức thanh toán</span>
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="payment-options">
-                            <div 
-                                *ngFor="let method of paymentMethods" 
-                                class="payment-card" 
-                                [class.active]="selectedPaymentMethodId === method.payment_method_id"
-                                (click)="selectPaymentMethod(method.payment_method_id)"
-                            >
-                                <div class="method-icon">
-                                    <i class="bi" [class.bi-truck]="method.method_name === 'COD'" 
-                                       [class.bi-wallet2]="method.method_name !== 'COD'"></i>
-                                </div>
-                                <div class="method-info">
-                                    <span class="method-name">{{ method.method_name }}</span>
-                                    <span class="method-desc">
-                                        {{ method.is_online ? 'Thanh toán qua cổng trực tuyến' : 'Thanh toán trực tiếp khi nhận hàng' }}
-                                    </span>
-                                </div>
-                                <div class="check-indicator"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Notes -->
-                <div class="checkout-section">
-                    <div class="section-header">
-                        <div class="header-title">
-                            <i class="bi bi-pencil-square"></i>
-                            <span>Ghi chú đơn hàng</span>
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <textarea 
-                            class="form-control order-notes" 
-                            [(ngModel)]="orderNotes" 
-                            placeholder="Thêm lời nhắn cho người bán hoặc đơn vị vận chuyển..."
-                            rows="3"
-                        ></textarea>
-                    </div>
-                </div>
+    <!-- Main Layout -->
+    <div class="row g-4" *ngIf="!isLoading; else loadingTemplate">
+      <!-- Left Column: Shipping & Payment -->
+      <div class="col-lg-8 animate__animated animate__fadeInLeft">
+        
+        <!-- Address Selection -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+          <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center border-start border-primary border-5">
+            <div class="icon-circle bg-primary-subtle rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+              <i class="bi bi-geo-alt fs-5 text-primary"></i>
             </div>
-
-            <!-- Right Side: Order Summary -->
-            <div class="col-lg-4">
-                <div class="summary-card sticky-top">
-                    <h5 class="summary-title">Tóm tắt đơn hàng</h5>
-                    <div class="items-list custom-scrollbar">
-                        <div *ngFor="let item of cartItems" class="order-item">
-                            <div class="item-img">
-                                <img [src]="item.product.product_images[0]?.image_url || 'assets/placeholder.png'" [alt]="item.product.title">
-                                <span class="item-qty">{{ item.quantity }}</span>
-                            </div>
-                            <div class="item-details">
-                                <h6 class="item-name">{{ item.product.title }}</h6>
-                                <span class="item-price">{{ item.product.price | number:'1.0-0' }}đ</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="summary-details mt-4">
-                        <div class="detail-row">
-                            <span>Tạm tính</span>
-                            <span>{{ getSubtotal() | number:'1.0-0' }}đ</span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Phí vận chuyển</span>
-                            <span>{{ shippingFee | number:'1.0-0' }}đ</span>
-                        </div>
-                        <div class="discount-section">
-                            <div class="input-group mb-2">
-                                <input type="text" class="form-control" placeholder="Mã giảm giá">
-                                <button class="btn btn-primary">Áp dụng</button>
-                            </div>
-                        </div>
-                        <hr class="summary-divider">
-                        <div class="detail-row total">
-                            <span>Tổng cộng</span>
-                            <span class="total-price">{{ getTotal() | number:'1.0-0' }}đ</span>
-                        </div>
-                    </div>
-
-                    <button 
-                        class="btn btn-checkout-primary w-100 mt-4" 
-                        [disabled]="isSubmitting || !selectedAddressId || !selectedPaymentMethodId"
-                        (click) ="placeOrder()"
-                    >
-                        <span *ngIf="!isSubmitting">ĐẶT HÀNG NGAY</span>
-                        <div *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status"></div>
-                    </button>
-                    <p class="order-policy mt-3">
-                        Bằng việc đặt hàng, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của OldShop.
-                    </p>
+            <h5 class="fw-bold mb-0 text-dark">Địa chỉ nhận hàng</h5>
+            <button class="ms-auto btn btn-link text-primary p-0 text-decoration-none small fw-bold">+ Thêm địa chỉ mới</button>
+          </div>
+          <div class="card-body p-4">
+            <div class="address-list d-flex flex-column gap-3">
+              <div 
+                *ngFor="let addr of addresses" 
+                class="address-item p-3 rounded-4 border transition-all cursor-pointer position-relative"
+                [class.border-primary]="selectedAddressId === addr.contact_id"
+                [class.bg-primary-subtle]="selectedAddressId === addr.contact_id"
+                (click)="selectAddress(addr.contact_id)"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fw-bold text-dark">{{ addr.full_name }}</span>
+                    <span class="text-muted opacity-50">|</span>
+                    <span class="text-muted small">{{ addr.phone_number }}</span>
+                    <span *ngIf="addr.is_default" class="badge bg-primary-subtle text-primary x-small rounded-pill px-2">Mặc định</span>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" 
+                           [name]="'address'" 
+                           [id]="'addr-' + addr.contact_id" 
+                           [checked]="selectedAddressId === addr.contact_id">
+                  </div>
                 </div>
+                <p class="text-muted small mb-0">{{ addr.address }}</p>
+                <p class="text-muted small mb-0">{{ addr.ward }}, {{ addr.district }}, {{ addr.province }}</p>
+              </div>
+
+              <div *ngIf="addresses.length === 0" class="text-center py-4 bg-light rounded-4">
+                <i class="bi bi-geo-alt text-muted display-4 mb-2 opacity-25"></i>
+                <p class="text-muted mb-0">Bạn chưa có địa chỉ nhận hàng nào.</p>
+              </div>
             </div>
+          </div>
         </div>
+
+        <!-- Payment Method -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+          <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center border-start border-warning border-5">
+            <div class="icon-circle bg-warning-subtle rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+              <i class="bi bi-credit-card fs-5 text-warning"></i>
+            </div>
+            <h5 class="fw-bold mb-0 text-dark">Phương thức thanh toán</h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="payment-methods-list d-flex flex-column gap-3">
+              <div 
+                *ngFor="let method of paymentMethods" 
+                class="payment-item p-3 rounded-4 border transition-all cursor-pointer d-flex align-items-center gap-3"
+                [class.border-warning]="selectedPaymentMethodId === method.payment_method_id"
+                [class.bg-warning-subtle]="selectedPaymentMethodId === method.payment_method_id"
+                (click)="selectPaymentMethod(method.payment_method_id)"
+              >
+                <div class="payment-icon bg-white rounded-3 shadow-xs d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                  <i class="bi fs-4" 
+                     [class.bi-truck]="method.method_name === 'COD'" 
+                     [class.bi-wallet2]="method.method_name !== 'COD'"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <h6 class="fw-bold text-dark mb-0">{{ method.method_name }}</h6>
+                  <small class="text-muted">{{ method.is_online ? 'Thanh toán trực tuyến an toàn' : 'Thanh toán khi nhận hàng' }}</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" 
+                         [name]="'payment'" 
+                         [id]="'pay-' + method.payment_method_id" 
+                         [checked]="selectedPaymentMethodId === method.payment_method_id">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Notes -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+          <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center border-start border-info border-5">
+            <div class="icon-circle bg-info-subtle rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+              <i class="bi bi-pencil-square fs-5 text-info"></i>
+            </div>
+            <h5 class="fw-bold mb-0 text-dark">Ghi chú đơn hàng</h5>
+          </div>
+          <div class="card-body p-4">
+            <textarea 
+              class="form-control bg-light border-0 rounded-4 p-3" 
+              rows="3" 
+              [(ngModel)]="orderNotes"
+              placeholder="Lời nhắn cho người bán (không bắt buộc)..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Order Summary -->
+      <div class="col-lg-4 animate__animated animate__fadeInRight">
+        <div class="sticky-top" style="top: 2rem;">
+          <div class="card border-0 shadow-lg rounded-4 overflow-hidden summary-card">
+            <div class="card-header bg-dark text-white border-0 py-4 px-4 text-center">
+              <h5 class="fw-bold mb-0 text-uppercase letter-spacing-1">Tóm tắt đơn hàng</h5>
+            </div>
+            
+            <div class="card-body p-4">
+              <!-- Item List Preview -->
+              <div class="items-preview mb-4 custom-scrollbar" style="max-height: 200px; overflow-y: auto;">
+                <div *ngFor="let item of cartItems" class="preview-item d-flex gap-3 mb-3 pb-3 border-bottom border-light">
+                  <div class="preview-thumb rounded-3 overflow-hidden border" style="width: 50px; height: 50px; flex-shrink: 0;">
+                    <img [src]="getFullImageUrl(item.product.product_images[0]?.image_url || '')" 
+                         [alt]="item.product.title" class="w-100 h-100 object-fit-cover">
+                  </div>
+                  <div class="preview-info flex-grow-1">
+                    <h6 class="fw-bold text-dark x-small mb-1 line-clamp-1">{{ item.product.title }}</h6>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted x-small">x{{ item.quantity }}</span>
+                      <span class="text-dark fw-bold x-small">{{ (item.product.price * item.quantity) | currency:'VND':'symbol':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price Breakdown -->
+              <div class="price-breakdown mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted small">Tiền hàng</span>
+                  <span class="text-dark fw-bold small">{{ getSubtotal() | currency:'VND':'symbol':'1.0-0' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted small">Phí vận chuyển</span>
+                  <span class="text-dark fw-bold small">{{ shippingFee | currency:'VND':'symbol':'1.0-0' }}</span>
+                </div>
+                <hr class="my-3 opacity-10">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="h5 fw-bold text-dark mb-0">Tổng tiền:</span>
+                  <span class="h4 fw-bold text-primary mb-0 shadow-text-xs text-price">{{ getTotal() | currency:'VND':'symbol':'1.0-0' }}</span>
+                </div>
+              </div>
+
+              <button 
+                (click)="placeOrder()"
+                [disabled]="isSubmitting || !selectedAddressId || !selectedPaymentMethodId"
+                class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg transition-all hover-lift-lg btn-checkout overflow-hidden position-relative">
+                <span *ngIf="!isSubmitting">ĐẶT HÀNG NGAY</span>
+                <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                <div class="reflection"></div>
+              </button>
+              
+              <button routerLink="/cart" class="btn btn-link w-100 mt-3 text-muted text-decoration-none small fw-bold">
+                <i class="bi bi-arrow-left me-2"></i> Quay lại giỏ hàng
+              </button>
+            </div>
+          </div>
+
+          <!-- Trust Badge -->
+          <div class="card border-0 shadow-sm rounded-4 mt-3 bg-white border border-dashed border-success p-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="icon-box bg-success-subtle rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-shield-check text-success fs-5"></i>
+              </div>
+              <p class="text-muted x-small mb-0">Bạn đang mua sắm trên một kết nối an toàn. Mọi giao dịch đều được OldShop bảo vệ.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Loading Template -->
+    <!-- Loading Placeholder -->
     <ng-template #loadingTemplate>
-        <div class="loading-overlay">
-            <div class="spinner-grow text-primary" role="status"></div>
-            <p>Đang xử lý thông tin...</p>
-        </div>
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <p class="text-muted">Đang tải thông tin thanh toán...</p>
+      </div>
     </ng-template>
+  </div>
 </div>
