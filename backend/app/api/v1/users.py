@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
+from app import models, schemas
+from app.models import User
 from app.schemas import UserResponse, UserUpdate, UserDetailResponse
 from app.core.dependencies import get_current_user, check_admin
 from app.crud.user import crud_user
@@ -149,3 +151,98 @@ async def delete_user(
     user.is_deleted = True
     db.add(user)
     db.commit()
+
+
+# ==================== User Contact Info ====================
+
+@router.get("/me/contacts", response_model=list[schemas.ContactInfoResponse])
+async def get_my_contacts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> list[schemas.ContactInfoResponse]:
+    """Get all contact information for current user"""
+    contacts = db.query(models.ContactInfo).filter(
+        models.ContactInfo.user_id == current_user.user_id,
+        models.ContactInfo.is_deleted == False
+    ).order_by(models.ContactInfo.is_default.desc(), models.ContactInfo.created_at.desc()).all()
+    return contacts
+
+
+@router.post("/me/contacts", response_model=schemas.ContactInfoResponse, status_code=status.HTTP_201_CREATED)
+async def create_contact(
+    contact_in: schemas.ContactInfoCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> schemas.ContactInfoResponse:
+    """Add new contact information"""
+    # If this is the first contact, make it default
+    contact_count = db.query(models.ContactInfo).filter(
+        models.ContactInfo.user_id == current_user.user_id,
+        models.ContactInfo.is_deleted == False
+    ).count()
+    
+    is_default = contact_in.is_default
+    if contact_count == 0:
+        is_default = True
+        
+    # If setting as default, unset others
+    if is_default:
+        db.query(models.ContactInfo).filter(
+            models.ContactInfo.user_id == current_user.user_id
+        ).update({"is_default": False})
+        
+    db_contact = models.ContactInfo(
+        **contact_in.dict(exclude={"is_default"}),
+        user_id=current_user.user_id,
+        is_default=is_default
+    )
+    db.add(db_contact)
+    db.commit()
+    db.refresh(db_contact)
+    return db_contact
+
+
+@router.post("/me/contacts/{contact_id}/set-default", response_model=schemas.ContactInfoResponse)
+async def set_default_contact(
+    contact_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> schemas.ContactInfoResponse:
+    """Set a contact as default"""
+    contact = db.query(models.ContactInfo).filter(
+        models.ContactInfo.contact_id == contact_id,
+        models.ContactInfo.user_id == current_user.user_id,
+        models.ContactInfo.is_deleted == False
+    ).first()
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+        
+    db.query(models.ContactInfo).filter(
+        models.ContactInfo.user_id == current_user.user_id
+    ).update({"is_default": False})
+    
+    contact.is_default = True
+    db.commit()
+    db.refresh(contact)
+    return contact
+
+
+@router.delete("/me/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_contact(
+    contact_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Soft delete contact information"""
+    contact = db.query(models.ContactInfo).filter(
+        models.ContactInfo.contact_id == contact_id,
+        models.ContactInfo.user_id == current_user.user_id
+    ).first()
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+        
+    contact.is_deleted = True
+    db.commit()
+    return None

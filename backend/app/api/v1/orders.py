@@ -1,13 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Order, Product, ContactInfo
+from app import models, schemas
+from app.models import User, Order, Product, ContactInfo, PaymentMethod
 from app.schemas import OrderResponse, OrderDetailResponse_Extended, OrderCreate, OrderUpdate
 from app.core.dependencies import check_admin, check_user_role
 from app.crud.order import crud_order
 from decimal import Decimal
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+@router.get("/payment-methods", response_model=list[schemas.PaymentMethodResponse])
+async def get_payment_methods(
+    db: Session = Depends(get_db)
+) -> list[schemas.PaymentMethodResponse]:
+    """Get all available payment methods"""
+    return db.query(PaymentMethod).filter(PaymentMethod.is_deleted == False).all()
 
 
 @router.get("", response_model=list[OrderResponse])
@@ -90,13 +99,13 @@ async def create_order(
     **Important**: User cannot order their own products.
     
     - **contact_id**: Delivery contact info ID
-    - **payment_method_id**: Payment method ID
+    - **payment_method_id**: Payment method ID (e.g., 1 for COD)
     - **order_items**: List of products with quantities
     - **voucher_id**: Optional voucher code ID
     - **shipping_fee**: Shipping fee amount
     - **notes**: Optional order notes
     """
-    # Validate contact info exists and belongs to current user
+    # 1. Validate contact info exists and belongs to current user
     contact = db.query(ContactInfo).filter(
         ContactInfo.contact_id == order_in.contact_id,
         ContactInfo.user_id == current_user.user_id,
@@ -109,7 +118,19 @@ async def create_order(
             detail="Invalid contact information"
         )
     
-    # Validate products and check user is not seller
+    # 2. Validate payment method
+    payment_method = db.query(models.PaymentMethod).filter(
+        models.PaymentMethod.payment_method_id == order_in.payment_method_id,
+        models.PaymentMethod.is_deleted == False
+    ).first()
+    
+    if not payment_method:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid payment method"
+        )
+    
+    # 3. Validate products and check user is not seller
     all_product_ids = set()
     for item in order_in.order_items:
         product = db.query(Product).filter(
@@ -124,14 +145,12 @@ async def create_order(
                 detail=f"Product {item.product_id} not found or not available"
             )
         
-        # **KEY VALIDATION**: User cannot buy their own products
         if product.seller_id == current_user.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"You cannot order product '{product.title}' because you are the seller"
             )
         
-        # Check quantity availability
         if product.quantity < item.quantity:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -140,7 +159,8 @@ async def create_order(
         
         all_product_ids.add(item.product_id)
     
-    # Create order with items
+    # 4. Create order with items
+    # For COD (not online), initial status is always 0 (Pending)
     order = crud_order.create_order(
         db=db,
         buyer_id=current_user.user_id,
@@ -148,12 +168,12 @@ async def create_order(
         payment_method_id=order_in.payment_method_id,
         order_items=[item.dict() for item in order_in.order_items],
         shipping_fee=order_in.shipping_fee,
-        discount_amount=Decimal("0"),  # Will be calculated based on voucher later
+        discount_amount=Decimal("0"),  # Will be calculated based on voucher if needed
         voucher_id=order_in.voucher_id,
         notes=order_in.notes
     )
     
-    # Update product quantities
+    # 5. Update product quantities
     for item in order_in.order_items:
         product = db.query(Product).filter(Product.product_id == item.product_id).first()
         if product:

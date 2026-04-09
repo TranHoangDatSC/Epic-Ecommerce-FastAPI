@@ -1,104 +1,137 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { CartService, CartItem } from '../../../core/services/cart.service';
+import { ContactService, ContactInfo } from '../../../shared/services/contact.service';
+import { OrderService, PaymentMethod, OrderCreate } from '../../../shared/services/order.service';
+import { UIService } from '../../../core/services/ui.service';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <h2>Checkout</h2>
-      <div class="row">
-        <div class="col-md-8">
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5>Shipping Information</h5>
-            </div>
-            <div class="card-body">
-              <form>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="firstName" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="firstName">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="lastName" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="lastName">
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label for="address" class="form-label">Address</label>
-                  <input type="text" class="form-control" id="address">
-                </div>
-                <div class="row">
-                  <div class="col-md-4 mb-3">
-                    <label for="city" class="form-label">City</label>
-                    <input type="text" class="form-control" id="city">
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <label for="state" class="form-label">State</label>
-                    <input type="text" class="form-control" id="state">
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <label for="zip" class="form-label">ZIP Code</label>
-                    <input type="text" class="form-control" id="zip">
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <h5>Payment Information</h5>
-            </div>
-            <div class="card-body">
-              <form>
-                <div class="mb-3">
-                  <label for="cardNumber" class="form-label">Card Number</label>
-                  <input type="text" class="form-control" id="cardNumber">
-                </div>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="expiry" class="form-label">Expiry Date</label>
-                    <input type="text" class="form-control" id="expiry" placeholder="MM/YY">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="cvv" class="form-label">CVV</label>
-                    <input type="text" class="form-control" id="cvv">
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h5>Order Summary</h5>
-              <hr>
-              <div class="d-flex justify-content-between">
-                <span>Subtotal:</span>
-                <span>$99.99</span>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Shipping:</span>
-                <span>$10.00</span>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Tax:</span>
-                <span>$8.00</span>
-              </div>
-              <hr>
-              <div class="d-flex justify-content-between fw-bold">
-                <span>Total:</span>
-                <span>$117.99</span>
-              </div>
-              <button class="btn btn-primary w-100 mt-3">Place Order</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './checkout.html',
+  styleUrls: ['./checkout.scss']
 })
-export class CheckoutComponent {}
+export class CheckoutComponent implements OnInit {
+  private cartService = inject(CartService);
+  private contactService = inject(ContactService);
+  private orderService = inject(OrderService);
+  private uiService = inject(UIService);
+  private router = inject(Router);
+
+  cartItems: CartItem[] = [];
+  addresses: ContactInfo[] = [];
+  paymentMethods: PaymentMethod[] = [];
+  
+  selectedAddressId: number | null = null;
+  selectedPaymentMethodId: number | null = null;
+  orderNotes: string = '';
+  
+  isLoading = true;
+  isSubmitting = false;
+  
+  shippingFee = 30000; // Fixed shipping fee for demonstration
+
+  ngOnInit(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.isLoading = true;
+    
+    // Load cart items
+    this.cartService.cartItems$.subscribe(items => {
+      this.cartItems = items;
+      if (items.length === 0 && !this.isLoading) {
+        this.router.navigate(['/cart']);
+      }
+    });
+
+    // Load addresses
+    this.contactService.getContactInfos().subscribe({
+      next: (data) => {
+        this.addresses = data;
+        const defaultAddr = data.find(a => a.is_default);
+        if (defaultAddr) {
+          this.selectedAddressId = defaultAddr.contact_id || null;
+        } else if (data.length > 0) {
+          this.selectedAddressId = data[0].contact_id || null;
+        }
+      },
+      error: (err) => console.error('Error loading addresses:', err)
+    });
+
+    // Load payment methods
+    this.orderService.getPaymentMethods().subscribe({
+      next: (data) => {
+        this.paymentMethods = data;
+        if (data.length > 0) {
+          this.selectedPaymentMethodId = data[0].payment_method_id;
+        }
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading payment methods:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getSubtotal(): number {
+    return this.cartService.getTotalPrice();
+  }
+
+  getTotal(): number {
+    return this.getSubtotal() + this.shippingFee;
+  }
+
+  selectAddress(id: number | undefined): void {
+    if (id) this.selectedAddressId = id;
+  }
+
+  selectPaymentMethod(id: number): void {
+    this.selectedPaymentMethodId = id;
+  }
+
+  placeOrder(): void {
+    if (!this.selectedAddressId || !this.selectedPaymentMethodId) {
+      this.uiService.showError('Vui lòng chọn địa chỉ giao hàng và phương thức thanh toán!');
+      return;
+    }
+
+    if (this.cartItems.length === 0) {
+      this.uiService.showError('Giỏ hàng của bạn đang trống!');
+      return;
+    }
+
+    this.isSubmitting = true;
+    
+    const orderData: OrderCreate = {
+      contact_id: this.selectedAddressId,
+      payment_method_id: this.selectedPaymentMethodId,
+      order_items: this.cartItems.map(item => ({
+        product_id: item.product.product_id,
+        quantity: item.quantity
+      })),
+      shipping_fee: this.shippingFee,
+      notes: this.orderNotes
+    };
+
+    this.orderService.createOrder(orderData).subscribe({
+      next: (res) => {
+        this.uiService.showSuccess('Đặt hàng thành công!');
+        this.cartService.clearCart();
+        this.router.navigate(['/customer/profile/orders']);
+        this.isSubmitting = false;
+      },
+      error: (err) => {
+        console.error('Order Error:', err);
+        const errorMsg = err.error?.detail || 'Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!';
+        this.uiService.showError(errorMsg);
+        this.isSubmitting = false;
+      }
+    });
+  }
+}
