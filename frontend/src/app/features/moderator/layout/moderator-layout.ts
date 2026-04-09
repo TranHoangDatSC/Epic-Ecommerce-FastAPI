@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-moderator-layout',
@@ -10,9 +11,29 @@ import { Router, RouterModule } from '@angular/router';
   styleUrl: './moderator-layout.scss'
 })
 export class ModeratorLayoutComponent {
+  private authService = inject(AuthService);
+
+  navSections = [
+    {
+      title: 'HỆ THỐNG',
+      icon: 'bi bi-hdd-network',
+      items: [
+        { path: 'dashboard', label: 'Dashboard', icon: 'bi bi-speedometer2' }
+      ]
+    },
+    {
+      title: 'QUẢN LÝ NỘI DUNG',
+      icon: 'bi bi-grid-fill',
+      items: [
+        { path: 'user-manage', label: 'Quản lý người dùng', icon: 'bi bi-people' },
+        { path: 'product-manage', label: 'Kiểm duyệt sản phẩm', icon: 'bi bi-box-seam' }
+      ]
+    }
+  ];
+
   constructor(private router: Router) {}
 
   logout(): void {
-    this.router.navigate(['/auth/login']);
+    this.authService.logout();
   }
 }

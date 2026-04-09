@@ -49,19 +49,15 @@ export class ModeratorManageComponent implements OnInit {
     this.isLoading = true;
     this.moderators = [];
 
-    const includeDeleted = this.activeTab === 'locked';
-
-    this.adminService.getModerators(includeDeleted).subscribe({
+    // Always fetch all to manage active/locked state in tabs
+    this.adminService.getModerators(true).subscribe({
       next: (data: any) => {
         if (this.activeTab === 'locked') {
-          this.moderators = data.filter((mod: any) => mod.is_deleted === true);
+          // Locked tab: Show moderators where is_active is false
+          this.moderators = data.filter((mod: any) => mod.is_active === false);
         } else {
-          this.moderators = data
-            .filter((mod: any) => mod.is_deleted !== true)
-            .sort((a: any, b: any) => {
-              if (a.is_active === b.is_active) return 0;
-              return a.is_active ? -1 : 1;
-            });
+          // Active tab: Show moderators where is_active is true
+          this.moderators = data.filter((mod: any) => mod.is_active === true);
         }
 
         if (this.skip >= this.moderators.length) {

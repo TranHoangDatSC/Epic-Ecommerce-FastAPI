@@ -13,6 +13,7 @@ export interface ViolationReportRequest {
 }
 
 export interface UserBanRequest {
+  user_id: number;
   reason: string;
 }
 
@@ -71,12 +72,12 @@ export class ModeratorService {
 
   // User management
   banUser(userId: number, reason: string): Observable<any> {
-    const body: UserBanRequest = { reason };
+    const body: UserBanRequest = { user_id: userId, reason };
     return this.http.post(`${this.apiUrl}/users/${userId}/ban`, body);
   }
 
   unbanUser(userId: number, reason: string): Observable<any> {
-    const body: UserBanRequest = { reason };
+    const body: UserBanRequest = { user_id: userId, reason };
     return this.http.post(`${this.apiUrl}/users/${userId}/unban`, body);
   }
 

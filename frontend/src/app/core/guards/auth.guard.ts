@@ -37,14 +37,16 @@ export const moderatorGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   const isAuthenticated = authService.isAuthenticated();
-  const role = Number(authService.getUserRole());
+  const role = authService.getUserRole();
+
+  console.log('[moderatorGuard] Check role:', role);
 
   if (!isAuthenticated) {
     router.navigate(['/auth/login']);
     return false;
   }
 
-  if (role === 1 || role === 2) {
+  if (role !== null && (Number(role) === 1 || Number(role) === 2)) {
     return true;
   }
 

@@ -1,47 +1,47 @@
 <div class="admin-content-wrapper delay-animation">
   <!-- Header -->
   <header class="page-header">
-    <div>
+    <div class="header-info">
       <h2>Quản lý Moderator</h2>
       <p>"Hệ thống quản lý kiểm duyệt viên của nền tảng."</p>
     </div>
     <div class="toolbar">
-      <button class="btn btn-success" (click)="openModal()" style="background: #48bb78; border:none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600;">
+      <button class="btn btn-success" (click)="openModal()">
         <i class="bi bi-plus-lg me-2"></i> Thêm Moderator Mới
       </button>
     </div>
   </header>
 
   <!-- Table Container -->
-  <div class="admin-table-container position-relative">
+  <div class="admin-table-container">
     <!-- Tabs -->
-    <ul class="nav nav-tabs mb-3" style="border-bottom: 1px solid #374151;">
+    <ul class="nav nav-tabs">
       <li class="nav-item">
-        <a class="nav-link" [class.active]="activeTab === 'active'" (click)="switchTab('active')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
-          <i class="bi bi-person-check-fill me-2"></i>Đang hoạt động
+        <a class="nav-link" [class.active]="activeTab === 'active'" (click)="switchTab('active')">
+          <i class="bi bi-person-check"></i>
+          Đang hoạt động
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" [class.active]="activeTab === 'locked'" (click)="switchTab('locked')" style="color: #d1d5db; background: transparent; border: none; cursor: pointer;">
-          <i class="bi bi-lock-fill me-2"></i>Bị khóa
+        <a class="nav-link" [class.active]="activeTab === 'locked'" (click)="switchTab('locked')">
+          <i class="bi bi-person-x"></i>
+          Bị khóa
         </a>
       </li>
     </ul>
 
     <div *ngIf="isLoading" class="loading-overlay">
-      <div class="spinner-border" style="color: #48bb78;" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <div class="spinner-border text-primary" role="status"></div>
     </div>
 
     <div class="table-responsive">
       <table class="table table-dark-custom align-middle mb-0">
         <thead>
           <tr>
-            <th>Moderator & Chi tiết</th>
-            <th>Thông tin liên hệ</th>
-            <th>Trạng thái</th>
-            <th class="text-end">Hành động</th>
+            <th>MODERATOR & CHI TIẾT</th>
+            <th>THÔNG TIN LIÊN HỆ</th>
+            <th>TRẠNG THÁI</th>
+            <th class="text-end">HÀNH ĐỘNG</th>
           </tr>
         </thead>
         <tbody>
@@ -53,44 +53,42 @@
                 </div>
                 <div>
                   <div class="cat-name">{{ moderator.username }}</div>
-                  <div class="cat-desc">{{ moderator.full_name }}</div>
+                  <div class="cat-desc">{{ moderator.full_name || 'Kiểm duyệt viên' }}</div>
                 </div>
               </div>
             </td>
             <td>
               <div class="text-white">{{ moderator.email }}</div>
-              <div class="text-muted small">{{ moderator.phone_number || 'Chưa có' }}</div>
+              <div class="cat-desc">{{ moderator.phone_number || '0987654321' }}</div>
             </td>
             <td>
-              <span *ngIf="moderator.is_active" class="badge bg-success">Hoạt động</span>
-              <span *ngIf="!moderator.is_active" class="badge bg-danger">Đã khóa</span>
-              <span *ngIf="activeTab === 'locked'" class="badge bg-warning text-dark ms-2">
-                <i class="bi bi-lock-fill me-1"></i>Bị khóa
+              <span class="badge" [class.bg-success]="moderator.is_active" [class.bg-danger]="!moderator.is_active">
+                {{ moderator.is_active ? 'Hoạt động' : 'Đã khóa' }}
               </span>
             </td>
             <td>
-              <div class="action-buttons">
-                <!-- <button *ngIf="activeTab === 'active'" (click)="openModal(moderator)" class="btn btn-primary-custom btn-sm">
-                  <i class="bi bi-pencil-square"></i> Chỉnh sửa
-                </button> -->
-                <button *ngIf="activeTab === 'active'" (click)="openStatusModal(moderator)" class="btn btn-danger-custom btn-sm">
+              <div class="action-buttons d-flex justify-content-end gap-2">
+                <button *ngIf="activeTab === 'active'" (click)="openStatusModal(moderator)" class="btn-sm btn-danger-custom">
                   <i class="bi bi-lock"></i> Khóa
                 </button>
-                <button *ngIf="activeTab === 'locked'" (click)="openStatusModal(moderator)" class="btn btn-success btn-sm">
+                <button *ngIf="activeTab === 'locked'" (click)="openStatusModal(moderator)" class="btn-sm btn-success">
                   <i class="bi bi-unlock"></i> Mở khóa
                 </button>
-                <!-- <button *ngIf="activeTab === 'locked'" (click)="hardDeleteModerator(moderator.user_id)" class="btn btn-danger-custom btn-sm">
-                  <i class="bi bi-x-circle"></i> Xóa vĩnh viễn
-                </button> -->
               </div>
             </td>
           </tr>
         </tbody>
       </table>
 
+      <!-- Empty State -->
+      <div class="p-5 text-center text-muted" *ngIf="!isLoading && pagedModerators.length === 0">
+         <i class="bi bi-people mb-3 d-block" style="font-size: 3rem; opacity: 0.2;"></i>
+         <p>Không tìm thấy danh sách moderator nào phù hợp.</p>
+      </div>
+
       <div *ngIf="moderators.length > limit" class="pagination-controls">
         <div class="pagination-info">
-          Đang hiển thị <strong class="text-white">{{ pagedModerators.length }}</strong> trên tổng <strong class="text-white">{{ moderators.length }}</strong> moderator.
+          Đang hiển thị <strong>{{ pagedModerators.length }}</strong> trên tổng <strong>{{ moderators.length }}</strong> moderator.
         </div>
         <div class="pagination-buttons">
           <button class="pagination-btn" (click)="prevPage()" [disabled]="skip === 0">Previous</button>
@@ -100,45 +98,45 @@
     </div>
   </div>
 
-  <!-- Modal using Bootstrap structure but custom dark theme -->
-  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.7);">
+  <!-- Modal for Add/Edit -->
+  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content dark-theme">
-        <div class="modal-header dark-theme">
+        <div class="modal-header">
           <h5 class="modal-title fw-bold">{{ editingModerator ? 'Chỉnh sửa Moderator' : 'Thêm Moderator Mới' }}</h5>
           <button type="button" class="btn-close" (click)="closeModal()"></button>
         </div>
-        <div class="modal-body dark-theme">
+        <div class="modal-body">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label dark-theme">Username</label>
-              <input type="text" class="form-control dark-theme" [(ngModel)]="moderatorForm.username" placeholder="Tên đăng nhập">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-control" [(ngModel)]="moderatorForm.username" placeholder="Tên đăng nhập">
             </div>
             <div class="col-md-6">
-              <label class="form-label dark-theme">Email</label>
-              <input type="email" class="form-control dark-theme" [(ngModel)]="moderatorForm.email" placeholder="Email">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" [(ngModel)]="moderatorForm.email" placeholder="Email">
             </div>
             <div class="col-md-6" *ngIf="!editingModerator">
-              <label class="form-label dark-theme">Mật khẩu</label>
-              <input type="password" class="form-control dark-theme" [(ngModel)]="moderatorForm.password" placeholder="Mật khẩu">
+              <label class="form-label">Mật khẩu</label>
+              <input type="password" class="form-control" [(ngModel)]="moderatorForm.password" placeholder="Mật khẩu">
             </div>
             <div class="col-md-6">
-              <label class="form-label dark-theme">Họ và tên</label>
-              <input type="text" class="form-control dark-theme" [(ngModel)]="moderatorForm.full_name" placeholder="Họ và tên">
+              <label class="form-label">Họ và tên</label>
+              <input type="text" class="form-control" [(ngModel)]="moderatorForm.full_name" placeholder="Họ và tên">
             </div>
             <div class="col-md-6">
-              <label class="form-label dark-theme">Số điện thoại</label>
-              <input type="text" class="form-control dark-theme" [(ngModel)]="moderatorForm.phone_number" placeholder="Số điện thoại">
+              <label class="form-label">Số điện thoại</label>
+              <input type="text" class="form-control" [(ngModel)]="moderatorForm.phone_number" placeholder="Số điện thoại">
             </div>
             <div class="col-md-6">
-              <label class="form-label dark-theme">Địa chỉ</label>
-              <input type="text" class="form-control dark-theme" [(ngModel)]="moderatorForm.address" placeholder="Địa chỉ">
+              <label class="form-label">Địa chỉ</label>
+              <input type="text" class="form-control" [(ngModel)]="moderatorForm.address" placeholder="Địa chỉ">
             </div>
           </div>
         </div>
-        <div class="modal-footer dark-theme">
+        <div class="modal-footer">
           <button type="button" class="btn btn-outline-custom" (click)="closeModal()">Hủy bỏ</button>
-          <button type="button" class="btn text-white px-4 py-2" style="background: #48bb78; border:none; border-radius: 8px; font-weight: 600;" (click)="saveModerator()">
+          <button type="button" class="btn btn-success px-4" (click)="saveModerator()">
             Lưu Thay Đổi
           </button>
         </div>
@@ -146,25 +144,27 @@
     </div>
   </div>
 
-  <div class="modal fade" [class.show]="showStatusModal" [style.display]="showStatusModal ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.7);">
+  <!-- Modal for Lock/Unlock -->
+  <div class="modal fade" [class.show]="showStatusModal" [style.display]="showStatusModal ? 'block' : 'none'" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
       <div class="modal-content dark-theme">
-        <div class="modal-header dark-theme">
+        <div class="modal-header">
           <h5 class="modal-title fw-bold">
             {{ statusAction === 'lock' ? 'Khóa Moderator' : 'Mở khóa Moderator' }}
           </h5>
           <button type="button" class="btn-close" (click)="closeStatusModal()"></button>
         </div>
-        <div class="modal-body dark-theme">
-          <p class="mb-3">Vui lòng nhập lý do để {{ statusAction === 'lock' ? 'khóa' : 'mở khóa' }} moderator.</p>
-          <div class="mb-3">
-            <label class="form-label dark-theme">Lý do</label>
-            <textarea class="form-control dark-theme" rows="4" [(ngModel)]="statusReason" placeholder="Nhập lý do..."></textarea>
+        <div class="modal-body text-center py-4">
+          <i class="bi mb-3 d-block" [class]="statusAction === 'lock' ? 'bi-lock text-danger' : 'bi-unlock text-success'" style="font-size: 3rem;"></i>
+          <p class="mb-4">Bạn có chắc chắn muốn {{ statusAction === 'lock' ? 'khóa' : 'mở khóa' }} moderator <strong>{{ statusModalModerator?.username }}</strong>?</p>
+          <div class="text-start">
+            <label class="form-label">Lý do</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Nhập lý do thực hiện..."></textarea>
           </div>
         </div>
-        <div class="modal-footer dark-theme">
+        <div class="modal-footer">
           <button type="button" class="btn btn-outline-custom" (click)="closeStatusModal()">Hủy bỏ</button>
-          <button type="button" class="btn text-white px-4 py-2" style="background: #48bb78; border:none; border-radius: 8px; font-weight: 600;" (click)="saveStatusChange()">
+          <button type="button" class="btn" [class]="statusAction === 'lock' ? 'btn-danger-custom' : 'btn-success'" (click)="saveStatusChange()">
             Xác nhận
           </button>
         </div>

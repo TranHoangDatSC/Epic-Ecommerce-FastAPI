@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModeratorService } from '../../../shared/services/moderator.service';
 
@@ -10,30 +10,52 @@ import { ModeratorService } from '../../../shared/services/moderator.service';
   styleUrl: './product-manage.scss'
 })
 export class ModeratorProductManageComponent implements OnInit {
-  pendingProducts: any[] = [];
+  products: any[] = [];
   isLoading = false;
   actionLoading = false;
   message: string | null = null;
+  activeTab: 'pending' | 'approved' | 'rejected' = 'pending';
 
-  constructor(private moderatorService: ModeratorService) {}
+  constructor(
+    private moderatorService: ModeratorService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    this.loadPendingProducts();
+    this.loadProducts();
   }
 
-  loadPendingProducts(): void {
+  loadProducts(): void {
     this.isLoading = true;
-    this.moderatorService.getPendingProducts().subscribe({
+    this.message = null;
+    this.products = [];
+    this.cdr.detectChanges();
+    
+    const obs = this.activeTab === 'pending' 
+    ? this.moderatorService.getPendingProducts() 
+    : this.activeTab === 'approved' 
+      ? this.moderatorService.getArchivedProducts() 
+      : this.moderatorService.getRejectedProducts();
+
+    obs.subscribe({
       next: (data) => {
-        this.pendingProducts = data || [];
+        console.log(`Data for ${this.activeTab}:`, data);
+        this.products = data || [];
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error loading pending products:', err);
-        this.message = err?.error?.detail || 'Không tải được sản phẩm đang chờ duyệt.';
+        console.error('Error loading products:', err);
+        this.message = err?.error?.detail || 'Không tải được danh sách sản phẩm.';
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  selectTab(tab: 'pending' | 'approved' | 'rejected'): void {
+    this.activeTab = tab;
+    this.loadProducts();
   }
 
   updateStatus(product: any, status: 'approved' | 'rejected'): void {
@@ -53,7 +75,7 @@ export class ModeratorProductManageComponent implements OnInit {
       next: () => {
         this.message = `Sản phẩm "${product.product_name}" đã được ${status === 'approved' ? 'phê duyệt' : 'từ chối'}.`;
         this.actionLoading = false;
-        this.loadPendingProducts();
+        this.loadProducts();
       },
       error: (err) => {
         console.error('Error updating product status:', err);

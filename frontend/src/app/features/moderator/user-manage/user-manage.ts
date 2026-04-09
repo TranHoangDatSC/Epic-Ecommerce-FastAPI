@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModeratorService } from '../../../shared/services/moderator.service';
@@ -17,8 +17,18 @@ export class ModeratorUserManageComponent implements OnInit {
   actionLoading = false;
   searchTerm = '';
   message: string | null = null;
+  currentTab: 'active' | 'locked' = 'active';
 
-  constructor(private moderatorService: ModeratorService) {}
+  // Modal control
+  showStatusModal = false;
+  selectedUser: any = null;
+  statusReason = '';
+  isBanAction = true;
+
+  constructor(
+    private moderatorService: ModeratorService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -26,53 +36,89 @@ export class ModeratorUserManageComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
+    this.message = null;
     this.moderatorService.getUsers().subscribe({
       next: (data) => {
-        this.users = data.filter((user: any) => user.role_id === 3);
-        this.filteredUsers = [...this.users];
+        console.log('Data user:', data);
+        this.users = data ? data.filter((user: any) => Number(user.role_id) === 3) : [];
+        this.filterUsers();
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error loading users:', err);
         this.message = err?.error?.detail || 'Không tải được danh sách người dùng.';
         this.isLoading = false;
+        console.error(err);
+        this.cdr.detectChanges();
       }
     });
   }
 
-  filterUsers(): void {
-    const term = this.searchTerm.trim().toLowerCase();
-    if (!term) {
-      this.filteredUsers = [...this.users];
-      return;
-    }
-    this.filteredUsers = this.users.filter((user) =>
-      user.username?.toLowerCase().includes(term) ||
-      user.email?.toLowerCase().includes(term) ||
-      user.full_name?.toLowerCase().includes(term) ||
-      user.user_id?.toString().includes(term)
-    );
+  selectTab(tab: 'active' | 'locked'): void {
+    this.currentTab = tab;
+    this.filterUsers();
   }
 
-  toggleLock(user: any): void {
-    const action = user.is_active ? 'lock' : 'unlock';
-    const label = user.is_active ? 'khóa' : 'mở khóa';
-    const reason = prompt(`Lý do ${label} tài khoản:`);
-    if (!reason) {
-      return;
+  filterUsers(): void {
+    let list = [...this.users];
+
+    if (this.currentTab === 'active') {
+      list = list.filter(u => u.is_active);
+    } else {
+      list = list.filter(u => !u.is_active);
     }
+
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
+      list = list.filter((user) =>
+        user.username?.toLowerCase().includes(term) ||
+        user.email?.toLowerCase().includes(term) ||
+        user.full_name?.toLowerCase().includes(term) ||
+        user.user_id?.toString().includes(term)
+      );
+    }
+
+    this.filteredUsers = list;
+  }
+
+  openStatusModal(user: any): void {
+    this.selectedUser = user;
+    this.isBanAction = user.is_active;
+    this.statusReason = '';
+    this.showStatusModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.selectedUser = null;
+    this.statusReason = '';
+    this.cdr.detectChanges();
+  }
+
+  confirmStatusChange(): void {
+    if (!this.statusReason.trim() || !this.selectedUser) return;
+
     this.actionLoading = true;
     this.message = null;
-    this.moderatorService.lockUnlockUser(user.user_id, action as 'lock' | 'unlock', reason).subscribe({
+
+    const obs = this.isBanAction 
+      ? this.moderatorService.banUser(this.selectedUser.user_id, this.statusReason)
+      : this.moderatorService.unbanUser(this.selectedUser.user_id, this.statusReason);
+
+    obs.subscribe({
       next: () => {
-        this.message = `Người dùng đã được ${label}.`;
+        const label = this.isBanAction ? 'khóa' : 'mở khóa';
+        this.message = `Người dùng đã được ${label} thành công.`;
         this.actionLoading = false;
+        this.closeStatusModal();
         this.loadUsers();
       },
       error: (err) => {
-        console.error('Error toggling user lock:', err);
-        this.message = err?.error?.detail || 'Không thể thay đổi trạng thái người dùng.';
+        console.error('Error updating account status:', err);
+        this.message = err?.error?.detail || 'Không thể cập nhật trạng thái người dùng.';
         this.actionLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
