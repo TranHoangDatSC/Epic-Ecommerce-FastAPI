@@ -1,0 +1,51 @@
+<div class="page-header">
+  <div>
+    <h2>Duyệt sản phẩm đang chờ</h2>
+    <p>Danh sách sản phẩm cần moderator phê duyệt hoặc từ chối.</p>
+  </div>
+</div>
+
+<div class="page-card">
+  <div class="page-card__body">
+    <div class="table-wrapper" *ngIf="!isLoading && pendingProducts?.length; else emptyState">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tên sản phẩm</th>
+            <th>Giá</th>
+            <th>Loại</th>
+            <th>Người tạo</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of pendingProducts">
+            <td>{{ product.product_id }}</td>
+            <td>{{ product.product_name }}</td>
+            <td>{{ product.price | currency: 'VND':'symbol':'1.0-0' }}</td>
+            <td>{{ product.category_name || 'Chưa rõ' }}</td>
+            <td>{{ product.created_by || 'Không rõ' }}</td>
+            <td class="action-buttons">
+              <button class="btn btn-success" [disabled]="actionLoading" (click)="updateStatus(product, 'approved')">
+                Phê duyệt
+              </button>
+              <button class="btn btn-danger" [disabled]="actionLoading" (click)="updateStatus(product, 'rejected')">
+                Từ chối
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <p *ngIf="isLoading">Đang tải sản phẩm chờ duyệt...</p>
+        <p *ngIf="!isLoading && !pendingProducts?.length">Hiện không có sản phẩm nào đang chờ duyệt.</p>
+      </div>
+    </ng-template>
+
+    <div class="message" *ngIf="message">{{ message }}</div>
+  </div>
+</div>

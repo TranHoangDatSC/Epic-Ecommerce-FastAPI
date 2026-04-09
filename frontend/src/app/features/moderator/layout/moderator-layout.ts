@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-moderator-layout',
@@ -9,4 +9,10 @@ import { RouterModule } from '@angular/router';
   templateUrl: './moderator-layout.html',
   styleUrl: './moderator-layout.scss'
 })
-export class ModeratorLayoutComponent {}
+export class ModeratorLayoutComponent {
+  constructor(private router: Router) {}
+
+  logout(): void {
+    this.router.navigate(['/auth/login']);
+  }
+}

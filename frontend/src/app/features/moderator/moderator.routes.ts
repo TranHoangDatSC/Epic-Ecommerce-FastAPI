@@ -13,6 +13,18 @@ export const moderatorRoutes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./dashboard/moderator-dashboard').then(m => m.ModeratorDashboardComponent)
+      },
+      {
+        path: 'user-manage',
+        loadComponent: () => import('./user-manage/user-manage').then(m => m.ModeratorUserManageComponent)
+      },
+      {
+        path: 'product-manage',
+        loadComponent: () => import('./product-manage/product-manage').then(m => m.ModeratorProductManageComponent)
+      },
+      {
+        path: '**',
+        redirectTo: 'dashboard'
       }
     ]
   }

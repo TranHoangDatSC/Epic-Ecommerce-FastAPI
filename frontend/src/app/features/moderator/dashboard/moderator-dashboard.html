@@ -1,179 +1,76 @@
-<div class="dashboard-wrapper">
-  <header class="page-header">
+<div class="moderator-dashboard-wrapper delay-animation">
+  <header class="dashboard-header">
     <div>
-      <h2>Moderator Dashboard</h2>
-      <p>Giám sát nội dung, người dùng và log vi phạm.</p>
+      <h1>Trung tâm Moderator</h1>
+      <p style="color: #a0aec0; margin: 0; font-size: 0.9rem; margin-top: 0.5rem;">Giao diện admin-style cho moderator. Chỉ dùng API duyệt sản phẩm và khóa/mở khóa user role 3.</p>
     </div>
-    <button class="btn btn-outline-custom" (click)="loadDashboard()">Tải lại</button>
+
+    <div class="header-meta">
+      <div class="status-badge">
+        <i class="bi bi-shield-lock"></i> Moderator ready
+      </div>
+      <button class="btn-refresh" (click)="loadDashboard()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
   </header>
 
   <div class="stats-grid">
-    <div class="stat-card products">
-      <div class="stat-label">Sản phẩm chờ duyệt</div>
-      <div class="stat-value">{{ pendingProducts.length }}</div>
-    </div>
     <div class="stat-card users">
-      <div class="stat-label">Người dùng role 3</div>
-      <div class="stat-value">{{ users.length }}</div>
+      <div class="stat-header">
+        <h3>Sản phẩm chờ duyệt</h3>
+        <i class="bi bi-hourglass-split stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ pendingProducts.length }}</p>
     </div>
-    <div class="stat-card violations">
-      <div class="stat-label">Báo cáo vi phạm</div>
-      <div class="stat-value">{{ violationReviews.length }}</div>
+
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <h3>Người dùng role 3</h3>
+        <i class="bi bi-people-fill stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ users.length }}</p>
     </div>
-    <div class="stat-card logs">
-      <div class="stat-label">Nhật ký vi phạm</div>
-      <div class="stat-value">{{ violationLogs.length }}</div>
+
+    <div class="stat-card pending">
+      <div class="stat-header">
+        <h3>Tổng tác vụ</h3>
+        <i class="bi bi-clipboard-check stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ totalTasks }}</p>
+    </div>
+
+    <div class="stat-card orders">
+      <div class="stat-header">
+        <h3>API Moderator</h3>
+        <i class="bi bi-cloud-check stat-icon"></i>
+      </div>
+      <p class="stat-value">Lock/Unlock + Duyệt</p>
     </div>
   </div>
 
-  <div *ngIf="message" class="alert-box">{{ message }}</div>
-
-  <section class="section-card">
-    <div class="section-header">
-      <h3>1. Quản lý sản phẩm</h3>
-      <p>Kiểm duyệt nội dung sản phẩm trước khi lên sàn.</p>
+  <div class="system-details">
+    <div class="info-card">
+      <h4><i class="bi bi-clipboard-data me-2" style="color: #63b3ed;"></i>Trạng thái kiểm duyệt</h4>
+      <div style="color: #cbd5e0; font-size: 0.95rem; line-height: 1.6;">
+        <p class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ pendingProducts.length }} sản phẩm chờ duyệt</p>
+        <p class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ users.length }} tài khoản role 3 có thể khóa/mở khóa</p>
+        <p class="mb-0"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Hành động thực hiện qua moderator API.</p>
+      </div>
     </div>
 
-    <div *ngIf="loadingProducts" class="section-loading">Đang tải sản phẩm...</div>
-    <div *ngIf="!loadingProducts && pendingProducts.length === 0" class="section-empty">Không có sản phẩm chờ duyệt.</div>
-
-    <div class="table-responsive" *ngIf="pendingProducts.length > 0">
-      <table class="table table-dark-custom align-middle mb-0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tiêu đề</th>
-            <th>Người bán</th>
-            <th>Trạng thái</th>
-            <th class="text-end">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let product of pendingProducts">
-            <td>{{ product.product_id }}</td>
-            <td>{{ product.title }}</td>
-            <td>{{ product.seller?.full_name || product.seller?.username || 'N/A' }}</td>
-            <td>
-              <span class="badge badge-pending">Chờ duyệt</span>
-            </td>
-            <td class="text-end action-cell">
-              <button class="btn btn-success btn-sm" (click)="approveProduct(product.product_id)">Duyệt</button>
-              <button class="btn btn-danger btn-sm" (click)="rejectProduct(product.product_id)">Từ chối</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="info-card">
+      <h4><i class="bi bi-lightning-charge me-2" style="color: #ed8936;"></i>Thao tác nhanh</h4>
+      <div class="quick-action-grid">
+        <a href="#pending-products" class="quick-action-btn">
+          <i class="bi bi-check2-square"></i>
+          Duyệt sản phẩm
+        </a>
+        <a href="#role3-users" class="quick-action-btn">
+          <i class="bi bi-person-lines-fill"></i>
+          Quản lý role 3
+        </a>
+      </div>
     </div>
-  </section>
-
-  <section class="section-card">
-    <div class="section-header">
-      <h3>2. Quản lý người dùng</h3>
-      <p>Xử lý tài khoản vi phạm (Role 3).</p>
-    </div>
-
-    <div *ngIf="loadingUsers" class="section-loading">Đang tải người dùng...</div>
-    <div *ngIf="!loadingUsers && users.length === 0" class="section-empty">Không có người dùng để xử lý.</div>
-
-    <div class="table-responsive" *ngIf="users.length > 0">
-      <table class="table table-dark-custom align-middle mb-0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username / Email</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let user of users">
-            <td>{{ user.user_id }}</td>
-            <td>
-              <div>{{ user.username }}</div>
-              <div class="small text-muted">{{ user.email }}</div>
-            </td>
-            <td>
-              <span [class.badge-active]="user.is_active" [class.badge-inactive]="!user.is_active" class="badge-status">
-                {{ user.is_active ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
-            <td class="action-cell">
-              <button class="btn btn-warning btn-sm" (click)="banUser(user)">Ban</button>
-              <button class="btn btn-success btn-sm" (click)="unbanUser(user)">Unban</button>
-              <button class="btn btn-secondary btn-sm" (click)="lockUser(user)">Lock</button>
-              <button class="btn btn-info btn-sm" (click)="unlockUser(user)">Unlock</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="section-card">
-    <div class="section-header">
-      <h3>3. Nội dung & Đánh giá</h3>
-      <p>Xử lý các review bị báo cáo vi phạm.</p>
-    </div>
-
-    <div *ngIf="loadingReviews" class="section-loading">Đang tải báo cáo...</div>
-    <div *ngIf="!loadingReviews && violationReviews.length === 0" class="section-empty">Không có báo cáo vi phạm.</div>
-
-    <div class="table-responsive" *ngIf="violationReviews.length > 0">
-      <table class="table table-dark-custom align-middle mb-0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tiêu đề</th>
-            <th>Nội dung</th>
-            <th>Người đánh giá</th>
-            <th class="text-end">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let review of violationReviews">
-            <td>{{ review.review_id }}</td>
-            <td>{{ review.title || 'Không có tiêu đề' }}</td>
-            <td>{{ review.content || 'Không có nội dung' }}</td>
-            <td>{{ review.reviewer?.full_name || review.reviewer?.username || 'N/A' }}</td>
-            <td class="text-end action-cell">
-              <button class="btn btn-danger btn-sm" (click)="handleViolation(review)">Xử lý</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="section-card">
-    <div class="section-header">
-      <h3>4. Nhật ký hệ thống</h3>
-      <p>Xem lịch sử các hành động xử lý vi phạm.</p>
-    </div>
-
-    <div *ngIf="loadingLogs" class="section-loading">Đang tải nhật ký...</div>
-    <div *ngIf="!loadingLogs && violationLogs.length === 0" class="section-empty">Không có nhật ký.</div>
-
-    <div class="table-responsive" *ngIf="violationLogs.length > 0">
-      <table class="table table-dark-custom align-middle mb-0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Hành động</th>
-            <th>Moderator</th>
-            <th>Target</th>
-            <th>Thời gian</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let log of violationLogs">
-            <td>{{ log.log_id || log.violation_log_id || 'N/A' }}</td>
-            <td>{{ log.action_type || log.action_details || 'N/A' }}</td>
-            <td>{{ log.moderator?.full_name || log.moderator?.username || 'N/A' }}</td>
-            <td>{{ log.target_title || log.target_type || 'N/A' }}</td>
-            <td>{{ log.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+  </div>
 </div>

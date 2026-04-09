@@ -6,8 +6,25 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a routerLink="/moderator/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+      <a routerLink="./dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
     </nav>
+    <nav class="sidebar-nav">
+      <a routerLink="./user-manage" routerLinkActive="active" class="nav-link">Quản lý người dùng</a>
+    </nav>
+    <nav class="sidebar-nav">
+      <a routerLink="./product-manage" routerLinkActive="active" class="nav-link">Quản lý sản phẩm</a>
+    </nav>
+    <!-- Khối Logout -->
+    <div class="nav-section mt-4">
+      <ul class="nav-list">
+        <li class="nav-item logout-item">
+          <button type="button" class="nav-link logout-link" (click)="logout()">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Đăng xuất</span>
+          </button>
+        </li>
+      </ul>
+    </div>
   </aside>
 
   <main class="main-content">
