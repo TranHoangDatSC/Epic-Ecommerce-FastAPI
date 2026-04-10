@@ -1,0 +1,82 @@
+<div class="container">
+  <h2>Đăng tin rao bán</h2>
+
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+
+    <!-- Tên sản phẩm -->
+    <div class="form-group">
+      <label>Tên sản phẩm</label>
+      <input type="text" formControlName="name" class="form-control" />
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label>Danh mục</label>
+        <select formControlName="category" class="form-control">
+          <option value="electronics">Đồ điện tử</option>
+          <option value="fashion">Thời trang</option>
+        </select>
+      </div>
+
+      <div class="col">
+        <label>Giá bán (VNĐ)</label>
+        <input type="number" formControlName="price" class="form-control" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label>Số lượng trong kho</label>
+        <input type="number" formControlName="quantity" class="form-control" />
+      </div>
+
+      <div class="col">
+        <label>Video URL</label>
+        <input type="text" formControlName="videoUrl" class="form-control" />
+      </div>
+    </div>
+
+    <!-- Upload ảnh -->
+    <div class="form-group upload-group">
+
+      <button type="button" class="upload-btn" (click)="fileInput.click()">
+        📷 Chọn ảnh
+        <span class="sub-text">Tối đa 3 ảnh</span>
+      </button>
+
+      <input
+        #fileInput
+        type="file"
+        (change)="onFileChange($event)"
+        multiple
+        accept="image/*"
+        hidden
+      />
+
+      <div class="preview">
+        <div class="preview-item" *ngFor="let img of previewUrls; let i = index">
+
+          <img [src]="img" />
+
+          <button type="button" class="remove-btn" (click)="removeImage(i)">
+            ×
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Box mô tả -->
+    <div class="form-group">
+      <label>Mô tả sản phẩm</label>
+      <textarea formControlName="description" rows="4" class="form-control"></textarea>
+    </div>
+
+    <div class="btn-wrapper">
+      <button type="submit" class="btn btn-primary">
+        XÁC NHẬN ĐĂNG BÁN
+      </button>
+    </div>
+
+  </form>
+</div>

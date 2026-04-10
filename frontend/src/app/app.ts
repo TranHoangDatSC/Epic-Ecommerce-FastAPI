@@ -24,7 +24,8 @@ export class App {
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
       // Hide header/footer for moderator and admin routes
       const isSpecialRoute = event.urlAfterRedirects.startsWith('/moderator') || 
-                            event.urlAfterRedirects.startsWith('/admin');
+                            event.urlAfterRedirects.startsWith('/admin') ||
+                            event.urlAfterRedirects.startsWith('/sellerhub')
       this.showShell.set(!isSpecialRoute);
     });
 

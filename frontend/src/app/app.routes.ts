@@ -34,6 +34,13 @@ export const routes: Routes = [
     loadChildren: () => import('./features/moderator/moderator.routes').then(m => m.moderatorRoutes)
   },
 
+  //My shop
+   {
+    path: 'sellerhub',
+    canActivate: [authGuard], 
+    loadChildren: () => import('./features/sellerhub/sellerhub.routes').then(m => m.sellerhubRoutes)
+  },
+
   { path: 'contact', loadComponent: () => import('./features/contact/contact').then((m) => m.ContactComponent) },
   { path: '**', redirectTo: '/home' }
 ];

@@ -1,0 +1,53 @@
+<div class="admin-dashboard-wrapper delay-animation">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div>
+      <h1>Bảng điều khiển</h1>
+      <!-- <p style="color: #a0aec0; margin: 0; font-size: 0.9rem; margin-top: 0.5rem;"></p> -->
+    </div>
+    <div class="header-meta">
+      <div class="status-badge">
+        <i class="bi bi-activity"></i> Hệ thống Ổn định
+      </div>
+      <button class="btn-refresh" (click)="loadStats()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <div class="stat-header">
+        <h3>Tổng doanh thu</h3>
+        <i class="bi bi-wallet stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_users }}</p>
+    </div>
+
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <h3>Đơn hoàn tất</h3>
+        <i class="fa-solid fa-circle-check stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_revenue | currency:'VND':'symbol':'1.0-0' }}</p>
+    </div>
+
+    <div class="stat-card pending">
+      <div class="stat-header">
+        <h3>Tỉ lệ chuyển đổi</h3>
+        <i class="fa-solid fa-chart-line stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.pending_products }}</p>
+    </div>
+
+    <div class="stat-card orders">
+      <div class="stat-header">
+        <h3>Lượt xem tin</h3>
+       <i class="fa-solid fa-eye stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_orders }}</p>
+    </div>
+  </div>
+  
+</div>

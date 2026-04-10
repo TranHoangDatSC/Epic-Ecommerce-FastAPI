@@ -42,6 +42,12 @@ import { CartItem } from '../../../core/services/cart.service';
                 Contact
               </a>
             </li>
+             <li class="nav-item *ngIf="user()?.role === 'CUSTOMER'">
+              <a class="nav-link d-flex align-items-center" routerLink="/sellerhub">
+                <i class="fa-solid fa-store"></i>
+                My Shop
+              </a>
+            </li>
             <li class="nav-item" *ngIf="user()?.role === 'CUSTOMER'">
               <a class="nav-link" routerLink="/customer/profile">Profile</a>
             </li>
