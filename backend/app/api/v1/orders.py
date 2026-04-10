@@ -180,6 +180,10 @@ async def create_order(
             product.quantity -= item.quantity
             db.add(product)
     
+    # 6. Clear shopping cart
+    from app.crud.shopping_cart import crud_cart
+    crud_cart.clear_cart(db, current_user.user_id)
+    
     db.commit()
     db.refresh(order)
     

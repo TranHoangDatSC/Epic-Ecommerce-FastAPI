@@ -18,6 +18,14 @@ export class CategoryManageComponent implements OnInit {
   showModal = false;
   editingCategory: any = null;
   activeTab: 'active' | 'trash' = 'active';
+  allCategories: any[] = []; // Chứa tất cả danh mục để tra cứu tên parent
+
+  // Modal Xác nhận
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  confirmActionType: 'delete' | 'restore' | 'hardDelete' | 'warning' | null = null;
+  pendingCategoryId: number | null = null;
 
   get pagedCategories(): any[] {
     return this.categories.slice(this.skip, this.skip + this.limit);
@@ -29,6 +37,12 @@ export class CategoryManageComponent implements OnInit {
     parent_id: null as number | null,
     is_active: true
   };
+
+  getParentName(parentId: number | null): string {
+    if (!parentId) return 'N/A';
+    const parent = this.allCategories.find(c => c.category_id === parentId);
+    return parent ? parent.name : `#${parentId}`;
+  }
 
   // FIX: Đã thêm private cdr: ChangeDetectorRef vào đây
   constructor(
@@ -48,9 +62,11 @@ export class CategoryManageComponent implements OnInit {
     const includeDeleted = this.activeTab === 'trash';
     
     // Gọi API: Tham số 1 (false) cho active_only để lấy cả category bị ẩn
-    // Tham số 2 (includeDeleted) để lấy dữ liệu từ thùng rác khi cần
-    this.adminService.getCategories(false, includeDeleted).subscribe({
+    // Tham số 2 (true) để lấy tất cả dữ liệu (bao gồm cả thùng rác) để tra cứu tên parent
+    this.adminService.getCategories(false, true).subscribe({
       next: (data) => {
+        this.allCategories = data; // Lưu lại để getParentName
+
         if (this.activeTab === 'trash') {
           // Lọc các mục đã xóa mềm
           this.categories = data.filter(cat => cat.is_deleted === true);
@@ -142,30 +158,82 @@ export class CategoryManageComponent implements OnInit {
     }
   }
 
-  deleteCategory(id: number) {
-    if (confirm('Bạn có chắc chắn muốn xóa danh mục này? (Xóa mềm)')) {
-      this.adminService.deleteCategory(id).subscribe({
-        next: () => this.loadCategories(),
-        error: (err) => console.error('Error deleting category:', err)
-      });
+  deleteCategory(cat: any) {
+    if (cat.is_active) {
+      this.confirmTitle = 'Không thể xóa';
+      this.confirmMessage = 'Danh mục này hiện đang ở trạng thái HIỂN THỊ. Bạn vui lòng chuyển sang trạng thái ẨN trước khi thực hiện xóa mềm.';
+      this.confirmActionType = 'warning';
+      this.showConfirmModal = true;
+      return;
     }
+    this.pendingCategoryId = cat.category_id;
+    this.confirmTitle = 'Xác nhận Xóa';
+    this.confirmMessage = 'Bạn có chắc chắn muốn xóa danh mục này? (Xóa mềm)';
+    this.confirmActionType = 'delete';
+    this.showConfirmModal = true;
   }
 
   restoreCategory(id: number) {
-    if (confirm('Khôi phục danh mục này về danh sách hoạt động?')) {
+    this.pendingCategoryId = id;
+    this.confirmTitle = 'Xác nhận Khôi phục';
+    this.confirmMessage = 'Khôi phục danh mục này về danh sách hoạt động?';
+    this.confirmActionType = 'restore';
+    this.showConfirmModal = true;
+  }
+
+  hardDeleteCategory(id: number) {
+    this.pendingCategoryId = id;
+    this.confirmTitle = 'CẢNH BÁO NGUY HIỂM';
+    this.confirmMessage = 'CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn và không thể hoàn tác!';
+    this.confirmActionType = 'hardDelete';
+    this.showConfirmModal = true;
+  }
+
+  onConfirm() {
+    if (!this.pendingCategoryId || !this.confirmActionType) return;
+
+    const id = this.pendingCategoryId;
+    this.isLoading = true;
+
+    if (this.confirmActionType === 'delete') {
+      this.adminService.deleteCategory(id).subscribe({
+        next: () => {
+          this.loadCategories();
+          this.closeConfirmModal();
+        },
+        error: (err) => {
+          console.error('Error deleting category:', err);
+          this.isLoading = false;
+        }
+      });
+    } else if (this.confirmActionType === 'restore') {
       this.adminService.restoreCategory(id).subscribe({
-        next: () => this.loadCategories(),
-        error: (err) => console.error('Error restoring category:', err)
+        next: () => {
+          this.loadCategories();
+          this.closeConfirmModal();
+        },
+        error: (err) => {
+          console.error('Error restoring category:', err);
+          this.isLoading = false;
+        }
+      });
+    } else if (this.confirmActionType === 'hardDelete') {
+      this.adminService.hardDeleteCategory(id).subscribe({
+        next: () => {
+          this.loadCategories();
+          this.closeConfirmModal();
+        },
+        error: (err) => {
+          console.error('Error hard deleting category:', err);
+          this.isLoading = false;
+        }
       });
     }
   }
 
-  hardDeleteCategory(id: number) {
-    if (confirm('CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn và không thể hoàn tác!')) {
-      this.adminService.hardDeleteCategory(id).subscribe({
-        next: () => this.loadCategories(),
-        error: (err) => console.error('Error hard deleting category:', err)
-      });
-    }
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.confirmActionType = null;
+    this.pendingCategoryId = null;
   }
 }

@@ -162,9 +162,9 @@
             <textarea class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Nhập lý do thực hiện..."></textarea>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-custom" (click)="closeStatusModal()">Hủy bỏ</button>
-          <button type="button" class="btn" [class]="statusAction === 'lock' ? 'btn-danger-custom' : 'btn-success'" (click)="saveStatusChange()">
+        <div class="modal-footer border-0">
+          <button type="button" class="btn px-4 py-2" style="background: transparent; color: #9ca3af; border: 1px solid #4b5563; border-radius: 10px; font-weight: 500;" (click)="closeStatusModal()">Hủy bỏ</button>
+          <button type="button" class="btn px-4 py-2 text-white" style="background: #3b82f6; border: none; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);" (click)="saveStatusChange()">
             Xác nhận
           </button>
         </div>
