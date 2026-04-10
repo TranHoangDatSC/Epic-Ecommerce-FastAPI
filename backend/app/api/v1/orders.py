@@ -96,16 +96,13 @@ async def create_order(
     """
     Create a new order.
     
-    **Important**: User cannot order their own products.
-    
     - **contact_id**: Delivery contact info ID
-    - **payment_method_id**: Payment method ID (e.g., 1 for COD)
+    - **payment_method_id**: Payment method ID
     - **order_items**: List of products with quantities
-    - **voucher_id**: Optional voucher code ID
-    - **shipping_fee**: Shipping fee amount
-    - **notes**: Optional order notes
+    - **shipping_address**: Custom delivery address (optional)
+    - **phone_number**: Custom delivery phone (optional)
     """
-    # 1. Validate contact info exists and belongs to current user
+    # 1. Validate contact info exists and belongs to current user (default/backup)
     contact = db.query(ContactInfo).filter(
         ContactInfo.contact_id == order_in.contact_id,
         ContactInfo.user_id == current_user.user_id,
@@ -117,6 +114,10 @@ async def create_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid contact information"
         )
+    
+    # Use custom address/phone if provided, else use default from contact
+    final_address = order_in.shipping_address or contact.address
+    final_phone = order_in.phone_number or contact.phone_number
     
     # 2. Validate payment method
     payment_method = db.query(models.PaymentMethod).filter(
@@ -130,37 +131,27 @@ async def create_order(
             detail="Invalid payment method"
         )
     
-    # 3. Validate products and check user is not seller
-    all_product_ids = set()
+    # 3. Validate products
     for item in order_in.order_items:
         product = db.query(Product).filter(
             Product.product_id == item.product_id,
-            Product.is_deleted == False,
-            Product.status == 1  # Only approved products
+            Product.is_deleted == False
         ).first()
         
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Product {item.product_id} not found or not available"
+                detail=f"Product {item.product_id} not found"
             )
         
         if product.seller_id == current_user.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You cannot order product '{product.title}' because you are the seller"
+                detail=f"You cannot order your own product '{product.title}'"
             )
-        
-        if product.quantity < item.quantity:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Product '{product.title}' has insufficient quantity. Available: {product.quantity}, Requested: {item.quantity}"
-            )
-        
-        all_product_ids.add(item.product_id)
     
-    # 4. Create order with items
-    # For COD (not online), initial status is always 0 (Pending)
+    # 4. Create order
+    # Note: Product quantity reduction is skipped here because it's already handled when items are added to the cart
     order = crud_order.create_order(
         db=db,
         buyer_id=current_user.user_id,
@@ -168,21 +159,16 @@ async def create_order(
         payment_method_id=order_in.payment_method_id,
         order_items=[item.dict() for item in order_in.order_items],
         shipping_fee=order_in.shipping_fee,
-        discount_amount=Decimal("0"),  # Will be calculated based on voucher if needed
+        discount_amount=Decimal("0"),
         voucher_id=order_in.voucher_id,
-        notes=order_in.notes
+        notes=order_in.notes,
+        shipping_address=final_address,
+        phone_number=final_phone
     )
     
-    # 5. Update product quantities
-    for item in order_in.order_items:
-        product = db.query(Product).filter(Product.product_id == item.product_id).first()
-        if product:
-            product.quantity -= item.quantity
-            db.add(product)
-    
-    # 6. Clear shopping cart
+    # 5. Clear shopping cart - IMPORTANT: restore_stock=False because we want to KEEP the decrement from the cart
     from app.crud.shopping_cart import crud_cart
-    crud_cart.clear_cart(db, current_user.user_id)
+    crud_cart.clear_cart(db, current_user.user_id, restore_stock=False)
     
     db.commit()
     db.refresh(order)
@@ -199,9 +185,6 @@ async def update_order(
 ) -> OrderResponse:
     """
     Update an order.
-    
-    - Regular users can only cancel pending orders
-    - Moderators and admins can update status and tracking number
     """
     order = crud_order.get_by_id(db, order_id=order_id)
     
@@ -217,7 +200,6 @@ async def update_order(
     is_moderator = 2 in user_roles or is_admin
     is_owner = order.buyer_id == current_user.user_id
     
-    # Regular users can only cancel their pending orders
     if not (is_moderator or is_admin):
         if not is_owner:
             raise HTTPException(
@@ -225,14 +207,22 @@ async def update_order(
                 detail="You can only update your own orders"
             )
         
-        # User can only cancel pending orders
         if order_update.order_status is not None:
             if order_update.order_status == 4:  # Cancel
-                if order.order_status != 0:  # Not pending
+                if order.order_status != 0:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Can only cancel pending orders"
                     )
+                # IF CANCELED, WE SHOULD RESTORE STOCK?
+                # For now, let's keep consistency:
+                for detail in order.order_details:
+                    product = db.query(Product).filter(Product.product_id == detail.product_id).first()
+                    if product:
+                        product.quantity += detail.quantity
+                        if product.status == 3: # Sold out
+                           product.status = 1
+                        db.add(product)
             else:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -249,8 +239,8 @@ async def update_order(
     if order_update.notes:
         updated_order.notes = order_update.notes
         db.add(updated_order)
-        db.commit()
     
+    db.commit()
     return updated_order
 
 
@@ -260,25 +250,14 @@ async def delete_order(
     admin_user: User = Depends(check_admin),
     db: Session = Depends(get_db)
 ) -> None:
-    """
-    Delete an order (Admin only).
-    
-    Soft deletes the order.
-    """
     order = crud_order.get_by_id(db, order_id=order_id)
-    
     if not order:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     
     order.is_deleted = True
     db.add(order)
     db.commit()
 
-
-# ==================== Admin endpoints ====================
 
 @router.get("/admin/all", response_model=list[OrderResponse])
 async def get_all_orders(
@@ -288,16 +267,9 @@ async def get_all_orders(
     admin_user: User = Depends(check_admin),
     db: Session = Depends(get_db)
 ) -> list[OrderResponse]:
-    """
-    Get all orders (Admin only).
-    
-    - **status_filter**: Filter by order status (0-4)
-    """
     query = db.query(Order).filter(Order.is_deleted == False)
-    
     if status_filter is not None:
         query = query.filter(Order.order_status == status_filter)
-    
     orders = query.offset(skip).limit(limit).all()
     return orders
 
@@ -309,6 +281,5 @@ async def get_pending_orders(
     admin_user: User = Depends(check_admin),
     db: Session = Depends(get_db)
 ) -> list[OrderResponse]:
-    """Get all pending orders (Admin only)"""
     orders = crud_order.get_pending_orders(db, skip=skip, limit=limit)
     return orders

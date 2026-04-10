@@ -64,8 +64,13 @@ async def update_cart_item(
     if item_in.quantity <= 0:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Quantity must be greater than zero")
 
-    updated_item = crud_cart.update_item_quantity(db, cart_item_id, item_in.quantity)
+    try:
+        updated_item = crud_cart.update_item_quantity(db, cart_item_id, item_in.quantity)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
     if not updated_item:
+        # Item was deleted (quantity <= 0 handled in crud) - though we handle quantity <= 0 above
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
 
     return updated_item

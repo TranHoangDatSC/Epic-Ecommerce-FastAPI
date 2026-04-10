@@ -354,6 +354,8 @@ class OrderBase(BaseModel):
     payment_method_id: int
     voucher_id: Optional[int] = None
     shipping_fee: Decimal = Field(default=0, ge=0)
+    shipping_address: Optional[str] = None
+    phone_number: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -571,4 +573,3 @@ class AdminDashboardStats(BaseModel):
     total_revenue: Decimal
     pending_products: int
     total_orders: int
-

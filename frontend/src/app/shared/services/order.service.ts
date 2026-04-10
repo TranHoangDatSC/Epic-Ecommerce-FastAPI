@@ -14,6 +14,8 @@ export interface OrderCreate {
   order_items: OrderItem[];
   voucher_id?: number;
   shipping_fee: number;
+  shipping_address?: string;
+  phone_number?: string;
   notes?: string;
 }
 

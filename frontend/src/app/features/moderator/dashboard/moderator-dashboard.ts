@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModeratorService } from '../../../shared/services/moderator.service';
 
@@ -18,7 +18,10 @@ export class ModeratorDashboardComponent implements OnInit {
   actionLoading = false;
   message: string | null = null;
 
-  constructor(private moderatorService: ModeratorService) {}
+  constructor(
+    private moderatorService: ModeratorService, 
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -39,10 +42,12 @@ export class ModeratorDashboardComponent implements OnInit {
       next: (data) => {
         this.pendingProducts = data;
         this.loadingProducts = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading pending products:', err);
         this.loadingProducts = false;
+        this.cdr.detectChanges();
       }
     });
   }

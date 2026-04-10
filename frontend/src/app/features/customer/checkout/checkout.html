@@ -29,16 +29,15 @@
               <i class="bi bi-geo-alt fs-5 text-primary"></i>
             </div>
             <h5 class="fw-bold mb-0 text-dark">Địa chỉ nhận hàng</h5>
-            <button class="ms-auto btn btn-link text-primary p-0 text-decoration-none small fw-bold">+ Thêm địa chỉ mới</button>
           </div>
           <div class="card-body p-4">
-            <div class="address-list d-flex flex-column gap-3">
+            <div class="address-list d-flex flex-column gap-3 mb-4">
               <div 
                 *ngFor="let addr of addresses" 
                 class="address-item p-3 rounded-4 border transition-all cursor-pointer position-relative"
                 [class.border-primary]="selectedAddressId === addr.contact_id"
                 [class.bg-primary-subtle]="selectedAddressId === addr.contact_id"
-                (click)="selectAddress(addr.contact_id)"
+                (click)="selectAddress(addr)"
               >
                 <div class="d-flex justify-content-between align-items-start">
                   <div class="d-flex align-items-center gap-2 mb-2">
@@ -60,8 +59,30 @@
 
               <div *ngIf="addresses.length === 0" class="text-center py-4 bg-light rounded-4">
                 <i class="bi bi-geo-alt text-muted display-4 mb-2 opacity-25"></i>
-                <p class="text-muted mb-0">Bạn chưa có địa chỉ nhận hàng nào.</p>
+                <p class="text-muted mb-0">Bạn chưa có địa chỉ nhận hàng nào. Vui lòng nhập thông tin bên dưới.</p>
               </div>
+            </div>
+
+            <!-- Custom Delivery Info Inputs -->
+            <div class="custom-delivery-info pt-3 border-top">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pencil-fill me-2 text-primary"></i>Tùy chỉnh thông tin giao hàng</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Số điện thoại nhận hàng</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0 bg-white" placeholder="0xxxxxxxxx" [(ngModel)]="customPhone">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted">Địa chỉ nhận hàng cụ thể</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0 bg-white" placeholder="Số nhà, tên đường, Phường/Xã..." [(ngModel)]="customAddress">
+                        </div>
+                        <div class="form-text x-small text-info"><i class="bi bi-info-circle me-1"></i>Thay đổi thông tin này nếu bạn muốn giao hàng đến nơi khác với địa chỉ mặc định.</div>
+                    </div>
+                </div>
             </div>
           </div>
         </div>

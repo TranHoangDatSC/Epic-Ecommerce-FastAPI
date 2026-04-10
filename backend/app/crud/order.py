@@ -81,7 +81,9 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         shipping_fee: Decimal = Decimal("0"),
         discount_amount: Decimal = Decimal("0"),
         voucher_id: Optional[int] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        shipping_address: Optional[str] = None,
+        phone_number: Optional[str] = None
     ) -> Order:
         """Create a new order with items"""
         from app.models import OrderDetail, Product
@@ -107,6 +109,8 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
             discount_amount=discount_amount,
             final_amount=final_amount,
             notes=notes,
+            shipping_address=shipping_address,
+            tracking_number=phone_number, # Mapping phone number to tracking_number as requested
             order_status=0,  # Pending
         )
         

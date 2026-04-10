@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../shared/services/admin.service';
 
@@ -15,7 +15,10 @@ export class FeedbackManageComponent implements OnInit {
   skip = 0;
   limit = 20;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadFeedbacks();
@@ -27,10 +30,12 @@ export class FeedbackManageComponent implements OnInit {
       next: (data) => {
         this.feedbacks = data;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading feedbacks:', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -31,6 +31,10 @@ export class CheckoutComponent implements OnInit {
   
   selectedAddressId: number | null = null;
   selectedPaymentMethodId: number | null = null;
+  
+  // Custom delivery info
+  customAddress: string = '';
+  customPhone: string = '';
   orderNotes: string = '';
   
   isLoading = true;
@@ -60,8 +64,12 @@ export class CheckoutComponent implements OnInit {
         const defaultAddr = data.find(a => a.is_default);
         if (defaultAddr) {
           this.selectedAddressId = defaultAddr.contact_id || null;
+          this.customAddress = defaultAddr.address;
+          this.customPhone = defaultAddr.phone_number;
         } else if (data.length > 0) {
           this.selectedAddressId = data[0].contact_id || null;
+          this.customAddress = data[0].address;
+          this.customPhone = data[0].phone_number;
         }
       },
       error: (err) => console.error('Error loading addresses:', err)
@@ -93,9 +101,11 @@ export class CheckoutComponent implements OnInit {
     return this.getSubtotal() + this.shippingFee;
   }
 
-  selectAddress(id: number | undefined): void {
-    if (id) {
-      this.selectedAddressId = id;
+  selectAddress(addr: ContactInfo): void {
+    if (addr.contact_id) {
+      this.selectedAddressId = addr.contact_id;
+      this.customAddress = addr.address;
+      this.customPhone = addr.phone_number;
       this.cdr.detectChanges();
     }
   }
@@ -107,8 +117,13 @@ export class CheckoutComponent implements OnInit {
 
   placeOrder(): void {
     if (!this.selectedAddressId || !this.selectedPaymentMethodId) {
-      this.uiService.showError('Vui lòng chọn địa chỉ giao hàng và phương thức thanh toán!');
+      this.uiService.showError('Vui lòng chọn hoặc nhập thông tin giao hàng!');
       return;
+    }
+
+    if (!this.customAddress || !this.customPhone) {
+        this.uiService.showError('Địa chỉ và số điện thoại không được để trống!');
+        return;
     }
 
     if (this.cartItems.length === 0) {
@@ -126,6 +141,8 @@ export class CheckoutComponent implements OnInit {
         quantity: item.quantity
       })),
       shipping_fee: this.shippingFee,
+      shipping_address: this.customAddress,
+      phone_number: this.customPhone,
       notes: this.orderNotes
     };
 

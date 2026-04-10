@@ -125,7 +125,8 @@ export class CartService {
       },
       error: (error) => {
         console.error('Error adding item to cart:', error);
-        this.uiService.showError('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại sau.');
+        const errorMessage = error.error?.detail || 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại sau.';
+        this.uiService.showError(errorMessage);
       }
     });
   }
@@ -163,7 +164,8 @@ export class CartService {
         next: () => this.loadCartFromBackend(),
         error: (error) => {
           console.error('Error updating item:', error);
-          this.uiService.showError('Không thể cập nhật số lượng. Vui lòng thử lại sau.');
+          const errorMessage = error.error?.detail || 'Không thể cập nhật số lượng. Vui lòng thử lại sau.';
+          this.uiService.showError(errorMessage);
         }
       });
     }

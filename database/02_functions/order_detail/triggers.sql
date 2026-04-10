@@ -90,41 +90,41 @@ $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public;
 
-CREATE TRIGGER trg_update_stock
-BEFORE INSERT ON order_detail
-FOR EACH ROW EXECUTE FUNCTION update_stock_on_order();
+-- CREATE TRIGGER trg_update_stock
+-- BEFORE INSERT ON order_detail
+-- FOR EACH ROW EXECUTE FUNCTION update_stock_on_order();
 
--- Trigger function to validate order details before insertion
-CREATE OR REPLACE FUNCTION validate_order_detail()
-RETURNS TRIGGER AS $$
-DECLARE
-    product_status SMALLINT;
-BEGIN
-    SELECT status INTO product_status
-    FROM product
-    WHERE product_id = NEW.product_id;
+-- -- Trigger function to validate order details before insertion
+-- CREATE OR REPLACE FUNCTION validate_order_detail()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     product_status SMALLINT;
+-- BEGIN
+--     SELECT status INTO product_status
+--     FROM product
+--     WHERE product_id = NEW.product_id;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'INVALID_PRODUCT: Product does not exist';
-    END IF;
+--     IF NOT FOUND THEN
+--         RAISE EXCEPTION 'INVALID_PRODUCT: Product does not exist';
+--     END IF;
 
-    IF product_status != 1 THEN
-        RAISE EXCEPTION 'PRODUCT_NOT_AVAILABLE: Product is not available for purchase (status: %)',
-                       get_product_status_text(product_status);
-    END IF;
+--     IF product_status != 1 THEN
+--         RAISE EXCEPTION 'PRODUCT_NOT_AVAILABLE: Product is not available for purchase (status: %)',
+--                        get_product_status_text(product_status);
+--     END IF;
 
-    IF NEW.quantity <= 0 THEN
-        RAISE EXCEPTION 'INVALID_QUANTITY: Quantity must be greater than 0';
-    END IF;
+--     IF NEW.quantity <= 0 THEN
+--         RAISE EXCEPTION 'INVALID_QUANTITY: Quantity must be greater than 0';
+--     END IF;
 
-    IF NEW.price_at_purchase <= 0 THEN
-        RAISE EXCEPTION 'INVALID_PRICE: Price must be greater than 0';
-    END IF;
+--     IF NEW.price_at_purchase <= 0 THEN
+--         RAISE EXCEPTION 'INVALID_PRICE: Price must be greater than 0';
+--     END IF;
 
-    NEW.subtotal := NEW.price_at_purchase * NEW.quantity;
+--     NEW.subtotal := NEW.price_at_purchase * NEW.quantity;
 
-    RETURN NEW;
-END;
+--     RETURN NEW;
+-- END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public;
