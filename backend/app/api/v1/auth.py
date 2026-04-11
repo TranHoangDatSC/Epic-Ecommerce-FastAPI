@@ -142,7 +142,7 @@ from app.core.dependencies import get_current_user
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     # Debug: In ra xem thằng user này có gì mà sập
-    print(f"DEBUG USER: {current_user.__dict__}") 
+    print(f"DEBUG USER ID: {current_user.user_id}")
     
     # Nếu model User của ný không có role_id, hãy lấy từ quan hệ role (nếu có)
     if not hasattr(current_user, 'role_id') or current_user.role_id is None:

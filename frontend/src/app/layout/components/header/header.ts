@@ -21,16 +21,16 @@ import { CartItem } from '../../../core/services/cart.service';
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link d-flex align-items-center" routerLink="/home"><i class="bi bi-house-door me-1"></i>Home</a>
+              <a class="nav-link d-flex align-items-center" routerLink="/home"><i class="bi bi-house-door me-1"></i>Trang chủ</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link d-flex align-items-center" routerLink="/shop"><i class="bi bi-bag me-1"></i>Shop</a>
+              <a class="nav-link d-flex align-items-center" routerLink="/shop"><i class="bi bi-bag me-1"></i>Cửa hàng</a>
             </li>
             <!-- Customer Navigation -->
             <li class="nav-item">
               <a class="nav-link d-flex align-items-center" href="#" (click)="goToCart($event)">
                 <i class="bi bi-cart3 me-1"></i>
-                Cart
+                Giỏ hàng
                 <span class="badge rounded-pill bg-danger border border-light ms-1" *ngIf="(cartCount$ | async) !== 0">
                   {{ cartCount$ | async }}
                 </span>
@@ -39,25 +39,25 @@ import { CartItem } from '../../../core/services/cart.service';
             <li class="nav-item">
               <a class="nav-link d-flex align-items-center" routerLink="/contact">
                 <i class="bi bi-telephone me-1"></i>
-                Contact
+                Liên hệ
               </a>
             </li>
             <li class="nav-item" *ngIf="user()?.role === 'CUSTOMER'">
-              <a class="nav-link" routerLink="/customer/profile">Profile</a>
+              <a class="nav-link" routerLink="/customer/profile">Thông tin cá nhân</a>
             </li>
             <!-- Seller Navigation -->
             <li class="nav-item" *ngIf="user()?.role === 'SELLER'">
-              <a class="nav-link" routerLink="/seller/dashboard">Dashboard</a>
+              <a class="nav-link" routerLink="/seller/dashboard">Cửa hàng của tôi</a>
             </li>
             <li class="nav-item" *ngIf="user()?.role === 'SELLER'">
-              <a class="nav-link" routerLink="/seller/inventory">Inventory</a>
+              <a class="nav-link" routerLink="/seller/inventory">Quản lý sản phẩm</a>
             </li>
             <!-- Admin Navigation -->
             <li class="nav-item" *ngIf="user()?.role === 'ADMIN'">
-              <a class="nav-link" routerLink="/admin/user-manage">Users</a>
+              <a class="nav-link" routerLink="/admin/user-manage">Quản lý người dùng</a>
             </li>
             <li class="nav-item" *ngIf="user()?.role === 'ADMIN'">
-              <a class="nav-link" routerLink="/admin/category-manage">Categories</a>
+              <a class="nav-link" routerLink="/admin/category-manage">Quản lý danh mục</a>
             </li>
             <!-- Moderator Navigation -->
             <li class="nav-item" *ngIf="user()?.role === 'MODERATOR'">
@@ -66,10 +66,10 @@ import { CartItem } from '../../../core/services/cart.service';
           </ul>
           <ul class="navbar-nav">
             <li class="nav-item" *ngIf="!isLoggedIn()">
-              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</a>
             </li>
             <li class="nav-item" *ngIf="!isLoggedIn()">
-              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
+              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Đăng ký</a>
             </li>
             <li class="nav-item" *ngIf="isLoggedIn()">
               <a class="nav-link" href="#" (click)="logout(); $event.preventDefault()">Đăng xuất</a>
