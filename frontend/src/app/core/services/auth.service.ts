@@ -60,7 +60,9 @@ export class AuthService {
       }),
       switchMap(() => this.getUserProfile()),
       tap((user) => {
-        const roleId = Number(user.user_roles);
+        // Lấy role_id từ mảng roles mới
+        const roleId = (user.roles && user.roles.length > 0) ? Number(user.roles[0].role_id) : null;
+        
         if (roleId === 1) {
           this.router.navigate(['/admin/dashboard']);
         } else if (roleId === 2) {
@@ -89,13 +91,11 @@ export class AuthService {
 
   getUserRole(): number | null {
     const user = this.currentUser();
-    const data = user ? user : JSON.parse(sessionStorage.getItem('user') || '{}');
-
-    if (!data || data.role_id === undefined || data.role_id === null) {
-      return null;
+    // Lấy thẳng từ roles[0]
+    if (user && user.roles && user.roles.length > 0) {
+      return Number(user.roles[0].role_id);
     }
-
-    return Number(data.role_id);
+    return null;
   }
 
   logout() {

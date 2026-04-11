@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from datetime import timedelta
 from app.database import get_db
-from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse, UserDetailResponse
 from app.core.security import verify_password, create_access_token
 from app.crud.user import crud_user
 from app.models import User, ShoppingCart
@@ -140,7 +140,7 @@ async def login(
 from app.core.dependencies import get_current_user
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserDetailResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     # Debug: In ra xem thằng user này có gì mà sập
     print(f"DEBUG USER ID: {current_user.user_id}")
