@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../shared/services/admin.service';
 
@@ -18,7 +18,10 @@ export class AdminDashboardComponent implements OnInit {
   };
   isLoading = true;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadStats();
@@ -30,10 +33,12 @@ export class AdminDashboardComponent implements OnInit {
       next: (data) => {
         this.stats = data;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading stats:', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
