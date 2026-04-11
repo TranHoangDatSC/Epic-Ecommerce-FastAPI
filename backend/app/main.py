@@ -60,15 +60,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ==================== Media Files ====================
- 
-# Create media directory if it doesn't exist
-media_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media")
+# ==================== Static Files ====================
+
+# Move and setup media directory
+media_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "media")
 os.makedirs(media_dir, exist_ok=True)
 os.makedirs(os.path.join(media_dir, "products"), exist_ok=True)
 os.makedirs(os.path.join(media_dir, "users"), exist_ok=True)
 
-# Mount media files
+# Mount static files to /media
 app.mount("/media", StaticFiles(directory=media_dir), name="media")
 
 # ==================== Middleware ====================

@@ -78,6 +78,39 @@ import { CartItem } from '../../../core/services/cart.service';
         </div>
       </div>
     </nav>
+
+    <!-- Premium Error Modal -->
+    <div class="modal fade" [class.show]="isErrorModalOpen" [style.display]="isErrorModalOpen ? 'block' : 'none'" id="errorModalHeader" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl glass-effect text-dark">
+          <div class="modal-header bg-gradient-danger text-white border-0">
+            <h5 class="modal-title d-flex align-items-center">
+              <i class="bi {{ errorIcon }} me-2 fs-4"></i>
+              {{ errorTitle }}
+            </h5>
+            <button type="button" class="btn-close btn-close-white shadow-none" (click)="closeErrorModal()"></button>
+          </div>
+          <div class="modal-body p-5 text-center">
+            <div class="status-icon-wrapper mb-4 text-center d-flex justify-content-center">
+              <div class="status-icon bg-light-danger shadow-sm">
+                <i class="bi {{ errorIcon }} text-danger fs-1"></i>
+              </div>
+            </div>
+            <h4 class="fw-bold text-dark mb-3">{{ errorTitle }}</h4>
+            <p class="text-muted fs-5 px-3">
+              {{ errorDescription }}
+            </p>
+          </div>
+          <div class="modal-footer border-0 p-4 justify-content-center">
+            <button type="button" class="btn btn-outline-secondary px-4 me-2 rounded-pill" (click)="closeErrorModal()">Bỏ qua</button>
+            <button *ngIf="errorTitle === 'Account Restricted'" type="button" class="btn btn-primary px-4 rounded-pill shadow-sm" (click)="contactSupport()">
+              <i class="bi bi-headset me-2"></i>Liên hệ hỗ trợ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show" *ngIf="isErrorModalOpen"></div>
     
     <!-- Login Modal (Moved inside component for easier state access) -->
     <div class="modal fade" id="loginModal" tabindex="-1">
@@ -103,7 +136,7 @@ import { CartItem } from '../../../core/services/cart.service';
                   <input type="password" class="form-control" id="loginPassword" name="password" [(ngModel)]="password" required>
                 </div>
               </div>
-              <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm fw-bold">Login</button>
+              <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm fw-bold">Đăng nhập</button>
             </form>
           </div>
         </div>
@@ -128,6 +161,29 @@ import { CartItem } from '../../../core/services/cart.service';
     .nav-link i {
       font-size: 1.1rem;
     }
+    .bg-gradient-danger {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    .status-icon-wrapper {
+      display: flex;
+      justify-content: center;
+    }
+    .status-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fdf2f2;
+    }
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+    .shadow-2xl {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
   `]
 })
 export class HeaderComponent {
@@ -143,6 +199,11 @@ export class HeaderComponent {
 
   cartCount$ = this.cartService.cartCount$;
 
+  isErrorModalOpen = false;
+  errorTitle = '';
+  errorDescription = '';
+  errorIcon = '';
+
   login() {
     const returnUrl = this.router.url || '/home';
 
@@ -153,7 +214,20 @@ export class HeaderComponent {
         this.password = '';
       },
       error: (err: any) => {
-        alert(err.error?.detail || 'Login failed');
+        console.error('Login failed', err);
+        document.getElementById('closeLoginModal')?.click();
+        
+        if (err.status === 401 && err.error?.detail === 'User account is inactive') {
+          this.errorTitle = 'Account Restricted';
+          this.errorDescription = 'Tài khoản của bạn đã bị vô hiệu hóa hoặc xóa. Vui lòng liên hệ bộ phận hỗ trợ để được trợ giúp.';
+          this.errorIcon = 'bi-shield-lock-fill';
+          this.isErrorModalOpen = true;
+        } else {
+          this.errorTitle = 'Authentication Failed';
+          this.errorDescription = err.error?.detail || 'Email hoặc mật khẩu không hợp lệ. Yêu cầu thử lại.';
+          this.errorIcon = 'bi-exclamation-octagon-fill';
+          this.isErrorModalOpen = true;
+        }
       }
     });
   }
@@ -173,5 +247,14 @@ export class HeaderComponent {
         (window as any).bootstrap.Modal.getOrCreateInstance(modal).show();
       }
     }
+  }
+
+  closeErrorModal() {
+    this.isErrorModalOpen = false;
+  }
+
+  contactSupport() {
+    this.closeErrorModal();
+    this.router.navigate(['/contact']);
   }
 }
