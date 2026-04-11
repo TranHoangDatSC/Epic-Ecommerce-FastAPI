@@ -19,10 +19,10 @@ try:
     user = db.query(User).filter(User.email == target_email).first()
     
     if user:
-        print(f"Role hiện tại của {target_email} là: {user.role_id}")
-        user.role_id = 3  # Ép nó về 3 (User thường)
+        print(f"Role hiện tại của {target_email} là: {user.user_roles}")
+        user.user_roles = 3  # Ép nó về 3 (User thường)
         db.commit()
-        print(f"==> ĐÃ FIX: Giờ {target_email} có role_id = {user.role_id}")
+        print(f"==> ĐÃ FIX: Giờ {target_email} có role_id = {user.user_roles}")
     else:
         print("Không tìm thấy thằng user này!")
 except Exception as e:

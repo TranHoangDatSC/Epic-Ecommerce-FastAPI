@@ -68,7 +68,7 @@ async def get_current_user_optional(
 def check_user_role(required_roles: List[int]):
     """Check if user has one of the required roles"""
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role_id in required_roles:
+        if current_user.user_roles in required_roles:
             return current_user
         
         raise HTTPException(
@@ -81,7 +81,7 @@ def check_user_role(required_roles: List[int]):
 
 def check_admin(user: User = Depends(get_current_user)) -> User:
     """Check if user is admin (role_id = 1)"""
-    if user.role_id != 1:
+    if user.user_roles != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cút! Chỉ Admin mới được vào đây!"
@@ -91,7 +91,7 @@ def check_admin(user: User = Depends(get_current_user)) -> User:
 
 def check_moderator(user: User = Depends(get_current_user)) -> User:
     """Check if user is moderator or admin (role_id = 2 or 1)"""
-    if user.role_id not in [1, 2]:
+    if user.user_roles not in [1, 2]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cút! Chỉ Moderator hoặc Admin mới được vào đây!"

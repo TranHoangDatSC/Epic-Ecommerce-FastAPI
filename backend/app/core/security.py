@@ -123,7 +123,7 @@ def get_current_moderator(
             detail="Account not active or not found"
         )
 
-    if db_user.role_id not in (1, 2):
+    if db_user.user_roles not in (1, 2):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions - Admin or Mod role required"
@@ -148,9 +148,9 @@ def get_current_admin(
             detail="Account not active or not found"
         )
 
-    print(f"Checking Admin: {current_user.email} - Role: {current_user.role_id}")
+    print(f"Checking Admin: {current_user.email} - Role: {current_user.user_roles}")
 
-    if db_user.role_id != 1:
+    if db_user.user_roles != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cút ngay!"

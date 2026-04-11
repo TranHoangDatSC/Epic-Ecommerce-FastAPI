@@ -40,7 +40,7 @@ export class ModeratorUserManageComponent implements OnInit {
     this.moderatorService.getUsers().subscribe({
       next: (data) => {
         console.log('Data user:', data);
-        this.users = data ? data.filter((user: any) => Number(user.role_id) === 3) : [];
+        this.users = data ? data.filter((user: any) => Number(user.user_roles) === 3) : [];
         this.filterUsers();
         this.isLoading = false;
         this.cdr.detectChanges();

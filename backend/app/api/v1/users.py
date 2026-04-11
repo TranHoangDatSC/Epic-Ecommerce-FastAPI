@@ -20,7 +20,7 @@ async def get_current_user_info(
     """
     # Check if user has role_id = 3 (seller)
     has_seller_role = any(role.role_id == 3 for role in current_user.user_roles)
-    
+    role_list = [ur.role for ur in current_user.user_roles]
     return UserDetailResponse(
         user_id=current_user.user_id,
         username=current_user.username,
@@ -35,16 +35,7 @@ async def get_current_user_info(
         last_login=current_user.last_login,
         email_verified=current_user.email_verified,
         trust_score=current_user.trust_score if has_seller_role else None,
-        roles=[
-            {
-                "role_id": ur.role.role_id,
-                "role_name": ur.role.role_name,
-                "description": ur.role.description,
-                "is_deleted": ur.role.is_deleted,
-                "created_at": ur.role.created_at
-            }
-            for ur in current_user.user_roles
-        ]
+        roles=role_list
     )
 
 

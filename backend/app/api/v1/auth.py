@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import timedelta
 from app.database import get_db
 from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse
@@ -85,7 +85,7 @@ async def login(
     """
     # Find user by email (OAuth2 form uses username field)
     email = form_data.username
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).options(joinedload(User.user_roles)).filter(User.email == email).first()
 
     if not user:
         print(f"Auth failed: User '{email}' not found")
@@ -111,20 +111,21 @@ async def login(
         )
     
     # Get user roles
-    role_ids = [user.role_id]
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=30)  # Default 30 minutes
+    # 1. Lấy danh sách role_id (số nguyên) từ bảng trung gian
+    role_ids = [ur.role_id for ur in user.user_roles]
+    primary_role_id = role_ids[0] if role_ids else 3 
+
+    # 2. Tạo access token với DỮ LIỆU CƠ BẢN (int, str)
     access_token = create_access_token(
         data={
             "user_id": user.user_id,
             "username": user.email,
-            "role_id": user.role_id  # Trả về số nguyên 1, 2 hoặc 3
+            "role_id": primary_role_id # Dùng biến số nguyên này
         },
         expires_delta=timedelta(minutes=30)
     )
-    
-    # Update last login
+        
+        # Update last login
     user.last_login = __import__('datetime').datetime.utcnow()
     db.add(user)
     db.commit()
@@ -145,7 +146,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
     print(f"DEBUG USER ID: {current_user.user_id}")
     
     # Nếu model User của ný không có role_id, hãy lấy từ quan hệ role (nếu có)
-    if not hasattr(current_user, 'role_id') or current_user.role_id is None:
-        current_user.role_id = 3 # Gán tạm để cứu đói
+    if not hasattr(current_user, 'user_roles') or current_user.user_roles is None:
+        current_user.user_roles = 3 # Gán tạm để cứu đói
         
     return current_user

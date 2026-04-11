@@ -19,7 +19,8 @@ class Role(Base):
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
 
     # Relationships
-    user_roles = relationship("UserRole", back_populates="role", cascade="all, delete-orphan")
+    users = relationship("User", secondary="user_role", back_populates="roles")
+    user_roles = relationship("UserRole", back_populates="role")
 
     __table_args__ = (
         Index('idx_role_name', 'role_name', postgresql_where=(is_deleted == False)),
@@ -49,10 +50,11 @@ class User(Base):
     password_reset_token = Column(String(255))
     password_reset_expires = Column(DateTime)
     trust_score = Column(DECIMAL(5,2), default=0.0, nullable=True)
-    role_id = Column(Integer, ForeignKey("role.role_id"), default=3, nullable=False)
 
     # Relationships
-    role = relationship("Role", backref="users")
+    roles = relationship("Role", secondary="user_role", back_populates="users")
+    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    # role = relationship("Role", backref="users")
     # link to roles assigned to this user.
     # foreign_keys not required since UserRole now only references User once.
     user_roles = relationship(
@@ -87,11 +89,7 @@ class UserRole(Base):
     role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
 
     # Relationships
-    user = relationship(
-        "User",
-        back_populates="user_roles",
-        foreign_keys=[user_id]
-    )
+    user = relationship("User", back_populates="user_roles")
     role = relationship("Role", back_populates="user_roles")
 
 
