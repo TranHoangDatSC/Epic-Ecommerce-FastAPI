@@ -32,7 +32,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.roles)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,36 +66,32 @@ async def get_current_user_optional(
 # ==================== Authorization ====================
 
 def check_user_role(required_roles: List[int]):
-    """Check if user has one of the required roles"""
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.user_roles in required_roles:
+        if has_role(current_user, required_roles):
             return current_user
-        
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User does not have permission. Required roles: {required_roles}"
         )
-    
     return role_checker
 
 
-def check_admin(user: User = Depends(get_current_user)) -> User:
-    """Check if user is admin (role_id = 1)"""
-    if user.user_roles != 1:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cút! Chỉ Admin mới được vào đây!"
-        )
+def has_role(user: User, required_role_ids: List[int]) -> bool:
+    # Lấy danh sách ID từ các Role object (giả định user.roles là list)
+    user_role_ids = [role.role_id for role in user.roles]
+    # Kiểm tra xem có giao nhau không
+    return any(role_id in required_role_ids for role_id in user_role_ids)
+
+async def check_admin(user: User = Depends(get_current_user)) -> User:
+    user_role_ids = [role.role_id for role in user.roles]
+    print(f"DEBUG: User ID {user.user_id} đang sở hữu các role: {user_role_ids}") # Dòng này
+    if not has_role(user, [1]):
+        raise HTTPException(status_code=403, detail=f"User roles {user_role_ids} không chứa quyền 1")
     return user
 
-
-def check_moderator(user: User = Depends(get_current_user)) -> User:
-    """Check if user is moderator or admin (role_id = 2 or 1)"""
-    if user.user_roles not in [1, 2]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cút! Chỉ Moderator hoặc Admin mới được vào đây!"
-        )
+async def check_moderator(user: User = Depends(get_current_user)) -> User:
+    if not has_role(user, [1, 2]):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền Moderator!")
     return user
 
 

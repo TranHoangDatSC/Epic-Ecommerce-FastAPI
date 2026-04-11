@@ -85,7 +85,7 @@ async def login(
     """
     # Find user by email (OAuth2 form uses username field)
     email = form_data.username
-    user = db.query(User).options(joinedload(User.user_roles)).filter(User.email == email).first()
+    user = db.query(User).options(joinedload(User.roles)).filter(User.email == email).first()
 
     if not user:
         print(f"Auth failed: User '{email}' not found")
@@ -112,7 +112,7 @@ async def login(
     
     # Get user roles
     # 1. Lấy danh sách role_id (số nguyên) từ bảng trung gian
-    role_ids = [ur.role_id for ur in user.user_roles]
+    role_ids = [role.role_id for role in user.roles]
     primary_role_id = role_ids[0] if role_ids else 3 
 
     # 2. Tạo access token với DỮ LIỆU CƠ BẢN (int, str)

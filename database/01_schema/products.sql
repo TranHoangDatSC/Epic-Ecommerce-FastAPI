@@ -20,6 +20,7 @@ CREATE TABLE product (
     dimensions VARCHAR(50), -- e.g., "10x20x5 cm"
     condition_rating SMALLINT CHECK (condition_rating BETWEEN 1 AND 10), -- 1-10 scale
     warranty_months INTEGER DEFAULT 0,
+    transfer_method SMALLINT NOT NULL DEFAULT 1 CHECK (transfer_method IN (1, 2)),
     FOREIGN KEY (seller_id) REFERENCES "user"(user_id),
     FOREIGN KEY (category_id) REFERENCES category(category_id),
     FOREIGN KEY (approved_by) REFERENCES "user"(user_id)

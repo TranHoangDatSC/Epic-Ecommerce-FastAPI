@@ -20,7 +20,6 @@ class Role(Base):
 
     # Relationships
     users = relationship("User", secondary="user_role", back_populates="roles")
-    user_roles = relationship("UserRole", back_populates="role")
 
     __table_args__ = (
         Index('idx_role_name', 'role_name', postgresql_where=(is_deleted == False)),
@@ -52,16 +51,20 @@ class User(Base):
     trust_score = Column(DECIMAL(5,2), default=0.0, nullable=True)
 
     # Relationships
-    roles = relationship("Role", secondary="user_role", back_populates="users")
-    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
-    # role = relationship("Role", backref="users")
-    # link to roles assigned to this user.
-    # foreign_keys not required since UserRole now only references User once.
-    user_roles = relationship(
-        "UserRole",
-        back_populates="user",
-        cascade="all, delete-orphan"
+    roles = relationship(
+        "Role", 
+        secondary="user_role", 
+        back_populates="users"
     )
+    # user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    # # role = relationship("Role", backref="users")
+    # # link to roles assigned to this user.
+    # # foreign_keys not required since UserRole now only references User once.
+    # user_roles = relationship(
+    #     "UserRole",
+    #     back_populates="user",
+    #     cascade="all, delete-orphan"
+    # )
     products = relationship("Product", foreign_keys="Product.seller_id", back_populates="seller")
     approved_products = relationship("Product", foreign_keys="Product.approved_by", back_populates="approved_by_user")
     orders = relationship("Order", back_populates="buyer")
@@ -89,8 +92,8 @@ class UserRole(Base):
     role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
 
     # Relationships
-    user = relationship("User", back_populates="user_roles")
-    role = relationship("Role", back_populates="user_roles")
+    user_id = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
+    role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
 
 
 class Category(Base):
@@ -142,7 +145,7 @@ class Product(Base):
     dimensions = Column(String(50))  # e.g., "10x20x5 cm"
     condition_rating = Column(SmallInteger)  # 1-10 scale
     warranty_months = Column(Integer, default=0)
-    transfer_method = Column(SmallInteger, default=1, nullable=False) # 1: Shipping, 2: Meetup
+    transfer_method = Column(SmallInteger, default=1, nullable=True) # 1: Shipping, 2: Meetup
 
     # Relationships
     seller = relationship("User", foreign_keys=[seller_id], back_populates="products")

@@ -80,7 +80,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -126,15 +126,15 @@ app.include_router(cart.router, prefix="/api", include_in_schema=False)
 
 # ==================== Error Handlers ====================
 
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "Internal server error",
-            "error": str(exc) if settings.DEBUG else "Internal server error"
-        }
-    )
+# @app.exception_handler(Exception)
+# async def general_exception_handler(request, exc):
+#     return JSONResponse(
+#         status_code=500,
+#         content={
+#             "detail": "Internal server error",
+#             "error": str(exc) if settings.DEBUG else "Internal server error"
+#         }
+#     )
 
 if __name__ == "__main__":
     uvicorn.run(

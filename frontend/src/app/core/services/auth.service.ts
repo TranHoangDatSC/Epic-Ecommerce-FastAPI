@@ -60,7 +60,7 @@ export class AuthService {
       }),
       switchMap(() => this.getUserProfile()),
       tap((user) => {
-        const roleId = Number(user.role_id);
+        const roleId = Number(user.user_roles);
         if (roleId === 1) {
           this.router.navigate(['/admin/dashboard']);
         } else if (roleId === 2) {
