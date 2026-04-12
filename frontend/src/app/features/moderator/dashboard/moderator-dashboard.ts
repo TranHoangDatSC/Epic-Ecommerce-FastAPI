@@ -1,11 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { ModeratorService } from '../../../shared/services/moderator.service';
 
 @Component({
   selector: 'app-moderator-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './moderator-dashboard.html',
   styleUrl: './moderator-dashboard.scss'
 })

@@ -64,17 +64,14 @@
     <div class="info-card">
       <h4><i class="bi bi-lightning-charge me-2" style="color: #ed8936;"></i>Thao tác Nhanh</h4>
       <div class="quick-action-grid">
-        <a routerLink="/admin/user-manage" class="quick-action-btn">
-          <i class="bi bi-person-plus"></i>
-          Quản lý User
+        <a [routerLink]="['/admin', 'moderator-manage']" class="quick-action-btn">
+          <i class="bi bi-person-plus"></i> Quản lý Kiểm duyệt viên
         </a>
-        <a routerLink="/admin/category-manage" class="quick-action-btn">
-          <i class="bi bi-tags"></i>
-          Quản lý Danh mục
+        <a [routerLink]="['/admin', 'category-manage']" class="quick-action-btn">
+          <i class="bi bi-tags"></i> Quản lý Danh mục
         </a>
-        <a routerLink="/admin/feedback-manage" class="quick-action-btn" style="grid-column: span 2;">
-          <i class="bi bi-chat-dots text-warning"></i>
-          Xem Hệ thống Logs & Phản hồi
+        <a [routerLink]="['/admin', 'feedback-manage']" class="quick-action-btn" style="grid-column: span 2;">
+          <i class="bi bi-chat-dots text-warning"></i> Xem Hệ thống Logs & Phản hồi
         </a>
       </div>
     </div>

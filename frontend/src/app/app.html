@@ -1,14 +1,27 @@
-<ng-container *ngIf="showShell()">
-  <app-header></app-header>
+<div *ngIf="!authService.isInitialized()" class="initial-loading">
+  <div class="loading-content">
+    <div class="spinner"></div>
+    <p>Đang đồng bộ hệ thống...</p>
+  </div>
+</div>
+
+<ng-container *ngIf="authService.isInitialized()">
+  <ng-container *ngIf="showShell()">
+    <app-header></app-header>
+  </ng-container>
+
+  <main [class.fullscreen]="!showShell()">
+    <router-outlet></router-outlet>
+  </main>
+
+  <ng-container *ngIf="showShell()">
+    <app-footer></app-footer>
+  </ng-container>
 </ng-container>
 
-<main [class.fullscreen]="!showShell()">
-  <router-outlet></router-outlet>
-</main>
-
-<ng-container *ngIf="showShell()">
-  <app-footer></app-footer>
-</ng-container>
+<!-- Global Notification Modal ... same as before -->
+<div class="modal fade" id="globalNotificationModal" tabindex="-1" aria-hidden="true">
+  <!-- ... existing modal content ... -->
 
 <!-- Global Notification Modal -->
 <div class="modal fade" id="globalNotificationModal" tabindex="-1" aria-hidden="true">

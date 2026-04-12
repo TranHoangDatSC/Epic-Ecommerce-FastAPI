@@ -23,7 +23,7 @@ export class AuthService {
   constructor() {
     this.checkAuth();
   }
-
+  isInitialized = signal(false);
   private checkAuth() {
     const token = sessionStorage.getItem('token');
     const cachedUser = sessionStorage.getItem('user');
@@ -31,6 +31,7 @@ export class AuthService {
     if (!token) {
       this.currentUser.set(null);
       this.isLoggedIn.set(false);
+      this.isInitialized.set(true); // No token, initialization complete
       return;
     }
 
@@ -45,7 +46,11 @@ export class AuthService {
 
     // Luôn refresh user từ API /me để tránh dữ liệu cũ trong sessionStorage
     this.getUserProfile().subscribe({
-      error: () => this.logout()
+      next: () => this.isInitialized.set(true),
+      error: () => { 
+        this.logout(); 
+        this.isInitialized.set(true); 
+      }
     });
   }
 

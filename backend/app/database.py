@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from app.config import get_settings
-print(f"DEBUG: Connecting to URL: {get_settings().DATABASE_URL}")
+
 settings = get_settings()
 
 # Create database engine
@@ -10,7 +10,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     # echo=settings.DEBUG,
     # echo=False,
-    echo=True,
+    echo=False,
     pool_pre_ping=True,  # Test connections before using them
     pool_size=10,
     max_overflow=20,

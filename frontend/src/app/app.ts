@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -8,6 +8,8 @@ import { UIService, ModalConfig } from './core/services/ui.service';
 
 declare var bootstrap: any;
 
+import { AuthService } from './core/services/auth.service';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -15,12 +17,19 @@ declare var bootstrap: any;
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
+
 export class App {
   protected readonly title = signal('Oldshop Ecommerce');
   protected showShell = signal(true);
   modalConfig: ModalConfig | null = null;
+  authService = inject(AuthService);
 
   constructor(private router: Router, private uiService: UIService) {
+    // Initial check for showShell
+    const initialUrl = window.location.pathname;
+    const isSpecialRoute = initialUrl.startsWith('/moderator') || initialUrl.startsWith('/admin');
+    this.showShell.set(!isSpecialRoute);
+
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
       // Hide header/footer for moderator and admin routes
       const isSpecialRoute = event.urlAfterRedirects.startsWith('/moderator') || 

@@ -23,6 +23,10 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
   console.log('[adminGuard] role from getUserRole():', role);
 
+  if (!authService.isInitialized()) {
+    return false; // Chặn tạm thời cho đến khi APP_INITIALIZER chạy xong
+  }
+
   if (isAuthenticated && Number(role) === 1) {
     return true;
   }
@@ -40,6 +44,10 @@ export const moderatorGuard: CanActivateFn = (route, state) => {
   const role = authService.getUserRole();
 
   console.log('[moderatorGuard] Check role:', role);
+
+  if (!authService.isInitialized()) {
+    return false; // Chặn tạm thời cho đến khi APP_INITIALIZER chạy xong
+  }
 
   if (!isAuthenticated) {
     router.navigate(['/auth/login']);
