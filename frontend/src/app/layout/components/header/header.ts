@@ -27,43 +27,114 @@ import { CartItem } from '../../../core/services/cart.service';
               <a class="nav-link d-flex align-items-center" routerLink="/shop"><i class="bi bi-bag me-1"></i>Cửa hàng</a>
             </li>
             <!-- Customer Navigation -->
-            <li class="nav-item">
-              <a class="nav-link d-flex align-items-center" href="#" (click)="goToCart($event)">
+            <!-- Account & Cart Dropdown -->
+            <li class="nav-item dropdown" *ngIf="isLoggedIn()">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-cart3 me-1"></i>
                 Giỏ hàng
                 <span class="badge rounded-pill bg-danger border border-light ms-1" *ngIf="(cartCount$ | async) !== 0">
                   {{ cartCount$ | async }}
                 </span>
               </a>
+              <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-4 mt-2" aria-labelledby="cartDropdown">
+                <li>
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/customer/cart">
+                    <div class="d-flex align-items-center">
+                      <div class="icon-box bg-primary-subtle text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="bi bi-cart-fill"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold small">Giỏ hàng</div>
+                        <div class="text-muted smaller">Xem các sản phẩm đã chọn</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/customer/profile">
+                    <div class="d-flex align-items-center">
+                      <div class="icon-box bg-success-subtle text-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="bi bi-person-fill"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold small">Hồ sơ của tôi</div>
+                        <div class="text-muted smaller">Quản lý thông tin cá nhân</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li *ngIf="user()?.role === 'SELLER'">
+                  <hr class="dropdown-divider my-2 opacity-50">
+                </li>
+                <li *ngIf="user()?.role === 'SELLER'">
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/seller/dashboard">
+                    <div class="d-flex align-items-center">
+                      <div class="icon-box bg-warning-subtle text-warning rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="bi bi-shop"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold small">Cửa hàng của tôi</div>
+                        <div class="text-muted smaller">Kênh người bán Hub</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <hr class="dropdown-divider my-2 opacity-50">
+                </li>
+                <li>
+                  <a class="dropdown-item py-2 rounded-3 text-danger" href="#" (click)="logout(); $event.preventDefault()">
+                    <div class="d-flex align-items-center">
+                      <div class="icon-box bg-danger-subtle text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="bi bi-box-arrow-right"></i>
+                      </div>
+                      <div class="fw-bold small">Đăng xuất</div>
+                    </div>
+                  </a>
+                </li>
+              </ul>
             </li>
+
+            <li class="nav-item" *ngIf="!isLoggedIn()">
+              <a class="nav-link d-flex align-items-center" href="#" (click)="goToCart($event)">
+                <i class="bi bi-cart3 me-1"></i>
+                Giỏ hàng
+              </a>
+            </li>
+
             <li class="nav-item">
               <a class="nav-link d-flex align-items-center" routerLink="/contact">
                 <i class="bi bi-telephone me-1"></i>
                 Liên hệ
               </a>
             </li>
-            <li class="nav-item" *ngIf="user()?.role === 'CUSTOMER'">
-              <a class="nav-link" routerLink="/customer/profile">Thông tin cá nhân</a>
-            </li>
-            <!-- Seller Navigation -->
-            <li class="nav-item" *ngIf="user()?.role === 'SELLER'">
-              <a class="nav-link" routerLink="/seller/dashboard">Cửa hàng của tôi</a>
-            </li>
-            <li class="nav-item" *ngIf="user()?.role === 'SELLER'">
-              <a class="nav-link" routerLink="/seller/inventory">Quản lý sản phẩm</a>
-            </li>
-            <!-- Admin Navigation -->
-            <li class="nav-item" *ngIf="user()?.role === 'ADMIN'">
-              <a class="nav-link" routerLink="/admin/user-manage">Quản lý người dùng</a>
-            </li>
-            <li class="nav-item" *ngIf="user()?.role === 'ADMIN'">
-              <a class="nav-link" routerLink="/admin/category-manage">Quản lý danh mục</a>
-            </li>
-            <!-- Moderator Navigation -->
-            <li class="nav-item" *ngIf="user()?.role === 'MODERATOR'">
-              <a class="nav-link" routerLink="/moderator/dashboard">Dashboard</a>
+
+            <!-- Admin & Moderator Management Dropdown -->
+            <li class="nav-item dropdown" *ngIf="user()?.role === 'ADMIN' || user()?.role === 'MODERATOR'">
+              <a class="nav-link dropdown-toggle d-flex align-items-center text-primary fw-bold" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-shield-lock me-1"></i>
+                Quản lý
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-4 mt-2" aria-labelledby="adminDropdown">
+                <li *ngIf="user()?.role === 'ADMIN'">
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/admin/user-manage">
+                    <i class="bi bi-people-fill me-2 text-primary"></i> Quản lý người dùng
+                  </a>
+                </li>
+                <li *ngIf="user()?.role === 'ADMIN'">
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/admin/category-manage">
+                    <i class="bi bi-tags-fill me-2 text-primary"></i> Quản lý danh mục
+                  </a>
+                </li>
+                <li *ngIf="user()?.role === 'MODERATOR'">
+                  <a class="dropdown-item py-2 rounded-3" routerLink="/moderator/dashboard">
+                    <i class="bi bi-speedometer2 me-2 text-warning"></i> Moderator Dashboard
+                  </a>
+                </li>
+              </ul>
             </li>
           </ul>
+
           <ul class="navbar-nav">
             <li class="nav-item" *ngIf="!isLoggedIn()">
               <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</a>
@@ -71,10 +142,8 @@ import { CartItem } from '../../../core/services/cart.service';
             <li class="nav-item" *ngIf="!isLoggedIn()">
               <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Đăng ký</a>
             </li>
-            <li class="nav-item" *ngIf="isLoggedIn()">
-              <a class="nav-link" href="#" (click)="logout(); $event.preventDefault()">Đăng xuất</a>
-            </li>
           </ul>
+
         </div>
       </div>
     </nav>
@@ -184,6 +253,24 @@ import { CartItem } from '../../../core/services/cart.service';
     .shadow-2xl {
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+    .dropdown-menu {
+      min-width: 250px;
+      animation: fadeIn 0.15s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .dropdown-item:active {
+      background-color: #F39C12;
+    }
+    .icon-box {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .smaller {
+      font-size: 0.75rem;
+    }
+
   `]
 })
 export class HeaderComponent {

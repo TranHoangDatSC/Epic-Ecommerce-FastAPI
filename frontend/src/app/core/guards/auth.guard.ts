@@ -88,3 +88,22 @@ export const guestGuard: CanActivateFn = (route, state) => {
   }
   return true;
 };
+
+export const sellerGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const isAuthenticated = authService.isAuthenticated();
+  const role = authService.getUserRole();
+  const isInitialized = authService.isInitialized();
+
+  if (!isInitialized) return false;
+
+  if (isAuthenticated && (Number(role) === 1 || Number(role) === 3)) {
+    return true;
+  }
+
+  console.warn('[sellerGuard] Access denied. role:', role);
+  router.navigate(['/home']);
+  return false;
+};
