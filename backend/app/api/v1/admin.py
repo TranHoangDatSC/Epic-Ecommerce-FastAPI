@@ -70,7 +70,9 @@ def create_moderator(
     admin: models.User = Depends(get_current_admin)
 ):
     # Log cho biết ai đang làm gì
-    print(f"Admin {admin.email} đang tạo moderator: {moderator_data.username}")
+    # Sửa thành:
+    print(f"DEBUG: Admin ID {admin.user_id} creating moderator: {moderator_data.username}")
+    print(f"Admin {admin.email} creating moderator: {moderator_data.username}")
     
     # Kiểm tra quyền Admin (nên nằm ở Middleware nhưng check đây cho an toàn)
     if not admin.is_active:

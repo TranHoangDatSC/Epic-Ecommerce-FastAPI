@@ -91,11 +91,6 @@ class UserRole(Base):
     user_id = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
     role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
 
-    # Relationships
-    user_id = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
-    role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
-
-
 class Category(Base):
     """Category model - product categories"""
     __tablename__ = "category"

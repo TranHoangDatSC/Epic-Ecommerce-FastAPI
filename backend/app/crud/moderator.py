@@ -165,43 +165,35 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         return query.distinct().all()
 
     def toggle_moderator_status(
-        self,
-        db: Session,
-        *,
-        user_id: int,
-        is_active: bool,
-        reason: str,
-        admin_id: int
+        self, db: Session, *, user_id: int, is_active: bool, reason: str, admin_id: int
     ) -> models.User:
-        """Activate/deactivate a moderator account (only for role_id=2 users)."""
         user = db.query(models.User).filter(models.User.user_id == user_id).first()
-
         if not user:
             raise NotFoundException("User not found")
 
-        # Only allow changing status for users with role_id=2 (Moderator role)
-        if not any(ur.role_id == 2 for ur in user.user_roles):
+        # SỬA Ở ĐÂY: Dùng quan hệ user.roles đã khai báo trong model
+        # Kiểm tra xem user này có role_id = 2 hay không
+        is_moderator = any(role.role_id == 2 for role in user.roles)
+        
+        if not is_moderator:
             raise ValidationException("Can only change status for users with Moderator role (role_id=2)")
 
-        # If no state change, do nothing (idempotent)
+        # ... logic phía dưới giữ nguyên ...
         if user.is_active == is_active:
             action = "ACTIVATE" if is_active else "DEACTIVATE"
             raise ValidationException(f"Moderator is already {action.lower()}")
 
         user.is_active = is_active
-        user.is_deleted = not is_active
-        action_taken = "ACTIVATE_MODERATOR" if is_active else "DEACTIVATE_MODERATOR"
-
+        # Lưu ý: Bạn đang set is_deleted = not is_active, 
+        # nếu không muốn xóa vĩnh viễn thì nên cân nhắc logic này
+        user.is_deleted = not is_active 
+        
         violation_log = models.ViolationLog(
-            user_id=user_id,
-            reason=reason,
-            action_taken=action_taken
+            user_id=user_id, reason=reason, 
+            action_taken="ACTIVATE_MODERATOR" if is_active else "DEACTIVATE_MODERATOR"
         )
         db.add(violation_log)
-
         db.commit()
         db.refresh(user)
         return user
-
-
 moderator = CRUDModerator(models.Product)

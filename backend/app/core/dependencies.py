@@ -84,7 +84,7 @@ def has_role(user: User, required_role_ids: List[int]) -> bool:
 
 async def check_admin(user: User = Depends(get_current_user)) -> User:
     user_role_ids = [role.role_id for role in user.roles]
-    print(f"DEBUG: User ID {user.user_id} đang sở hữu các role: {user_role_ids}") # Dòng này
+    print(f"DEBUG: User ID {user.user_id} has roles: {user_role_ids}")
     if not has_role(user, [1]):
         raise HTTPException(status_code=403, detail=f"User roles {user_role_ids} không chứa quyền 1")
     return user
