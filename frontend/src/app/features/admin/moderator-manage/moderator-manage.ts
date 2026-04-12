@@ -17,6 +17,9 @@ export class ModeratorManageComponent implements OnInit {
   isLoading = false;
   showModal = false;
   showStatusModal = false;
+  showDuplicateModal = false;
+  duplicateErrorMsg = '';
+  duplicateErrorTitle = 'Dữ liệu bị trùng!';
   editingModerator: any = null;
   statusModalModerator: any = null;
   statusReason = '';
@@ -144,9 +147,28 @@ export class ModeratorManageComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Error creating moderator:', err);
-        alert(err?.error?.detail || 'Tạo moderator thất bại.');
+        const detail = err?.error?.detail || 'Tạo moderator thất bại.';
+        
+        // Cập nhật câu điều kiện để bắt cả tiếng Việt và tiếng Anh cho lỗi trùng lặp
+        const isDuplicate = detail.toLowerCase().includes('already exists') || 
+                            detail.toLowerCase().includes('đã tồn tại') || 
+                            detail.toLowerCase().includes('trùng');
+
+        this.duplicateErrorMsg = detail;
+        this.duplicateErrorTitle = isDuplicate ? 'Dữ liệu bị trùng!' : 'Lỗi khởi tạo!';
+        this.showDuplicateModal = true;
+        
+        // Ẩn modal tạo để tránh chồng lấp
+        this.showModal = false; 
       }
     });
+  }
+
+  closeDuplicateModal(): void {
+    this.showDuplicateModal = false;
+    this.duplicateErrorMsg = '';
+    // Optional: reopen create modal
+    this.showModal = true;
   }
 
   openStatusModal(moderator: any): void {

@@ -81,3 +81,12 @@ def create_moderator(db: Session, moderator_data: dict, admin_id: int) -> User:
     except SQLAlchemyError as e:
         db.rollback()
         raise ValueError(f"Lỗi database: {str(e)}")
+
+def update_moderator_status(db: Session, moderator_id: int, status: int) -> Optional[User]:
+    """Update moderator status (Activate/Deactivate)"""
+    db_user = db.query(User).filter(User.user_id == moderator_id).first()
+    if db_user:
+        db_user.is_active = (status == 1)
+        db.commit()
+        db.refresh(db_user)
+    return db_user

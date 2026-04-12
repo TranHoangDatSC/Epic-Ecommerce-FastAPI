@@ -171,4 +171,26 @@
       </div>
     </div>
   </div>
+  <!-- Modal for Duplicate Data Alert -->
+  <div class="modal fade" [class.show]="showDuplicateModal" [style.display]="showDuplicateModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content duplicate-modal">
+        <div class="modal-body text-center p-5">
+          <div class="warning-icon-wrapper mb-4">
+            <div class="pulse-ring"></div>
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <h3 class="modal-title mb-3">{{ duplicateErrorTitle }}</h3>
+          <!-- <p class="error-detail mb-4">
+            {{ duplicateErrorMsg || 'Thông tin Username hoặc Email này đã tồn tại trong hệ thống. Vui lòng kiểm tra lại.' }}
+          </p> -->
+          <div class="d-grid">
+            <button type="button" class="btn btn-warning-custom py-3" (click)="closeDuplicateModal()">
+              Tôi đã hiểu, để tôi kiểm tra lại
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
