@@ -122,29 +122,32 @@ def get_users(
     """Get all users with role_id=3 for moderator management."""
     return crud_moderator.get_users_by_role(db, role_id=3)
 
-
 @router.post("/users/{user_id}/lock-unlock")
 def lock_unlock_user(
-    user_id: int,
-    lock_request: schemas.UserLockRequest,
-    db: Session = Depends(get_db),
+    user_id: int, 
+    lock_request: schemas.UserLockRequest, 
+    db: Session = Depends(get_db), 
     current_user: models.User = Depends(get_current_moderator)
 ):
-    """Lock or unlock a user account (only for users with role_id=3)"""
+    """Lock hoặc Unlock user bằng cách gọi đúng hàm đã viết trong CRUD"""
     try:
-        user = crud_moderator.lock_unlock_user(
-            db,
-            user_id=user_id,
-            action=lock_request.action,
-            reason=lock_request.reason,
+        # Xác định trạng thái dựa trên action truyền lên
+        is_active = (lock_request.action == "unlock") 
+        
+        # Gọi đúng hàm bạn đã viết trong crud/moderator.py
+        user = crud_moderator.toggle_user_status(
+            db, 
+            user_id=user_id, 
+            is_active=is_active, 
+            reason=lock_request.reason, 
             moderator_id=current_user.user_id
         )
+        
         action_msg = "locked" if lock_request.action == "lock" else "unlocked"
         return {"message": f"User {action_msg} successfully", "user": user}
+        
     except (NotFoundException, ValidationException) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
 @router.get("/violation-logs", response_model=List[schemas.ViolationLogResponse])
 def get_violation_logs(
     user_id: Optional[int] = None,

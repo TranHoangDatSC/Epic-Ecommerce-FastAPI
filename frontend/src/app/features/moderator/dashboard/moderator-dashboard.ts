@@ -57,8 +57,12 @@ export class ModeratorDashboardComponent implements OnInit {
     this.loadingUsers = true;
     this.moderatorService.getUsers().subscribe({
       next: (data) => {
-        this.users = data.filter((user: any) => user.user_roles === 3);
+        // Lọc qua mảng roles
+        this.users = data.filter((user: any) => 
+          user.roles && user.roles.some((r: any) => r.role_id === 3)
+        );
         this.loadingUsers = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading users:', err);

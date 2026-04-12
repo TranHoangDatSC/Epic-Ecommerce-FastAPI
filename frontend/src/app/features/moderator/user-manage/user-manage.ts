@@ -39,16 +39,25 @@ export class ModeratorUserManageComponent implements OnInit {
     this.message = null;
     this.moderatorService.getUsers().subscribe({
       next: (data) => {
-        console.log('Data user:', data);
-        this.users = data ? data.filter((user: any) => Number(user.user_roles) === 3) : [];
+        console.log('Data user nhận được:', data);
+        
+        // LOG ĐỂ KIỂM TRA CHÍNH XÁC TÊN TRƯỜNG
+        if (data && data.length > 0) {
+          console.log('User đầu tiên có cấu trúc:', data[0]);
+        }
+
+        this.users = data.filter((user: any) => {
+          // Kiểm tra xem mảng roles có tồn tại và có role nào mang id = 3 không
+          return user.roles && user.roles.some((r: any) => Number(r.role_id) === 3);
+        });
+
         this.filterUsers();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.message = err?.error?.detail || 'Không tải được danh sách người dùng.';
+        this.message = 'Không tải được danh sách.';
         this.isLoading = false;
-        console.error(err);
         this.cdr.detectChanges();
       }
     });

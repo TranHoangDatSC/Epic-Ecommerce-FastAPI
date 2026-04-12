@@ -71,14 +71,20 @@ export class ModeratorService {
   }
 
   // User management
-  banUser(userId: number, reason: string): Observable<any> {
-    const body: UserBanRequest = { user_id: userId, reason };
-    return this.http.post(`${this.apiUrl}/users/${userId}/ban`, body);
+  banUser(userId: number, reason: string) {
+    // Phải gửi đầy đủ các trường mà class UserBanRequest yêu cầu
+    return this.http.post(`${this.apiUrl}/users/${userId}/ban`, { 
+      user_id: userId,  // Phải khớp với Schema
+      reason: reason    // Phải khớp với Schema
+    });
   }
 
-  unbanUser(userId: number, reason: string): Observable<any> {
-    const body: UserBanRequest = { user_id: userId, reason };
-    return this.http.post(`${this.apiUrl}/users/${userId}/unban`, body);
+  unbanUser(userId: number, reason: string) {
+    // Sửa URL thành /unban để gọi đúng route unban
+    return this.http.post(`${this.apiUrl}/users/${userId}/unban`, { 
+      user_id: userId, 
+      reason: reason 
+    });
   }
 
   lockUnlockUser(userId: number, action: 'lock' | 'unlock', reason: string): Observable<any> {

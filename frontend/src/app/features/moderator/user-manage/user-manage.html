@@ -9,7 +9,7 @@
         <i class="bi bi-search"></i>
         <input
           type="text"
-          placeholder="Tìm kiếm moderator..."
+          placeholder="Tìm kiếm người dùng..."
           [(ngModel)]="searchTerm"
           (ngModelChange)="filterUsers()"
         />
@@ -86,7 +86,7 @@
                 (click)="openStatusModal(user)"
               >
                 <i class="bi" [class.bi-slash-circle]="user.is_active" [class.bi-check-circle-fill]="!user.is_active"></i>
-                {{ user.is_active ? 'Ban' : 'Unban' }}
+                {{ user.is_active ? 'Khóa' : 'Mở khóa' }}
               </button>
             </td>
           </tr>
@@ -96,7 +96,7 @@
       <ng-template #emptyOrLoading>
         <div class="empty-state" *ngIf="!isLoading">
           <i class="bi bi-people"></i>
-          <p>Không tìm thấy moderator nào trong mục này.</p>
+          <p>Không tìm thấy người dùng nào trong mục này.</p>
         </div>
         <div class="empty-state" *ngIf="isLoading && filteredUsers.length === 0">
           <div class="spinner-border text-primary" role="status"></div>
@@ -108,7 +108,7 @@
 
     <div class="table-footer" *ngIf="!isLoading && filteredUsers.length > 0">
       <div class="info-text">
-        Hiển thị <strong>{{ filteredUsers.length }}</strong> moderator.
+        Hiển thị <strong>{{ filteredUsers.length }}</strong> người dùng.
       </div>
       <div class="pagination">
         <button class="page-btn" disabled>Trước</button>

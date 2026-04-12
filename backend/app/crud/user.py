@@ -1,3 +1,4 @@
+from app import models
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional, List
@@ -6,7 +7,7 @@ from app.models import User
 from app.schemas import UserCreate, UserUpdate
 from app.core.security import hash_password
 from app.core.utils import generate_unique_key
-
+from sqlalchemy.orm import joinedload
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     """User CRUD operations"""
@@ -55,6 +56,18 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """Get user by ID"""
         return db.query(User).filter(User.user_id == user_id).first()
 
+    def get_active_users_with_roles(self, db: Session, skip: int = 0, limit: int = 100) -> List[User]:
+        """Get active users with their roles pre-loaded"""
+        return (
+            db.query(User)
+            .options(joinedload(User.user_roles).joinedload(models.UserRole.role)) # Load cả bảng UserRole và Role
+            .filter(User.is_deleted == False)
+            .filter(User.is_active == True)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        
 
 # Create CRUD instance
 crud_user = CRUDUser(User)

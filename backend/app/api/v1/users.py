@@ -93,16 +93,15 @@ async def list_users(
     admin_user: User = Depends(check_admin),
     db: Session = Depends(get_db)
 ) -> list[UserResponse]:
-    """
-    List all users (Admin only).
+    # Dùng hàm mới đã JOIN dữ liệu
+    users = crud_user.get_active_users_with_roles(db, skip=skip, limit=limit)
     
-    Requires admin role.
-    """
-    users = crud_user.get_active_users(db, skip=skip, limit=limit)
     result = []
     for user in users:
         has_seller_role = any(role.role_id == 3 for role in user.user_roles)
-        result.append(UserResponse(
+        
+        # Tạo object response kèm danh sách roles
+        user_res = UserResponse(
             user_id=user.user_id,
             username=user.username,
             email=user.email,
@@ -115,8 +114,10 @@ async def list_users(
             updated_at=user.updated_at,
             last_login=user.last_login,
             email_verified=user.email_verified,
-            trust_score=user.trust_score if has_seller_role else None
-        ))
+            trust_score=user.trust_score if has_seller_role else None,
+            roles=[r.role for r in user.user_roles if r.role] # Gán roles ở đây
+        )
+        result.append(user_res)
     return result
 
 

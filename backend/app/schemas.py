@@ -62,6 +62,7 @@ class UserResponse(UserBase):
     email_verified: bool
     trust_score: Optional[float] = None
     role: Optional['RoleResponse'] = None
+    roles: Optional[List['RoleResponse']] = []
 
     class Config:
         from_attributes = True
