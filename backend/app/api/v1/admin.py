@@ -102,14 +102,23 @@ def toggle_moderator_status(
 ):
     """Lock or unlock a moderator account (Admin only)"""
     try:
+        new_log = models.ViolationLog(
+            user_id=user_id,
+            reason=status_update.reason,
+            action_taken=f"ADMIN_ACTION: {status_update.action.upper()}"
+        )
+        db.add(new_log)
+        
         is_active = status_update.action == "unlock"
         updated_moderator = crud_moderator.toggle_moderator_status(
-            db,
-            user_id=user_id,
-            is_active=is_active,
-            reason=status_update.reason,
-            admin_id=admin.user_id
+            db, user_id=user_id, is_active=is_active, reason=status_update.reason, admin_id=admin.user_id
         )
+        db.commit()
         return schemas.UserResponse.model_validate(updated_moderator)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        db.rollback()
+        # Chỉ trả về thông báo an toàn, không trả về chi tiết Exception
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Không thể cập nhật trạng thái, vui lòng kiểm tra lại ID."
+        )

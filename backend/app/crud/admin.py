@@ -77,10 +77,19 @@ def create_moderator(db: Session, moderator_data: dict, admin_id: int) -> User:
         
     except IntegrityError as e:
         db.rollback()
-        raise ValueError(f"Dữ liệu bị trùng (username hoặc email): {str(e)}")
+        error_str = str(e.orig).lower()
+        # Dùng kỹ thuật "Lọc từ khóa" để ẩn cấu trúc DB
+        if "unique constraint" in error_str or "key" in error_str:
+            if "username" in error_str:
+                raise ValueError("Tên đăng nhập đã tồn tại trong hệ thống.")
+            if "email" in error_str:
+                raise ValueError("Email này đã được sử dụng.")
+        raise ValueError("Thông tin đăng ký không hợp lệ.")
     except SQLAlchemyError as e:
         db.rollback()
-        raise ValueError(f"Lỗi database: {str(e)}")
+        # Log lỗi thật vào hệ thống (cần cấu hình logging thật ở đây)
+        print(f"CRITICAL ERROR: {str(e)}") 
+        raise ValueError("Lỗi hệ thống nội bộ, vui lòng thử lại sau.")
 
 def update_moderator_status(db: Session, moderator_id: int, status: int) -> Optional[User]:
     """Update moderator status (Activate/Deactivate)"""

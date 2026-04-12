@@ -123,20 +123,24 @@ export class ModeratorManageComponent implements OnInit {
   closeModal(): void {
     this.showModal = false;
     this.editingModerator = null;
+    this.cdr.detectChanges();
   }
 
   saveModerator(): void {
     if (this.editingModerator) {
       // For now, we don't have an update API, so just close modal
       this.closeModal();
+      this.cdr.detectChanges();
     } else {
       this.createModerator();
+      this.cdr.detectChanges();
     }
   }
 
   createModerator(): void {
     if (!this.moderatorForm.username || !this.moderatorForm.email || !this.moderatorForm.password || !this.moderatorForm.full_name) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -157,6 +161,7 @@ export class ModeratorManageComponent implements OnInit {
         this.duplicateErrorMsg = detail;
         this.duplicateErrorTitle = isDuplicate ? 'Dữ liệu bị trùng!' : 'Lỗi khởi tạo!';
         this.showDuplicateModal = true;
+        this.cdr.detectChanges();
         
         // Ẩn modal tạo để tránh chồng lấp
         this.showModal = false; 
