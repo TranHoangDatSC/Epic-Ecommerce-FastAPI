@@ -98,7 +98,7 @@ async def list_users(
     
     result = []
     for user in users:
-        has_seller_role = any(role.role_id == 3 for role in user.user_roles)
+        has_seller_role = any(role.role_id == 3 for role in user.user_role)
         
         # Tạo object response kèm danh sách roles
         user_res = UserResponse(
@@ -115,7 +115,7 @@ async def list_users(
             last_login=user.last_login,
             email_verified=user.email_verified,
             trust_score=user.trust_score if has_seller_role else None,
-            roles=[r.role for r in user.user_roles if r.role] # Gán roles ở đây
+            roles=[r.role for r in user.user_role if r.role] # Gán roles ở đây
         )
         result.append(user_res)
     return result

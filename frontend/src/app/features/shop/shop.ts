@@ -8,6 +8,8 @@ import { CategoryService } from '../../shared/services/category.service';
 import { Product, Category } from '../../core/models';
 import { environment } from '../../../environments/environment';
 import { CartService } from '../../core/services/cart.service';
+import { UIService } from '../../core/services/ui.service';
+
 
 @Component({
   selector: 'app-shop',
@@ -38,7 +40,9 @@ export class ShopComponent implements OnInit {
     private categoryService: CategoryService,
     private cartService: CartService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private uiService: UIService
+
   ) {
     // Reload data if navigating back to /shop (handles clicking header link again)
     this.router.events.pipe(
@@ -66,7 +70,9 @@ export class ShopComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading categories:', error);
+        this.uiService.showError('Không thể tải danh sách danh mục.');
       }
+
     });
   }
 
@@ -84,11 +90,15 @@ export class ShopComponent implements OnInit {
         this.computeCategoryCounts();
         this.applyFilters();
         this.loading = false;
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        });
       },
       error: (error) => {
         console.error('Error loading products:', error);
         this.loading = false;
+        this.uiService.showError('Không thể tải danh sách sản phẩm.');
+        this.cdr.detectChanges();
       }
     });
   }

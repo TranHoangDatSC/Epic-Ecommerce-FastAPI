@@ -56,7 +56,7 @@ async def get_current_user_optional(
     if token_data is None:
         return None
     
-    user = db.query(User).options(joinedload(User.role)).filter(User.user_id == token_data.user_id).first()
+    user = db.query(User).options(joinedload(User.roles)).filter(User.user_id == token_data.user_id).first()
     if user is None or user.is_deleted or not user.is_active:
         return None
     

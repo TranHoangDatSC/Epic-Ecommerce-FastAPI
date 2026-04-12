@@ -72,7 +72,11 @@ export class CheckoutComponent implements OnInit {
           this.customPhone = data[0].phone_number;
         }
       },
-      error: (err) => console.error('Error loading addresses:', err)
+      error: (err) => {
+        console.error('Error loading addresses:', err);
+        this.uiService.showError('Không thể tải thông tin địa chỉ.');
+      }
+
     });
 
     // Load payment methods
@@ -87,9 +91,11 @@ export class CheckoutComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading payment methods:', err);
+        this.uiService.showError('Không thể tải phương thức thanh toán.');
         this.isLoading = false;
         this.cdr.detectChanges();
       }
+
     });
   }
 

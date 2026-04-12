@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
+declare var bootstrap: any;
+
 export interface ModalConfig {
   title: string;
   message: string;
@@ -18,6 +20,14 @@ export class UIService {
 
   showModal(config: ModalConfig) {
     this.modalSubject.next(config);
+    // Explicitly trigger the bootstrap modal
+    setTimeout(() => {
+      const modalElement = document.getElementById('globalNotificationModal');
+      if (modalElement) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+      }
+    }, 0);
   }
 
   showSuccess(message: string, title: string = 'Thành công!') {
@@ -28,3 +38,4 @@ export class UIService {
     this.showModal({ title, message, type: 'error' });
   }
 }
+

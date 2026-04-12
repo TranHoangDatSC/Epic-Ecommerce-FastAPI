@@ -49,8 +49,10 @@ export class ProductDetailComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading product details:', error);
+        this.uiService.showError('Không thể tải thông tin sản phẩm.');
         this.cdr.detectChanges();
       }
+
     });
   }
 

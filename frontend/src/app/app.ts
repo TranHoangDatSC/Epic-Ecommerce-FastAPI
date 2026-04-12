@@ -39,11 +39,7 @@ export class App {
 
     this.uiService.modal$.subscribe(config => {
       this.modalConfig = config;
-      const modalElement = document.getElementById('globalNotificationModal');
-      if (modalElement) {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-        modal.show();
-      }
     });
+
   }
 }

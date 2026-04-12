@@ -20,21 +20,25 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
   const isAuthenticated = authService.isAuthenticated();
   const role = authService.getUserRole();
+  const isInitialized = authService.isInitialized();
 
-  console.log('[adminGuard] role from getUserRole():', role);
+  console.log('[adminGuard] Debug:', { isAuthenticated, role, isInitialized });
 
-  if (!authService.isInitialized()) {
-    return false; // Chặn tạm thời cho đến khi APP_INITIALIZER chạy xong
+  if (!isInitialized) {
+    console.log('[adminGuard] Blocked: Not initialized yet');
+    return false;
   }
 
   if (isAuthenticated && Number(role) === 1) {
+    console.log('[adminGuard] Access granted');
     return true;
   }
 
-  console.warn('[adminGuard] access denied. role:', role);
+  console.warn('[adminGuard] Access denied. role:', role);
   router.navigate(['/home']);
   return false;
 };
+
 
 export const moderatorGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -42,26 +46,32 @@ export const moderatorGuard: CanActivateFn = (route, state) => {
 
   const isAuthenticated = authService.isAuthenticated();
   const role = authService.getUserRole();
+  const isInitialized = authService.isInitialized();
 
-  console.log('[moderatorGuard] Check role:', role);
+  console.log('[moderatorGuard] Debug:', { isAuthenticated, role, isInitialized });
 
-  if (!authService.isInitialized()) {
-    return false; // Chặn tạm thời cho đến khi APP_INITIALIZER chạy xong
+  if (!isInitialized) {
+    console.log('[moderatorGuard] Blocked: Not initialized yet');
+    return false;
   }
 
   if (!isAuthenticated) {
+    console.log('[moderatorGuard] Blocked: Not authenticated');
     router.navigate(['/auth/login']);
     return false;
   }
 
   if (role !== null && (Number(role) === 1 || Number(role) === 2)) {
+    console.log('[moderatorGuard] Access granted');
     return true;
   }
 
+  console.warn('[moderatorGuard] Access denied. role:', role);
   alert('Bạn không có quyền truy cập trang moderator.');
   router.navigate(['/home']);
   return false;
 };
+
 
 export const guestGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
