@@ -74,6 +74,12 @@ class UserDetailResponse(UserResponse):
     roles: List['RoleResponse'] = []
 
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+
 # ==================== Role Schemas ====================
 
 class RoleBase(BaseModel):

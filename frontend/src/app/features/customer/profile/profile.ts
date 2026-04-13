@@ -44,12 +44,20 @@ export class ProfileComponent implements OnInit {
     return `http://localhost:8000${path}`; 
   }
 
-  saveChanges() {
-    if (this.user) {
-      console.log('Đang gửi dữ liệu:', this.user);
-      alert('Thông tin đã được cập nhật!');
-    }
-  }
-
   onImageError(event: any) { event.target.src = this.defaultAvatar; }
+  
+  saveChanges() {
+    if (!this.user) return;
+
+    this.authService.updateProfile(this.user).subscribe({
+      next: (updatedUser: User) => {
+        this.authService.updateLocalUser(updatedUser); 
+        this.user = updatedUser;
+        alert('Cập nhật thành công!');
+      },
+      error: (err: any) => {
+        console.error('Lỗi khi lưu:', err);
+      }
+    });
+  }
 }

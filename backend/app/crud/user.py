@@ -69,6 +69,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             .all()
         )
         
+    # def update_user(db: Session, db_user: User, user_in: UserUpdate):
+    #     update_data = user_in.dict(exclude_unset=True)
+    #     for field, value in update_data.items():
+    #         setattr(db_user, field, value)
+        
+    #     db.add(db_user)
+    #     db.commit()
+    #     db.refresh(db_user)
+    #     return db_user
 
 # Create CRUD instance
 crud_user = CRUDUser(User)

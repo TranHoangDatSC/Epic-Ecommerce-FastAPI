@@ -1,11 +1,13 @@
-<div class="container mt-5" *ngIf="user">
+<div class="container mt-5" *ngIf="user; else loading">
   <div class="row">
     <div class="col-md-4">
       <div class="card shadow-sm border-0">
         <div class="card-body text-center py-4">
-          <img [src]="getAvatarUrl(userProfile.avatar_url)" (error)="onImageError($event)" 
+          <img [src]="getAvatarUrl(userProfile.avatar_url)" 
+               (error)="onImageError($event)" 
                class="rounded-circle border border-3 shadow-sm" 
-               style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar">
+               style="width: 150px; height: 150px; object-fit: cover;" 
+               alt="Avatar">
           <h4 class="mt-3">{{ userProfile.full_name }}</h4>
           <span class="badge bg-info text-dark">{{ userProfile.role }}</span>
         </div>
@@ -45,6 +47,7 @@
                 <textarea class="form-control" [(ngModel)]="userProfile.address" name="address" rows="2"></textarea>
               </div>
             </div>
+
             <div class="mt-4 text-end">
               <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
             </div>
@@ -56,5 +59,7 @@
 </div>
 
 <ng-template #loading>
-  <div class="text-center mt-5"><div class="spinner-border"></div></div>
+  <div class="text-center mt-5">
+    <div class="spinner-border text-primary"></div>
+  </div>
 </ng-template>

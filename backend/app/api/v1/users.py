@@ -51,6 +51,13 @@ async def update_current_user(
     updated_user = crud_user.update(db, db_obj=current_user, obj_in=user_update)
     return updated_user
 
+@router.put("/me", response_model=UserResponse)
+def update_my_profile(
+    user_in: UserUpdate, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    return crud_user.update_user(db, db_user=current_user, user_in=user_in)
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
@@ -144,6 +151,13 @@ async def delete_user(
     db.add(user)
     db.commit()
 
+@router.put("/me", response_model=UserResponse)
+def update_my_profile(
+    user_in: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return crud_user.update_user(db, db_user=current_user, user_in=user_in)
 
 # ==================== User Contact Info ====================
 

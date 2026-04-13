@@ -25,6 +25,7 @@ export class AuthService {
     this.checkAuth();
   }
   isInitialized = signal(false);
+  
   private checkAuth() {
     const token = sessionStorage.getItem('token');
     const cachedUser = sessionStorage.getItem('user');
@@ -102,6 +103,15 @@ export class AuthService {
       return Number(user.roles[0].role_id);
     }
     return null;
+  }
+
+  updateProfile(data: User): Observable<User> {
+    const userApiUrl = `${environment.apiUrl}/users`; 
+    return this.http.put<User>(`${userApiUrl}/me`, data);
+  }
+  updateLocalUser(user: User) {
+    sessionStorage.setItem('user', JSON.stringify(user));
+    this.currentUser.set(user);
   }
 
   logout() {
