@@ -12,7 +12,9 @@ export interface User {
   full_name: string;
   phone_number?: string;
   address?: string;
+  avatar_url?: string;
   role?: Role;
+  trust_score?: number;
   created_at: string;
   updated_at?: string;
 }

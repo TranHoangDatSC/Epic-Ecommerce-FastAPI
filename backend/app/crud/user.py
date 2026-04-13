@@ -30,8 +30,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             phone_number=obj_in.phone_number,
             address=obj_in.address,
             role_id=obj_in.role_id or 3,
+            avatar_url = f"/media/users/user_{obj_in.role_id}_{obj_in.username}.png",
             random_key=generate_unique_key('user'),
-        )
+        )   
         db.add(db_obj)
         db.flush()  # Get user_id without committing
         return db_obj

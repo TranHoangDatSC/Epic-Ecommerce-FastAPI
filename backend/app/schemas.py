@@ -61,6 +61,7 @@ class UserResponse(UserBase):
     last_login: Optional[datetime]
     email_verified: bool
     trust_score: Optional[float] = None
+    avatar_url: Optional[str] = None
     role: Optional['RoleResponse'] = None
     roles: Optional[List['RoleResponse']] = []
 

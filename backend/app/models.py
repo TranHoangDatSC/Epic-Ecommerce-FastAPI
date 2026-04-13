@@ -49,7 +49,8 @@ class User(Base):
     password_reset_token = Column(String(255))
     password_reset_expires = Column(DateTime)
     trust_score = Column(DECIMAL(5,2), default=0.0, nullable=True)
-
+    avatar_url = Column(String(500), nullable=True)
+    
     # Relationships
     roles = relationship(
         "Role", 

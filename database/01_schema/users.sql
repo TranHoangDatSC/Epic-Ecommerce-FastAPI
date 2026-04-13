@@ -17,7 +17,8 @@ CREATE TABLE "user" (
     email_verification_token VARCHAR(255),
     password_reset_token VARCHAR(255),
     password_reset_expires TIMESTAMP,
-    trust_score DECIMAL(5,2) DEFAULT 0.0
+    trust_score DECIMAL(5,2) DEFAULT 0.0,
+    avatar_url VARCHAR(500)
 );
 
 -- Indexes for performance and constraints

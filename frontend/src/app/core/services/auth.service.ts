@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { User } from '../models';
 
 export interface LoginResponse {
   access_token: string;
@@ -108,5 +109,8 @@ export class AuthService {
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
     this.router.navigate(['/home']);
+  }
+  getMe(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`);
   }
 }

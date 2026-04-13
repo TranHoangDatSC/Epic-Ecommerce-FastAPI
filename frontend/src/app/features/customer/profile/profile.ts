@@ -1,59 +1,55 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { User } from '../../../core/models/index';
+import { AuthService } from '../../../core/services/auth.service';
+import { take } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-profile',
+  selector: 'app-customer-profile',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="container mt-4">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body text-center">
-              <img src="https://via.placeholder.com/150" class="rounded-circle mb-3" alt="Profile Picture">
-              <h5>John Doe</h5>
-              <p class="text-muted">Customer</p>
-              <button class="btn btn-primary">Edit Profile</button>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-8">
-          <div class="card">
-            <div class="card-header">
-              <h5>Profile Information</h5>
-            </div>
-            <div class="card-body">
-              <form>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="firstName" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="firstName" value="John">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="lastName" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="lastName" value="Doe">
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label for="email" class="form-label">Email</label>
-                  <input type="email" class="form-control" id="email" value="john.doe@example.com">
-                </div>
-                <div class="mb-3">
-                  <label for="phone" class="form-label">Phone</label>
-                  <input type="tel" class="form-control" id="phone" value="+1234567890">
-                </div>
-                <div class="mb-3">
-                  <label for="address" class="form-label">Address</label>
-                  <textarea class="form-control" id="address" rows="3">123 Main St, City, State 12345</textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: []
+  imports: [CommonModule, FormsModule], // Đã thêm các module cần thiết
+  templateUrl: './profile.html',
+  styleUrls: ['./profile.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush // Tối ưu hóa render
 })
-export class ProfileComponent {}
+
+export class ProfileComponent implements OnInit {
+  private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
+  
+  user: User | null = null;
+  readonly defaultAvatar = 'assets/images/default-avt.png';
+
+  // Getter an toàn để template sử dụng
+  get userProfile(): User {
+    return this.user!; 
+  }
+
+  ngOnInit() { this.loadUserProfile(); }
+
+  loadUserProfile() {
+    this.authService.getMe().pipe(take(1)).subscribe({
+      next: (data: User) => {
+        this.user = data;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Lỗi tải profile:', err)
+    });
+  }
+
+  getAvatarUrl(path: string | null | undefined): string {
+    if (!path) return this.defaultAvatar;
+    if (path.startsWith('http')) return path;
+    return `http://localhost:8000${path}`; 
+  }
+
+  saveChanges() {
+    if (this.user) {
+      console.log('Đang gửi dữ liệu:', this.user);
+      alert('Thông tin đã được cập nhật!');
+    }
+  }
+
+  onImageError(event: any) { event.target.src = this.defaultAvatar; }
+}

@@ -1,1 +1,60 @@
-<p>profile works!</p>
+<div class="container mt-5" *ngIf="user">
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-4">
+          <img [src]="getAvatarUrl(userProfile.avatar_url)" (error)="onImageError($event)" 
+               class="rounded-circle border border-3 shadow-sm" 
+               style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar">
+          <h4 class="mt-3">{{ userProfile.full_name }}</h4>
+          <span class="badge bg-info text-dark">{{ userProfile.role }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0 text-primary">Chi tiết tài khoản</h5>
+        </div>
+        <div class="card-body p-4">
+          <form (ngSubmit)="saveChanges()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-muted">Họ và tên</label>
+                <input type="text" class="form-control" [(ngModel)]="userProfile.full_name" name="fullName">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted">Tên đăng nhập</label>
+                <input type="text" class="form-control bg-light" [value]="userProfile.username" readonly>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-muted">Email</label>
+                <input type="email" class="form-control" [(ngModel)]="userProfile.email" name="email">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted">Số điện thoại</label>
+                <input type="text" class="form-control" [(ngModel)]="userProfile.phone_number" name="phone">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted">Điểm tin cậy</label>
+                <input type="text" class="form-control bg-light" [value]="userProfile.trust_score || 0" readonly>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-muted">Địa chỉ</label>
+                <textarea class="form-control" [(ngModel)]="userProfile.address" name="address" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="mt-4 text-end">
+              <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="text-center mt-5"><div class="spinner-border"></div></div>
+</ng-template>
