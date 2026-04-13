@@ -46,6 +46,24 @@ export class ProfileComponent implements OnInit {
 
   onImageError(event: any) { event.target.src = this.defaultAvatar; }
   
+  triggerFileUpload() {
+    document.getElementById('avatarInput')?.click();
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.authService.uploadAvatar(file).subscribe({
+        next: (updatedUser: User) => {
+          this.user = updatedUser;
+          this.cdr.markForCheck();
+          // alert('Avatar updated successfully!');
+        },
+        error: (err) => console.error('Error uploading avatar:', err)
+      });
+    }
+  }
+
   saveChanges() {
     if (!this.user) return;
 

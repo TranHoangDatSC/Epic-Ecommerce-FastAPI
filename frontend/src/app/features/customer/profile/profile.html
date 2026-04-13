@@ -3,13 +3,25 @@
     <div class="col-md-4">
       <div class="card shadow-sm border-0">
         <div class="card-body text-center py-4">
-          <img [src]="getAvatarUrl(userProfile.avatar_url)" 
-               (error)="onImageError($event)" 
-               class="rounded-circle border border-3 shadow-sm" 
-               style="width: 150px; height: 150px; object-fit: cover;" 
-               alt="Avatar">
-          <h4 class="mt-3">{{ userProfile.full_name }}</h4>
-          <span class="badge bg-info text-dark">{{ userProfile.role }}</span>
+          <div class="avatar-wrapper position-relative d-inline-block">
+            <img [src]="getAvatarUrl(userProfile.avatar_url)" 
+                 (error)="onImageError($event)" 
+                 class="rounded-circle border border-4 border-white shadow-lg" 
+                 style="width: 160px; height: 160px; object-fit: cover;" 
+                 alt="Avatar">
+            <button class="btn btn-primary btn-sm rounded-circle position-absolute bottom-0 end-0 shadow-sm"
+                    style="width: 40px; height: 40px; border: 3px solid #fff;"
+                    (click)="triggerFileUpload()"
+                    type="button"
+                    title="Change Avatar">
+              <i class="bi bi-camera-fill"></i>
+            </button>
+            <input type="file" id="avatarInput" hidden (change)="onFileSelected($event)" accept="image/*">
+          </div>
+          <h4 class="mt-3 fw-bold">{{ userProfile.full_name }}</h4>
+          <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-2">
+            <i class="bi bi-person-badge me-1"></i>{{ userProfile.role }}
+          </span>
         </div>
       </div>
     </div>

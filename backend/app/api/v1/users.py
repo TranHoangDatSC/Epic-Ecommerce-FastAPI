@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+import os
+from pathlib import Path
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
@@ -58,6 +60,54 @@ def update_my_profile(
     db: Session = Depends(get_db)
 ):
     return crud_user.update_user(db, db_user=current_user, user_in=user_in)
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> UserResponse:
+    """
+    Upload user avatar with syntax: user_[role]_[id]_[filename]
+    """
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File is not an image"
+        )
+    
+    # media/users
+    media_dir = Path(__file__).parent.parent.parent.parent / "media" / "users"
+    media_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Find role_id (first role or default 3)
+    role_id = current_user.roles[0].role_id if hasattr(current_user, 'roles') and current_user.roles else 3
+    
+    # user_[role]_[id]_[tên hình]
+    original_name = Path(file.filename).stem
+    extension = Path(file.filename).suffix.lower()
+    new_filename = f"user_{role_id}_{current_user.user_id}_{original_name}{extension}"
+    file_path = media_dir / new_filename
+    
+    # Save file
+    try:
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+            
+        # Update user avatar_url
+        current_user.avatar_url = f"/media/users/{new_filename}"
+        db.add(current_user)
+        db.commit()
+        db.refresh(current_user)
+        
+        return current_user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload avatar: {str(e)}"
+        )
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(

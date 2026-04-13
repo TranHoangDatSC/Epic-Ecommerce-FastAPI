@@ -114,6 +114,15 @@ export class AuthService {
     this.currentUser.set(user);
   }
 
+  uploadAvatar(file: File): Observable<User> {
+    const userApiUrl = `${environment.apiUrl}/users`;
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<User>(`${userApiUrl}/me/avatar`, formData).pipe(
+      tap(updatedUser => this.updateLocalUser(updatedUser))
+    );
+  }
+
   logout() {
     sessionStorage.clear();
     this.currentUser.set(null);

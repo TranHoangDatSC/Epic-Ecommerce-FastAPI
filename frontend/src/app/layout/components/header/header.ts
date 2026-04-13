@@ -63,10 +63,10 @@ import { CartItem } from '../../../core/services/cart.service';
                     </div>
                   </a>
                 </li>
-                <li *ngIf="user()?.role === 'SELLER'">
+                <li>
                   <hr class="dropdown-divider my-2 opacity-50">
                 </li>
-                <li *ngIf="user()?.role === 'SELLER'">
+                <li>
                   <a class="dropdown-item py-2 rounded-3" routerLink="/seller/dashboard">
                     <div class="d-flex align-items-center">
                       <div class="icon-box bg-warning-subtle text-warning rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
@@ -141,6 +141,12 @@ import { CartItem } from '../../../core/services/cart.service';
             </li>
             <li class="nav-item" *ngIf="!isLoggedIn()">
               <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Đăng ký</a>
+            </li>
+            <li class="nav-item" *ngIf="isLoggedIn()">
+              <a class="nav-link d-flex align-items-center fw-bold text-white shadow-lg px-3 rounded-pill ms-lg-2 logout-btn" 
+                 href="#" (click)="logout(); $event.preventDefault()">
+                <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
+              </a>
             </li>
           </ul>
 
@@ -270,7 +276,19 @@ import { CartItem } from '../../../core/services/cart.service';
     .smaller {
       font-size: 0.75rem;
     }
-
+    .logout-btn {
+      background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .logout-btn:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+      filter: brightness(1.1);
+    }
+    .logout-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
   `]
 })
 export class HeaderComponent {
