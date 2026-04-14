@@ -1,0 +1,29 @@
+.seller-table {
+  th {
+    color: #7d879c;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #edf2f9;
+    padding: 1rem;
+  }
+  
+  td {
+    padding: 1rem;
+    color: #2b3445;
+    border-bottom: 1px solid #edf2f9;
+  }
+  
+  tr:hover {
+    background-color: #fcfdfe;
+  }
+}
+
+.custom-modal {
+  .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+}

@@ -1,0 +1,161 @@
+<div class="seller-content-wrapper p-4">
+  <div class="seller-page-header">
+    <div>
+      <h2>Quản lý Sản phẩm</h2>
+      <p>Thêm mới, cập nhật và theo dõi trạng thái sản phẩm của bạn</p>
+    </div>
+    <button class="btn btn-primary add-btn" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> Đăng sản phẩm mới
+    </button>
+  </div>
+
+  <div class="seller-card">
+    <div class="table-responsive">
+      <table class="table seller-table align-middle">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Danh mục</th>
+            <th>Giá (VNĐ)</th>
+            <th>Tồn kho</th>
+            <th>Trạng thái</th>
+            <th class="text-end">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="products.length === 0">
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+              Bạn chưa đăng sản phẩm nào.
+            </td>
+          </tr>
+          <tr *ngFor="let p of products">
+            <td>
+              <div class="d-flex align-items-center">
+                <img [src]="p.product_images?.length > 0 ? ('http://localhost:8000' + p.product_images[0].image_url) : 'assets/placeholder.jpg'" class="product-img-thumb me-3" alt="product">
+                <div>
+                  <h6 class="mb-1 text-truncate" style="max-width: 250px;" [title]="p.title">{{ p.title }}</h6>
+                  <small class="text-muted">Lượt xem: {{ p.view_count || 0 }}</small>
+                </div>
+              </div>
+            </td>
+            <td>Category {{ p.category_id }}</td>
+            <td class="fw-bold text-danger">{{ p.price | number:'1.0-0' }}₫</td>
+            <td>{{ p.quantity }}</td>
+            <td>
+              <span [class]="getStatusBadge(p.status).class">
+                {{ getStatusBadge(p.status).label }}
+              </span>
+              <div *ngIf="p.status === 2 && p.reject_reason" class="text-danger small mt-1" style="max-width: 150px;">
+                Lý do: {{ p.reject_reason }}
+              </div>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteProduct(p.product_id)">
+                Xóa
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm Sản Phẩm -->
+<div class="modal fade show custom-modal" tabindex="-1" [ngStyle]="{'display': showCreateModal ? 'block' : 'none'}" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-bold">Đăng sản phẩm mới</h5>
+        <button type="button" class="btn-close" (click)="closeCreateModal()"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+          
+          <div class="bg-white p-4 rounded shadow-sm mb-4 border">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">1. Thông tin cơ bản</h6>
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="title" placeholder="Nhập tên sản phẩm...">
+                <small class="text-danger" *ngIf="productForm.get('title')?.touched && productForm.get('title')?.invalid">Tên sản phẩm là bắt buộc</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="category_id">
+                  <option value="" disabled selected>-- Chọn danh mục --</option>
+                  <option *ngFor="let cat of categories" [value]="cat.category_id">{{ cat.name }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Hình ảnh <span class="text-danger">*</span></label>
+                <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*" multiple>
+                <small class="text-muted">Chọn ít nhất 1 hình ảnh.</small>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Mô tả sản phẩm</label>
+                <textarea class="form-control" rows="4" formControlName="description" placeholder="Mô tả chi tiết về sản phẩm..."></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Video URL (Tùy chọn)</label>
+                <input type="text" class="form-control" formControlName="video_url" placeholder="VD: https://youtube.com/...">
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded shadow-sm mb-4 border">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">2. Chi tiết bán hàng</h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="price">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Số lượng <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="quantity">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Hình thức giao hàng <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="transfer_method">
+                  <option value="1">Giao hàng tận nơi (Shipping)</option>
+                  <option value="2">Gặp mặt trực tiếp (Meetup)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Bảo hành (tháng)</label>
+                <input type="number" class="form-control" formControlName="warranty_months">
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded shadow-sm border">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">3. Thông số vật lý & Tình trạng</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Trọng lượng (gram)</label>
+                <input type="number" class="form-control" formControlName="weight_grams">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Kích thước (D x R x C)</label>
+                <input type="text" class="form-control" formControlName="dimensions" placeholder="VD: 10x10x10 cm">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Độ mới (1-10) <span class="text-danger">*</span></label>
+                <input type="number" min="1" max="10" class="form-control" formControlName="condition_rating">
+              </div>
+            </div>
+          </div>
+          
+        </form>
+      </div>
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeCreateModal()" [disabled]="isSubmitting">Hủy</button>
+        <button type="button" class="btn btn-primary px-4 fw-bold" (click)="onSubmit()" [disabled]="isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          Đăng bán ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

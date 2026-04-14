@@ -1,98 +1,85 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-seller-dashboard',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   template: `
-    <div class="container mt-4">
-      <h2>Seller Dashboard</h2>
-      <div class="row">
-        <div class="col-md-3">
-          <div class="card text-center">
-            <div class="card-body">
-              <h5 class="card-title">Total Sales</h5>
-              <h3 class="text-primary">$12,345</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center">
-            <div class="card-body">
-              <h5 class="card-title">Orders</h5>
-              <h3 class="text-success">156</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center">
-            <div class="card-body">
-              <h5 class="card-title">Products</h5>
-              <h3 class="text-info">42</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center">
-            <div class="card-body">
-              <h5 class="card-title">Reviews</h5>
-              <h3 class="text-warning">89</h3>
-            </div>
-          </div>
+    <div class="seller-content-wrapper p-4">
+      <div class="seller-page-header">
+        <div>
+          <h2>Tổng quan Cửa hàng</h2>
+          <p>Thống kê nhanh hoạt động kinh doanh của bạn</p>
         </div>
       </div>
-      <div class="row mt-4">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">
-              <h5>Recent Orders</h5>
+      
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="seller-card text-center dashboard-stat-card">
+            <div class="icon-wrapper bg-primary-light">
+              <i class="bi bi-box-seam text-primary"></i>
             </div>
-            <div class="card-body">
-              <div class="list-group">
-                <div class="list-group-item">
-                  <div class="d-flex justify-content-between">
-                    <span>Order #12345</span>
-                    <span class="badge bg-success">Completed</span>
-                  </div>
-                  <small class="text-muted">$99.99 - 2 days ago</small>
-                </div>
-                <div class="list-group-item">
-                  <div class="d-flex justify-content-between">
-                    <span>Order #12346</span>
-                    <span class="badge bg-warning">Pending</span>
-                  </div>
-                  <small class="text-muted">$149.99 - 3 days ago</small>
-                </div>
-              </div>
-            </div>
+            <h3 class="mt-3 fw-bold">0</h3>
+            <p class="text-muted mb-0">Sản phẩm</p>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">
-              <h5>Top Products</h5>
+        <div class="col-md-3">
+          <div class="seller-card text-center dashboard-stat-card">
+            <div class="icon-wrapper bg-success-light">
+              <i class="bi bi-cart-check text-success"></i>
             </div>
-            <div class="card-body">
-              <div class="list-group">
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  Product A
-                  <span class="badge bg-primary rounded-pill">25 sales</span>
-                </div>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  Product B
-                  <span class="badge bg-primary rounded-pill">18 sales</span>
-                </div>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  Product C
-                  <span class="badge bg-primary rounded-pill">12 sales</span>
-                </div>
-              </div>
+            <h3 class="mt-3 fw-bold">0</h3>
+            <p class="text-muted mb-0">Đơn hàng mới</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="seller-card text-center dashboard-stat-card">
+            <div class="icon-wrapper bg-warning-light">
+              <i class="bi bi-wallet2 text-warning"></i>
             </div>
+            <h3 class="mt-3 fw-bold">0₫</h3>
+             <p class="text-muted mb-0">Doanh thu tạm tính</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="seller-card text-center dashboard-stat-card">
+            <div class="icon-wrapper bg-danger-light">
+              <i class="bi bi-star text-danger"></i>
+            </div>
+            <h3 class="mt-3 fw-bold">0.0</h3>
+            <p class="text-muted mb-0">Đánh giá trung bình</p>
           </div>
         </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    .dashboard-stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+    .dashboard-stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    }
+    .icon-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      font-size: 1.8rem;
+    }
+    .bg-primary-light { background: rgba(13, 110, 253, 0.1); }
+    .bg-success-light { background: rgba(25, 135, 84, 0.1); }
+    .bg-warning-light { background: rgba(255, 193, 7, 0.1); }
+    .bg-danger-light { background: rgba(220, 53, 69, 0.1); }
+  `]
 })
-export class DashboardComponent {}
+export class SellerDashboardComponent implements OnInit {
+  ngOnInit() {
+  }
+}

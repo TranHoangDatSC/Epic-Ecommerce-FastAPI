@@ -1,0 +1,128 @@
+<div class="seller-content-wrapper p-4">
+  <div class="seller-page-header">
+    <div>
+      <h2>Quản lý Đơn hàng</h2>
+      <p>Theo dõi và xử lý đơn hàng chi tiết từng sản phẩm</p>
+    </div>
+  </div>
+
+  <div class="seller-card">
+    <div class="table-responsive">
+      <table class="table seller-table align-middle">
+        <thead>
+          <tr>
+            <th>Mã ĐH</th>
+            <th>Ngày đặt</th>
+            <th>Tổng tiền</th>
+            <th>Giảm giá</th>
+            <th>Trạng thái</th>
+            <th class="text-end">Chi tiết</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="orders.length === 0">
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+              Chưa có đơn hàng nào.
+            </td>
+          </tr>
+          <tr *ngFor="let order of orders">
+            <td class="fw-bold">#{{ order.order_id }}</td>
+            <td>{{ order.order_date | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="fw-bold text-danger">{{ order.final_amount | number:'1.0-0' }}₫</td>
+            <td>{{ order.discount_amount | number:'1.0-0' }}₫</td>
+            <td>
+              <span [class]="getOrderStatus(order.order_status).class">
+                {{ getOrderStatus(order.order_status).label }}
+              </span>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" (click)="viewOrderDetails(order.order_id)">
+                <i class="bi bi-eye"></i> Xem
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Chi Tiết Đơn Hàng -->
+<div class="modal fade show custom-modal" tabindex="-1" [ngStyle]="{'display': showDetailModal ? 'block' : 'none'}" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" *ngIf="selectedOrder">
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-bold">Chi tiết đơn hàng #{{ selectedOrder.order_id }}</h5>
+        <button type="button" class="btn-close" (click)="closeDetailModal()"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="bg-white p-3 rounded border shadow-sm h-100">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-person-lines-fill"></i> Thông tin giao hàng</h6>
+              <p class="mb-1"><strong>Nơi nhận:</strong> {{ selectedOrder.shipping_address || 'Địa chỉ mặc định' }}</p>
+              <p class="mb-1"><strong>SĐT:</strong> {{ selectedOrder.phone_number || 'SĐT mặc định' }}</p>
+              <p class="mb-0 text-muted" *ngIf="selectedOrder.notes"><em>Ghi chú: {{ selectedOrder.notes }}</em></p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bg-white p-3 rounded border shadow-sm h-100">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle-fill"></i> Thanh toán & Vận chuyển</h6>
+              <p class="mb-1"><strong>Trạng thái: </strong> 
+                <span [class]="getOrderStatus(selectedOrder.order_status).class">{{ getOrderStatus(selectedOrder.order_status).label }}</span>
+              </p>
+              <p class="mb-1"><strong>Mã vận đơn:</strong> {{ selectedOrder.tracking_number || 'Chưa cung cấp' }}</p>
+              <p class="mb-1"><strong>Phí ship:</strong> {{ selectedOrder.shipping_fee | number:'1.0-0' }}₫</p>
+              <p class="mb-0 fw-bold">Tổng thanh toán: <span class="text-danger">{{ selectedOrder.final_amount | number:'1.0-0' }}₫</span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded border shadow-sm overflow-hidden">
+          <h6 class="fw-bold bg-light p-3 m-0 border-bottom">Sản phẩm trong đơn hàng</h6>
+          <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">Sản phẩm</th>
+                  <th class="text-center">Số lượng</th>
+                  <th class="text-end pe-3">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let detail of selectedOrder.order_details">
+                  <td class="ps-3 py-3">
+                    <div class="d-flex align-items-center">
+                      <div *ngIf="detail.product; else noProductInfo" class="d-flex align-items-center">
+                        <img [src]="detail.product.product_images?.length > 0 ? ('http://localhost:8000' + detail.product.product_images[0].image_url) : 'assets/placeholder.jpg'" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+                        <div>
+                          <h6 class="mb-1" style="font-size: 0.95rem;">{{ detail.product.title }}</h6>
+                          <small class="text-muted">Đơn giá: {{ detail.price_at_purchase | number:'1.0-0' }}₫</small>
+                        </div>
+                      </div>
+                      <ng-template #noProductInfo>
+                        <span>Sản phẩm #{{ detail.product_id }}</span>
+                      </ng-template>
+                    </div>
+                  </td>
+                  <td class="text-center fw-bold">{{ detail.quantity }}</td>
+                  <td class="text-end fw-bold text-danger pe-3">{{ detail.subtotal | number:'1.0-0' }}₫</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="mt-4 bg-white p-3 rounded border text-center" *ngIf="selectedOrder.order_status !== 4 && selectedOrder.order_status !== 3">
+          <h6 class="mb-3 text-muted">Hành động cập nhật</h6>
+          <button class="btn btn-info mx-1 mb-2 text-white" *ngIf="selectedOrder.order_status === 0" (click)="updateOrderStatus(selectedOrder.order_id, 1)">Đã xác nhận</button>
+          <button class="btn btn-primary mx-1 mb-2" *ngIf="selectedOrder.order_status === 1" (click)="updateOrderStatus(selectedOrder.order_id, 2)">Đang giao hàng</button>
+          <button class="btn btn-success mx-1 mb-2" *ngIf="selectedOrder.order_status === 2" (click)="updateOrderStatus(selectedOrder.order_id, 3)">Đã giao hàng</button>
+          <button class="btn btn-danger mx-1 mb-2" *ngIf="selectedOrder.order_status === 0" (click)="updateOrderStatus(selectedOrder.order_id, 4)">Hủy đơn</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
