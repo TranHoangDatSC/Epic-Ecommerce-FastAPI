@@ -9,11 +9,13 @@ import { UIService, ModalConfig } from './core/services/ui.service';
 declare var bootstrap: any;
 
 import { AuthService } from './core/services/auth.service';
+import { RegisterComponent } from './features/auth/register/register';
+import { LoginComponent } from './features/auth/login/login';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, RegisterComponent, LoginComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

@@ -56,6 +56,10 @@ export class AuthService {
     });
   }
 
+  register(userData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/register`, userData);
+  }
+
   login(email: string, password: string, returnUrl: string = '/home'): Observable<any> {
     const formData = new FormData();
     formData.append('username', email);

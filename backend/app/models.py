@@ -57,15 +57,14 @@ class User(Base):
         secondary="user_role", 
         back_populates="users"
     )
-    # user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
-    # # role = relationship("Role", backref="users")
-    # # link to roles assigned to this user.
-    # # foreign_keys not required since UserRole now only references User once.
-    # user_roles = relationship(
-    #     "UserRole",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
+    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def role_id(self):
+        if self.roles:
+            return self.roles[0].role_id
+        return 3
+
     products = relationship("Product", foreign_keys="Product.seller_id", back_populates="seller")
     approved_products = relationship("Product", foreign_keys="Product.approved_by", back_populates="approved_by_user")
     orders = relationship("Order", back_populates="buyer")
@@ -91,6 +90,11 @@ class UserRole(Base):
     # composite key matches existing SQL schema
     user_id = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
     role_id = Column(Integer, ForeignKey("role.role_id"), primary_key=True)
+
+    # relationships
+    user = relationship("User", back_populates="user_roles")
+    role = relationship("Role")
+
 
 class Category(Base):
     """Category model - product categories"""
