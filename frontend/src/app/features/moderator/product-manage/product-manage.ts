@@ -26,6 +26,7 @@ export class ModeratorProductManageComponent implements OnInit {
   category: any[] = [];
   categoryMap: Map<number, string> = new Map();
   userMap: Map<number, string> = new Map();
+  isViewMode: boolean = false;
 
   constructor(
     private moderatorService: ModeratorService,
@@ -50,19 +51,17 @@ export class ModeratorProductManageComponent implements OnInit {
   loadProducts(): void {
     this.isLoading = true;
     const statusMap = { 'pending': 0, 'approved': 1, 'rejected': 2 };
-    const status = statusMap[this.activeTab]; // <--- Đã sửa lỗi thiếu khai báo status
+    const status = statusMap[this.activeTab];
 
     this.productService.getProductsByStatus(status).subscribe({
       next: (data) => {
-        // Tạo map category
         this.category.forEach(c => this.categoryMap.set(c.category_id, c.name));
 
         this.products = (data || []).map(p => ({
           ...p,
-          // Map thông tin
           category_name: this.categoryMap.get(p.category_id) || 'Chưa phân loại',
           seller_name: this.userMap.get(p.seller_id) || 'User #' + p.seller_id,
-          product_name: p.title || 'Sản phẩm không tên' // Sửa lỗi lấy title
+          product_name: p.title || 'Sản phẩm không tên' 
         }));
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -71,6 +70,7 @@ export class ModeratorProductManageComponent implements OnInit {
     });
   }
 
+  
   selectTab(tab: 'pending' | 'approved' | 'rejected'): void {
     this.activeTab = tab;
     this.loadProducts();
@@ -103,12 +103,22 @@ export class ModeratorProductManageComponent implements OnInit {
     });
   }
 
-  openModal(product: any, status: 'approved' | 'rejected') {
+  openModal(product: any, status: 'approved' | 'rejected', viewMode: boolean = false) {
     this.selectedProduct = product;
+    this.isViewMode = viewMode;
     this.targetStatus = status === 'approved' ? 1 : 2;
-    this.rejectionReason = '';
-    const modal = new bootstrap.Modal(document.getElementById('reasonModal'));
-    modal.show();
+    
+    if (viewMode) {
+      this.rejectionReason = product.reject_reason || 'Không có lý do.';
+    } else {
+      this.rejectionReason = '';
+    }
+    
+    new bootstrap.Modal(document.getElementById('reasonModal')).show();
+  }
+
+  showFullReason(product: any) {
+    this.openModal(product, 'rejected', true);
   }
 
   confirmAction() {
@@ -131,9 +141,5 @@ export class ModeratorProductManageComponent implements OnInit {
     const modalEl = document.getElementById('reasonModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
-  }
-
-  showFullReason(reason: string) {
-    alert("Chi tiết lý do: \n" + reason);
   }
 }

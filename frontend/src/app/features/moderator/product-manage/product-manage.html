@@ -71,8 +71,8 @@
               </div>
 
               <div *ngIf="activeTab === 'rejected'" class="d-flex justify-content-end">
-                <button class="btn-action btn-view" (click)="showFullReason(product.reject_reason)">
-                  <i class="bi bi-eye"></i> Xem lý do
+                <button class="btn-action btn-view" (click)="showFullReason(product)">
+                  <i class="bi bi-eye"></i> Xem
                 </button>
               </div>
             </td>
@@ -106,17 +106,25 @@
   <!-- Message Reject -->
   <div class="modal fade" id="reasonModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Xác nhận thao tác</h5>
+      <div class="modal-content bg-dark text-light border-0">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">{{ isViewMode ? 'Chi tiết lý do từ chối' : 'Xác nhận thao tác' }}</h5>
         </div>
         <div class="modal-body">
-          <label>Lý do (Bắt buộc nếu từ chối):</label>
-          <textarea class="form-control" [(ngModel)]="rejectionReason" rows="3"></textarea>
+          <div *ngIf="isViewMode" class="p-3 bg-secondary bg-opacity-10 rounded">
+            {{ rejectionReason }}
+          </div>
+          <div *ngIf="!isViewMode">
+            <label class="mb-2">Lý do (Bắt buộc):</label>
+            <textarea class="form-control bg-dark text-light border-secondary" 
+                      [(ngModel)]="rejectionReason" rows="3"></textarea>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-          <button class="btn btn-primary" (click)="confirmAction()">Xác nhận</button>
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-secondary" (click)="closeModal()">
+            {{ isViewMode ? 'Đóng' : 'Hủy' }}
+          </button>
+          <button *ngIf="!isViewMode" class="btn btn-primary" (click)="confirmAction()">Xác nhận</button>
         </div>
       </div>
     </div>
