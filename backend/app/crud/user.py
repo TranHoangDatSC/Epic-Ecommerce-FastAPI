@@ -5,7 +5,7 @@ from typing import Optional, List
 from app.crud.base import CRUDBase
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.core.utils import generate_unique_key
 from sqlalchemy.orm import joinedload
 
@@ -68,6 +68,22 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             .limit(limit)
             .all()
         )
+        
+    def change_password(self, db: Session, db_user: User, current_password: str, new_password: str) -> bool:
+        """Change user's password after verifying current password.
+
+        Returns True on success, False if current password is incorrect.
+        """
+        # Verify current password
+        if not verify_password(current_password, db_user.password_hash):
+            return False
+
+        # Set new hashed password
+        db_user.password_hash = hash_password(new_password)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return True
         
     # def update_user(db: Session, db_user: User, user_in: UserUpdate):
     #     update_data = user_in.dict(exclude_unset=True)

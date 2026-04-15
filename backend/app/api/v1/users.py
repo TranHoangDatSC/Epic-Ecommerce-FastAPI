@@ -61,6 +61,25 @@ def update_my_profile(
 ):
     return crud_user.update_user(db, db_user=current_user, user_in=user_in)
 
+
+@router.post("/me/change-password")
+async def change_my_password(
+    payload: schemas.ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Change password for current authenticated user."""
+    success = crud_user.change_password(
+        db, db_user=current_user,
+        current_password=payload.current_password,
+        new_password=payload.new_password
+    )
+
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+
+    return {"message": "Password updated successfully"}
+
 @router.post("/me/avatar", response_model=UserResponse)
 async def upload_avatar(
     file: UploadFile = File(...),

@@ -80,6 +80,10 @@ class UserUpdate(BaseModel):
     phone_number: Optional[str] = None
     address: Optional[str] = None
 
+class ChangePasswordRequest(BaseModel):
+    """Schema for changing password from profile"""
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)
 # ==================== Role Schemas ====================
 
 class RoleBase(BaseModel):
