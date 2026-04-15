@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -16,6 +16,7 @@ export class ProductManageComponent implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   private uiService = inject(UIService);
+  private cdr = inject(ChangeDetectorRef);
 
   products: any[] = [];
   categories: any[] = [];
@@ -53,6 +54,7 @@ export class ProductManageComponent implements OnInit {
     this.http.get<any[]>(`${this.apiUrl}/products/seller/my-products`).subscribe({
       next: (data) => {
         this.products = data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading products', err)
     });
@@ -62,6 +64,7 @@ export class ProductManageComponent implements OnInit {
     this.http.get<any[]>(`${this.apiUrl}/categories`).subscribe({
       next: (data) => {
         this.categories = data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading categories', err)
     });

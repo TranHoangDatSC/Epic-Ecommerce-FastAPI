@@ -1,3 +1,5 @@
+from fastapi import Body
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List
@@ -308,95 +310,73 @@ async def delete_product(
 
 
 # ==================== Moderation endpoints ====================
-
-@router.get("/pending/all", response_model=list[ProductResponse])
-async def get_pending_products(
+@router.get("/moderation/list", response_model=list[ProductResponse])
+async def list_products_by_status(
+    status: int = Query(..., description="0: Pending, 1: Approved, 2: Rejected"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     moderator: User = Depends(check_moderator),
     db: Session = Depends(get_db)
-) -> list[ProductResponse]:
+):
     """
-    Get all pending products (Moderator only).
-    
-    Status 0 = Pending for review.
+    Endpoint chung để lấy danh sách sản phẩm theo trạng thái.
+    Frontend sẽ gọi: /products/moderation/list?status=0|1|2
     """
-    products = (
-        db.query(Product)
-        .filter(Product.status == 0)  # Pending
-        .filter(Product.is_deleted == False)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-    return products
+    return db.query(Product).filter(
+        Product.status == status, 
+        Product.is_deleted == False
+    ).offset(skip).limit(limit).all()
 
+@router.get("/pending/all", response_model=list[ProductResponse])
+async def get_pending_products(
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),
+    moderator: User = Depends(check_moderator), db: Session = Depends(get_db)
+):
+    return db.query(Product).filter(Product.status == 0, Product.is_deleted == False).offset(skip).limit(limit).all()
 
 @router.post("/{product_id}/approve", response_model=ProductResponse)
-async def approve_product(
-    product_id: int,
-    moderator: User = Depends(check_moderator),
-    db: Session = Depends(get_db)
-) -> ProductResponse:
-    """
-    Approve a product (Moderator only).
-    
-    Sets status to 1 (Approved).
-    """
+async def approve_product(product_id: int, moderator: User = Depends(check_moderator), db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.product_id == product_id).first()
-    
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-    
-    if product.status != 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only pending products can be approved"
-        )
-    
-    product.status = 1  # Approved
+    if not product or product.status != 0:
+        raise HTTPException(status_code=400, detail="Sản phẩm không hợp lệ hoặc không ở trạng thái chờ duyệt")
+    product.status = 1
     product.approved_by = moderator.user_id
-    db.add(product)
     db.commit()
-    db.refresh(product)
-    
     return product
-
 
 @router.post("/{product_id}/reject", response_model=ProductResponse)
 async def reject_product(
-    product_id: int,
-    reject_reason: str = Query(..., min_length=10),
-    moderator: User = Depends(check_moderator),
+    product_id: int, 
+    reject_reason: str = Query(..., min_length=10), 
+    moderator: User = Depends(check_moderator), 
     db: Session = Depends(get_db)
-) -> ProductResponse:
-    """
-    Reject a product (Moderator only).
-    
-    Sets status to 2 (Rejected) with reason.
-    """
+):
     product = db.query(Product).filter(Product.product_id == product_id).first()
-    
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-    
-    if product.status != 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only pending products can be rejected"
-        )
-    
-    product.status = 2  # Rejected
+    if not product or product.status != 0:
+        raise HTTPException(status_code=400, detail="Sản phẩm không hợp lệ hoặc không ở trạng thái chờ duyệt")
+    product.status = 2
     product.reject_reason = reject_reason
     product.approved_by = moderator.user_id
-    db.add(product)
     db.commit()
-    db.refresh(product)
-    
     return product
+
+@router.post("/{product_id}/status")
+async def update_product_status(
+    product_id: int, 
+    new_status: int = Body(..., ge=1, le=2), # Chỉ cho phép 1 (Duyệt) hoặc 2 (Từ chối)
+    reject_reason: Optional[str] = Body(None),
+    moderator: User = Depends(check_moderator),
+    db: Session = Depends(get_db)
+):
+    product = db.query(Product).filter(Product.product_id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm")
+    
+    if new_status == 2 and not reject_reason:
+        raise HTTPException(status_code=400, detail="Cần lý do khi từ chối sản phẩm")
+        
+    product.status = new_status
+    product.reject_reason = reject_reason
+    product.approved_by = moderator.user_id
+    db.commit()
+    return {"message": "Cập nhật thành công"}
