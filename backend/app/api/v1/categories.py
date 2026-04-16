@@ -165,40 +165,20 @@ async def update_category(
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
-    category_id: int,
-    admin_user: User = Depends(check_admin),
+    category_id: int, 
+    admin_user: User = Depends(check_admin), 
     db: Session = Depends(get_db)
 ) -> None:
-    """
-    Delete a category (Admin only).
-    
-    Soft deletes the category.
-    """
     category = crud_category.get_by_id(db, category_id=category_id)
-    
     if not category:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Category not found"
-        )
-        
-    # Check 1: category must be inactive
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+
     if category.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Phải vô hiệu hóa (Disable) danh mục trước khi thực hiện xóa mềm"
-        )
-        
-    # Check 2: Check if category has products
-    if crud_category.has_products(db, category_id=category_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Không thể xóa danh mục đang chứa sản phẩm"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Phải vô hiệu hóa danh mục trước khi xóa")
+
+    crud_category.soft_delete_category_and_products(db, category_id)
     
-    category.is_deleted = True
-    db.add(category)
-    db.commit()
+    return None
 
 
 @router.delete("/{category_id}/hard-delete", status_code=status.HTTP_204_NO_CONTENT)

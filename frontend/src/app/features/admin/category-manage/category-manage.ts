@@ -18,9 +18,8 @@ export class CategoryManageComponent implements OnInit {
   showModal = false;
   editingCategory: any = null;
   activeTab: 'active' | 'trash' = 'active';
-  allCategories: any[] = []; // Chứa tất cả danh mục để tra cứu tên parent
+  allCategories: any[] = [];
 
-  // Modal Xác nhận
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
@@ -30,25 +29,10 @@ export class CategoryManageComponent implements OnInit {
   get pagedCategories(): any[] {
     return this.categories.slice(this.skip, this.skip + this.limit);
   }
-  
-  categoryForm = {
-    name: '',
-    description: '',
-    parent_id: null as number | null,
-    is_active: true
-  };
 
-  getParentName(parentId: number | null): string {
-    if (!parentId) return 'N/A';
-    const parent = this.allCategories.find(c => c.category_id === parentId);
-    return parent ? parent.name : `#${parentId}`;
-  }
+  categoryForm = { name: '', description: '', parent_id: null as number | null, is_active: true };
 
-  // FIX: Đã thêm private cdr: ChangeDetectorRef vào đây
-  constructor(
-    private adminService: AdminService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadCategories();
@@ -56,36 +40,19 @@ export class CategoryManageComponent implements OnInit {
 
   loadCategories() {
     this.isLoading = true;
-    // Xóa danh sách cũ để UI reset trạng thái, tránh nhầm lẫn dữ liệu
-    this.categories = []; 
-    
-    const includeDeleted = this.activeTab === 'trash';
-    
-    // Gọi API: Tham số 1 (false) cho active_only để lấy cả category bị ẩn
-    // Tham số 2 (true) để lấy tất cả dữ liệu (bao gồm cả thùng rác) để tra cứu tên parent
+    this.categories = [];
     this.adminService.getCategories(false, true).subscribe({
       next: (data) => {
-        this.allCategories = data; // Lưu lại để getParentName
-
+        this.allCategories = data;
         if (this.activeTab === 'trash') {
-          // Lọc các mục đã xóa mềm
           this.categories = data.filter(cat => cat.is_deleted === true);
         } else {
-          // Lọc các mục chưa xóa và sắp xếp: cái nào Active lên đầu
           this.categories = data.filter(cat => !cat.is_deleted)
-            .sort((a, b) => {
-              if (a.is_active === b.is_active) return 0;
-              return a.is_active ? -1 : 1;
-            });
+            .sort((a, b) => (a.is_active === b.is_active ? 0 : a.is_active ? -1 : 1));
         }
-
-        if (this.skip >= this.categories.length) {
-          this.skip = 0;
-        }
-        
+        if (this.skip >= this.categories.length) this.skip = 0;
         this.isLoading = false;
-        // FIX: Ép Angular vẽ lại giao diện ngay lập tức
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi khi tải danh mục:', err);
@@ -95,80 +62,53 @@ export class CategoryManageComponent implements OnInit {
     });
   }
 
+  getParentName(parentId: number | null): string {
+    if (!parentId) return 'N/A';
+    const parent = this.allCategories.find(c => c.category_id === parentId);
+    return parent ? parent.name : `#${parentId}`;
+  }
+
   switchTab(tab: 'active' | 'trash') {
     this.activeTab = tab;
     this.skip = 0;
     this.loadCategories();
   }
 
-  nextPage(): void {
-    if (this.skip + this.limit < this.categories.length) {
-      this.skip += this.limit;
-    }
-  }
-
-  prevPage(): void {
-    if (this.skip >= this.limit) {
-      this.skip -= this.limit;
-    }
-  }
+  nextPage(): void { if (this.skip + this.limit < this.categories.length) this.skip += this.limit; }
+  prevPage(): void { if (this.skip >= this.limit) this.skip -= this.limit; }
 
   openModal(category: any = null) {
     this.editingCategory = category;
-    if (category) {
-      this.categoryForm = {
-        name: category.name,
-        description: category.description,
-        parent_id: category.parent_id,
-        is_active: category.is_active !== undefined ? category.is_active : true
-      };
-    } else {
-      this.categoryForm = { 
-        name: '', 
-        description: '', 
-        parent_id: null, 
-        is_active: true 
-      };
-    }
+    this.categoryForm = category ? 
+      { name: category.name, description: category.description, parent_id: category.parent_id, is_active: category.is_active } : 
+      { name: '', description: '', parent_id: null, is_active: true };
     this.showModal = true;
   }
 
-  closeModal() {
-    this.showModal = false;
-    this.editingCategory = null;
-  }
+  closeModal() { this.showModal = false; this.editingCategory = null; }
 
   saveCategory() {
-    if (this.editingCategory) {
-      this.adminService.updateCategory(this.editingCategory.category_id, this.categoryForm).subscribe({
-        next: () => {
-          this.loadCategories();
-          this.closeModal();
-        },
-        error: (err) => console.error('Error updating category:', err)
-      });
-    } else {
-      this.adminService.createCategory(this.categoryForm).subscribe({
-        next: () => {
-          this.loadCategories();
-          this.closeModal();
-        },
-        error: (err) => console.error('Error creating category:', err)
-      });
-    }
+    const request = this.editingCategory ? 
+      this.adminService.updateCategory(this.editingCategory.category_id, this.categoryForm) : 
+      this.adminService.createCategory(this.categoryForm);
+    
+    request.subscribe({
+      next: () => { this.loadCategories(); this.closeModal(); },
+      error: (err) => console.error('Error saving category:', err)
+    });
   }
 
   deleteCategory(cat: any) {
     if (cat.is_active) {
       this.confirmTitle = 'Không thể xóa';
-      this.confirmMessage = 'Danh mục này hiện đang ở trạng thái HIỂN THỊ. Bạn vui lòng chuyển sang trạng thái ẨN trước khi thực hiện xóa mềm.';
+      this.confirmMessage = 'Danh mục đang hiển thị. Hãy chuyển sang trạng thái ẨN trước.';
       this.confirmActionType = 'warning';
       this.showConfirmModal = true;
       return;
     }
     this.pendingCategoryId = cat.category_id;
     this.confirmTitle = 'Xác nhận Xóa';
-    this.confirmMessage = 'Bạn có chắc chắn muốn xóa danh mục này? (Xóa mềm)';
+    this.confirmMessage = 'Bạn có chắc chắn muốn xóa danh mục này?';
     this.confirmActionType = 'delete';
     this.showConfirmModal = true;
   }
@@ -176,7 +116,7 @@ export class CategoryManageComponent implements OnInit {
   restoreCategory(id: number) {
     this.pendingCategoryId = id;
     this.confirmTitle = 'Xác nhận Khôi phục';
-    this.confirmMessage = 'Khôi phục danh mục này về danh sách hoạt động?';
+    this.confirmMessage = 'Khôi phục danh mục này?';
     this.confirmActionType = 'restore';
     this.showConfirmModal = true;
   }
@@ -184,51 +124,37 @@ export class CategoryManageComponent implements OnInit {
   hardDeleteCategory(id: number) {
     this.pendingCategoryId = id;
     this.confirmTitle = 'CẢNH BÁO NGUY HIỂM';
-    this.confirmMessage = 'CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn và không thể hoàn tác!';
+    this.confirmMessage = 'Xóa vĩnh viễn không thể hoàn tác!';
     this.confirmActionType = 'hardDelete';
     this.showConfirmModal = true;
   }
 
   onConfirm() {
     if (!this.pendingCategoryId || !this.confirmActionType) return;
-
-    const id = this.pendingCategoryId;
     this.isLoading = true;
 
-    if (this.confirmActionType === 'delete') {
-      this.adminService.deleteCategory(id).subscribe({
-        next: () => {
-          this.loadCategories();
-          this.closeConfirmModal();
-        },
-        error: (err) => {
-          console.error('Error deleting category:', err);
-          this.isLoading = false;
-        }
-      });
-    } else if (this.confirmActionType === 'restore') {
-      this.adminService.restoreCategory(id).subscribe({
-        next: () => {
-          this.loadCategories();
-          this.closeConfirmModal();
-        },
-        error: (err) => {
-          console.error('Error restoring category:', err);
-          this.isLoading = false;
-        }
-      });
-    } else if (this.confirmActionType === 'hardDelete') {
-      this.adminService.hardDeleteCategory(id).subscribe({
-        next: () => {
-          this.loadCategories();
-          this.closeConfirmModal();
-        },
-        error: (err) => {
-          console.error('Error hard deleting category:', err);
-          this.isLoading = false;
-        }
-      });
-    }
+    const handleApiError = (err: any) => {
+      this.isLoading = false;
+      if (err.status === 400) {
+        this.confirmTitle = 'Lỗi không thể thực hiện';
+        this.confirmMessage = err.error?.detail || 'Dữ liệu đang được sử dụng, không thể thay đổi.';
+        this.confirmActionType = 'warning';
+        this.cdr.detectChanges(); 
+      } else {
+        this.closeConfirmModal();
+        alert('Có lỗi hệ thống: ' + (err.message || 'Unknown error'));
+      }
+    };
+
+    let apiCall;
+    if (this.confirmActionType === 'delete') apiCall = this.adminService.deleteCategory(this.pendingCategoryId);
+    else if (this.confirmActionType === 'restore') apiCall = this.adminService.restoreCategory(this.pendingCategoryId);
+    else apiCall = this.adminService.hardDeleteCategory(this.pendingCategoryId);
+
+    apiCall.subscribe({
+      next: () => { this.loadCategories(); this.closeConfirmModal(); },
+      error: handleApiError
+    });
   }
 
   closeConfirmModal() {

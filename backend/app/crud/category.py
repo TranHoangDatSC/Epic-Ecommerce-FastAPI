@@ -89,6 +89,15 @@ class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
             .filter(Category.category_id == category_id)
             .first()
         )
+    def soft_delete_category_and_products(self, db: Session, category_id: int):
+        category = self.get_by_id(db, category_id)
+        if category:
+            category.is_deleted = True
+            from app.models import Product
+            products = db.query(Product).filter(Product.category_id == category_id).all()
+            for p in products:
+                p.status = 0  
+            db.commit()
 
     def hard_delete(self, db: Session, category_id: int) -> bool:
         """Permanently delete a category from DB"""

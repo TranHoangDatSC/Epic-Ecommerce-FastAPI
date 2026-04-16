@@ -9,7 +9,7 @@ import { Product, Category } from '../../core/models';
 import { environment } from '../../../environments/environment';
 import { CartService } from '../../core/services/cart.service';
 import { UIService } from '../../core/services/ui.service';
-
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-shop',
@@ -58,8 +58,31 @@ export class ShopComponent implements OnInit {
   }
 
   private initialLoad() {
-    this.loadCategories();
-    this.loadProducts();
+    this.loading = true;
+    
+    forkJoin({
+      categories: this.categoryService.getCategories(),
+      products: this.productService.getProducts({ skip: 0, limit: 1000, sort_by: 'created_at' })
+    }).subscribe({
+      next: (result) => {
+        this.categories = result.categories;
+        
+        this.allProducts = result.products.filter(p => {
+          const cat = this.categories.find(c => c.category_id === p.category_id);
+          return cat && !cat.is_deleted;
+        });
+
+        this.computeCategoryCounts();
+        this.applyFilters();
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Lỗi tải dữ liệu:', error);
+        this.loading = false;
+        this.uiService.showError('Không thể tải dữ liệu cửa hàng.');
+      }
+    });
   }
 
   loadCategories() {
@@ -92,6 +115,10 @@ export class ShopComponent implements OnInit {
         this.loading = false;
         setTimeout(() => {
           this.cdr.detectChanges();
+        });
+        this.allProducts = products.filter(p => {
+          const cat = this.categories.find(c => c.category_id === p.category_id);
+          return cat && !(cat as any).is_deleted;
         });
       },
       error: (error) => {

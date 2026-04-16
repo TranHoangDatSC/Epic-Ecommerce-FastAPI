@@ -80,6 +80,6 @@ export interface Category {
   category_id: number;
   name: string;
   description: string;
-  // Optional alias for convenience in templates
+  is_deleted: boolean;
   id?: number;
 }

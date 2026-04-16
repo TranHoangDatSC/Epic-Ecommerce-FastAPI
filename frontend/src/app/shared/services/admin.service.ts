@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -75,11 +75,19 @@ export class AdminService {
   }
 
   updateCategory(categoryId: number, category: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/categories/${categoryId}`, category);
+    return this.http.put(`${this.apiUrl}/categories/${categoryId}`, category).pipe(
+      catchError((error) => {
+        return throwError(() => error);
+      })
+    );
   }
 
-  deleteCategory(categoryId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/categories/${categoryId}`);
+  deleteCategory(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/categories/${id}`).pipe(
+      catchError((error) => {
+        return throwError(() => error);
+      })
+    );
   }
 
   hardDeleteCategory(categoryId: number): Observable<any> {
