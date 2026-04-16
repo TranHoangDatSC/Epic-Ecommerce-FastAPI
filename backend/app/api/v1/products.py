@@ -1,3 +1,4 @@
+from app.core.dependencies import get_current_user
 from fastapi import Body
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -273,6 +274,21 @@ async def update_product(
     updated_product = crud_product.update(db=db, db_obj=product, obj_in=product_update)
     return updated_product
 
+@router.patch("/{product_id}/status")
+async def change_product_status(
+    product_id: int, 
+    new_status: int = Body(...), 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    product = crud_product.get_by_id(db, product_id=product_id)
+    if product.seller_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Không có quyền")
+    
+    # Logic: 1 -> 3 (Thu hồi), 3 -> 0 (Đăng bán lại)
+    product.status = new_status
+    db.commit()
+    return product
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(

@@ -27,13 +27,11 @@ export class App {
   authService = inject(AuthService);
 
   constructor(private router: Router, private uiService: UIService) {
-    // Initial check for showShell
     const initialUrl = window.location.pathname;
     const isSpecialRoute = initialUrl.startsWith('/moderator') || initialUrl.startsWith('/admin') || initialUrl.startsWith('/seller');
     this.showShell.set(!isSpecialRoute);
 
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
-      // Hide header/footer for moderator, admin, and seller routes
       const isSpecialRoute = event.urlAfterRedirects.startsWith('/moderator') || 
                              event.urlAfterRedirects.startsWith('/admin') ||
                              event.urlAfterRedirects.startsWith('/seller');

@@ -11,23 +11,27 @@ export interface ModalConfig {
   cancelText?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class UIService {
   private modalSubject = new Subject<ModalConfig>();
   modal$ = this.modalSubject.asObservable();
 
   showModal(config: ModalConfig) {
     this.modalSubject.next(config);
-    // Explicitly trigger the bootstrap modal
+    
     setTimeout(() => {
       const modalElement = document.getElementById('globalNotificationModal');
       if (modalElement) {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-        modal.show();
+        try {
+          const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+          modal.show();
+        } catch (e) {
+          console.error("Lỗi khi mở modal:", e);
+        }
+      } else {
+        console.warn("Global Notification Modal không tìm thấy trong DOM!");
       }
-    }, 0);
+    }, 100); 
   }
 
   showSuccess(message: string, title: string = 'Thành công!') {
@@ -38,4 +42,3 @@ export class UIService {
     this.showModal({ title, message, type: 'error' });
   }
 }
-
