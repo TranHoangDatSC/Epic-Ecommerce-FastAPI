@@ -29,12 +29,18 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             full_name=obj_in.full_name,
             phone_number=obj_in.phone_number,
             address=obj_in.address,
-            role_id=obj_in.role_id or 3,
-            avatar_url = f"/media/users/user_{obj_in.role_id}_{obj_in.username}.png",
+            avatar_url = f"/media/users/user_{obj_in.role_id or 3}_{obj_in.username}.png",
             random_key=generate_unique_key('user'),
         )   
         db.add(db_obj)
         db.flush()  # Get user_id without committing
+
+        # Add role to user_role table
+        from app.models import UserRole
+        db_user_role = UserRole(user_id=db_obj.user_id, role_id=obj_in.role_id or 3)
+        db.add(db_user_role)
+        db.flush()
+
         return db_obj
 
     def get_active_users(

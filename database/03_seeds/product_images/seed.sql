@@ -5,4 +5,15 @@ INSERT INTO product_image (product_id, image_url, alt_text, is_primary, display_
 (2, '/media/products/prod_2_1_phone.jpg', 'iPhone 12 Pro Max - Front View', TRUE, 1),
 (3, '/media/products/prod_3_1_headphone.jpg', 'Sony WH-1000XM4 Headphones', TRUE, 1),
 (4, '/media/products/prod_4_1_coat.jpg', 'Winter Coat - Front View', TRUE, 1),
-(5, '/media/products/prod_5_1_crimeandpunishmentbook.jpg', 'Crime and Punishment Book Cover', TRUE, 1);
+(5, '/media/products/prod_5_1_crimeandpunishmentbook.jpg', 'Crime and Punishment Book Cover', TRUE, 1),
+(6, '/media/products/prod_6_1_electricstove.jpg', 'Bếp điện', TRUE, 1),
+(7, '/media/products/prod_7_1_fishtank.jpg', 'Bể cá', TRUE, 1),
+(8, '/media/products/prod_8_1_oldsneakers.jpg', 'Giày sneakers', TRUE, 1),
+(9, '/media/products/prod_9_1_oldsofaset.jpg', 'Sofa', TRUE, 1),
+(10, '/media/products/prod_10_1_oldfridge.jpg', 'Tủ lạnh', TRUE, 1),
+(11, '/media/products/prod_11_1_oldspeakerset.jpg', 'Bộ loa', TRUE, 1),
+(12, '/media/products/prod_12_1_oldcamera.jpg', 'Máy ảnh', TRUE, 1),
+(13, '/media/products/prod_13_1_oldshirt.jpg', 'Áo sơ mi', TRUE, 1),
+(14, '/media/products/prod_14_1_oldlamb.jpg', 'Đèn ngủ', TRUE, 1),
+(15, '/media/products/prod_15_1_oldshoes.jpg', 'Giày tây', TRUE, 1),
+(16, '/media/products/prod_16_1_olddrone.jpg', 'Flycam', TRUE, 1);

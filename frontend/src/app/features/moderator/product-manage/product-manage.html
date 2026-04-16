@@ -45,56 +45,36 @@
             <th>SẢN PHẨM & DANH MỤC</th>
             <th>GIÁ NIÊM YẾT</th>
             <th>NGƯỜI ĐĂNG</th>
-            <th class="text-end">THAO TÁC</th>
-          </tr>
+            <th class="text-end">THAO TÁC</th> </tr>
         </thead>
         <tbody>
           <tr *ngFor="let product of products">
             <td>
               <div class="product-cell">
-                <div class="product-img">
-                  <i class="bi bi-box-seam"></i>
-                </div>
                 <div class="product-info">
-                  <span class="name">{{ product.product_name }}</span>
+                  <span class="name">{{ product.product_name || 'Sản phẩm không tên' }}</span>
                   <span class="category">{{ product.category_name || 'Chưa phân loại' }}</span>
                 </div>
               </div>
             </td>
-            <td>
-              <span class="price-text">{{ product.price | currency: 'VND':'symbol':'1.0-0' }}</span>
-            </td>
-            <td>
-              <div class="seller-info">
-                <i class="bi bi-person-circle"></i>
-                <span>{{ product.created_by || 'id:' + product.seller_id }}</span>
-              </div>
-            </td>
+            <td>{{ product.price | number:'1.0-0' }} đ</td>
+            <td>{{ product.seller_name || 'Vô danh' }}</td>
+            
             <td class="text-end">
-              <div class="d-flex justify-content-end gap-2" *ngIf="activeTab === 'pending'">
-                <button 
-                  class="btn-action btn-approve" 
-                  [disabled]="actionLoading"
-                  (click)="updateStatus(product, 'approved')"
-                >
-                  <i class="bi bi-check2"></i> Duyệt
+              <div class="d-flex justify-content-end gap-2" *ngIf="activeTab !== 'rejected'">
+                <button *ngIf="activeTab === 'pending'" class="btn-action btn-approve" (click)="openModal(product, 'approved')">
+                  <i class="bi bi-check-lg"></i> Duyệt
                 </button>
-                <button 
-                  class="btn-action btn-reject" 
-                  [disabled]="actionLoading"
-                  (click)="updateStatus(product, 'rejected')"
-                >
-                  <i class="bi bi-x-lg"></i> Từ chối
+                <button class="btn-action btn-reject-red" (click)="openModal(product, 'rejected')">
+                  <i class="bi bi-x-lg"></i> {{ activeTab === 'pending' ? 'Từ chối' : 'Hủy duyệt' }}
                 </button>
               </div>
-              
-              <span class="status-badge" 
-                [class.status-approved]="activeTab === 'approved'"
-                [class.status-rejected]="activeTab === 'rejected'"
-                *ngIf="activeTab !== 'pending'"
-              >
-                {{ activeTab === 'approved' ? 'Đã phê duyệt' : 'Đã từ chối' }}
-              </span>
+
+              <div *ngIf="activeTab === 'rejected'" class="d-flex justify-content-end">
+                <button class="btn-action btn-view" (click)="showFullReason(product)">
+                  <i class="bi bi-eye"></i> Xem
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -122,4 +102,32 @@
   <div class="alert alert-info mt-4 delay-animation" *ngIf="message">
     <i class="bi bi-info-circle me-2"></i> {{ message }}
   </div>
+
+  <!-- Message Reject -->
+  <div class="modal fade" id="reasonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-light border-0">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">{{ isViewMode ? 'Chi tiết lý do từ chối' : 'Xác nhận thao tác' }}</h5>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="isViewMode" class="p-3 bg-secondary bg-opacity-10 rounded">
+            {{ rejectionReason }}
+          </div>
+          <div *ngIf="!isViewMode">
+            <label class="mb-2">Lý do (Bắt buộc):</label>
+            <textarea class="form-control bg-dark text-light border-secondary" 
+                      [(ngModel)]="rejectionReason" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-secondary" (click)="closeModal()">
+            {{ isViewMode ? 'Đóng' : 'Hủy' }}
+          </button>
+          <button *ngIf="!isViewMode" class="btn btn-primary" (click)="confirmAction()">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+

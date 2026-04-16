@@ -10,7 +10,9 @@ import { environment } from '../../../environments/environment';
 export class ProductService {
   private apiUrl = `${environment.apiUrl}/products`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient
+  ) {}
 
   getProducts(params?: {
     skip?: number;
@@ -54,6 +56,23 @@ export class ProductService {
 
   updateProduct(id: number, product: Partial<Product>): Observable<Product> {
     return this.http.put<Product>(`${this.apiUrl}/${id}`, product);
+  }
+
+  getProductsByStatus(status: number): Observable<Product[]> {
+    const token = sessionStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    return this.http.get<Product[]>(`${this.apiUrl}/moderation/list`, { 
+        params: { status: status.toString() }, 
+        headers 
+    });
+  }
+
+  updateProductStatus(productId: number, status: number, reason?: string): Observable<Product> {
+    const token = sessionStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const body: any = { new_status: status };
+    if (reason) body.reject_reason = reason;
+    return this.http.post<Product>(`${this.apiUrl}/${productId}/status`, body, { headers });
   }
 
   deleteProduct(id: number): Observable<void> {
