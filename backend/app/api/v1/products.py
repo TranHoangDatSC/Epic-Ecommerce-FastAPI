@@ -1,3 +1,4 @@
+from app.schemas import StatusUpdate
 from app.core.dependencies import get_current_user
 from fastapi import Body
 from typing import Optional
@@ -261,19 +262,21 @@ async def update_product(
 
 @router.patch("/{product_id}/status")
 async def change_product_status(
-    product_id: int, 
-    new_status: int = Body(...), 
-    current_user: User = Depends(get_current_user), 
+    product_id: int,
+    status_data: StatusUpdate,
+    current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ):
     product = crud_product.get_by_id(db, product_id=product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm")
     if product.seller_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Không có quyền")
-    
-    # Logic: 1 -> 3 (Thu hồi), 3 -> 0 (Đăng bán lại)
-    product.status = new_status
+
+    # Cập nhật status đơn giản
+    product.status = status_data.new_status
     db.commit()
-    return product
+    return {"message": "Cập nhật trạng thái thành công"}
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(

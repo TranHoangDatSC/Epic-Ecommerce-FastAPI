@@ -32,6 +32,8 @@ export class ProductManageComponent implements OnInit {
   isEditMode = false;
   editingProductId: number | null = null;
   isSubmitting = false;
+  isUpdatingStatus = false;
+  totalItems: number = 0;
 
   ngOnInit() {
     this.initForm();
@@ -54,8 +56,6 @@ export class ProductManageComponent implements OnInit {
       transfer_method: ['1', Validators.required]
     });
   }
-
-  totalItems: number = 0;
 
   loadProducts() {
     this.http.get<any[]>(`${this.apiUrl}/products/seller/my-products`).subscribe({
@@ -131,25 +131,25 @@ export class ProductManageComponent implements OnInit {
   }
 
   openModal(p?: any) {
-  this.showModal = true;
-  this.isEditMode = !!p;
-  this.editingProductId = p ? p.product_id : null;
-  
-  if (p) {
-    const patchData = { ...p };
-    // Nếu dimensions là "10x20x30", tách nó ra
-    if (p.dimensions && p.dimensions.includes('x')) {
-      const parts = p.dimensions.split('x');
-      patchData.d = parts[0];
-      patchData.r = parts[1];
-      patchData.c = parts[2];
+    this.showModal = true;
+    this.isEditMode = !!p;
+    this.editingProductId = p ? p.product_id : null;
+    
+    if (p) {
+      const patchData = { ...p };
+      // Nếu dimensions là "10x20x30", tách nó ra
+      if (p.dimensions && p.dimensions.includes('x')) {
+        const parts = p.dimensions.split('x');
+        patchData.d = parts[0];
+        patchData.r = parts[1];
+        patchData.c = parts[2];
+      }
+      this.productForm.patchValue(patchData);
+    } else {
+      this.productForm.reset({ condition_rating: '8', warranty_months: '0', transfer_method: '1' });
+      this.selectedFiles = [];
     }
-    this.productForm.patchValue(patchData);
-  } else {
-    this.productForm.reset({ condition_rating: '8', warranty_months: '0', transfer_method: '1' });
-    this.selectedFiles = [];
   }
-}
 
   onFileSelected(event: any) {
     if (event.target.files.length > 0) this.selectedFiles = Array.from(event.target.files);
@@ -225,14 +225,22 @@ export class ProductManageComponent implements OnInit {
   }
 
   updateStatus(product: any, newStatus: number) {
-    this.http.patch(`${this.apiUrl}/products/${product.product_id}/status`, { new_status: newStatus }).subscribe({
-      next: () => { 
+    if (this.isUpdatingStatus) return;
+    
+    this.isUpdatingStatus = true;
+    this.http.patch(`${this.apiUrl}/products/${product.product_id}/status`, { 
+      new_status: newStatus 
+    }).subscribe({
+      next: () => {
+        // 1. Tải lại danh sách để reset trạng thái pagedProducts
         this.loadProducts(); 
         this.uiService.showSuccess('Đã cập nhật trạng thái', 'Thành công');
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.uiService.showError('Không thể cập nhật trạng thái', 'Lỗi');
+        this.uiService.showError(err.error?.message || 'Không thể cập nhật', 'Lỗi');
+      },
+      complete: () => {
+        this.isUpdatingStatus = false;
         this.cdr.detectChanges();
       }
     });

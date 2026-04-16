@@ -183,10 +183,12 @@ class ProductCreate(ProductBase):
     """Product creation schema"""
     pass
 
+class StatusUpdate(BaseModel):
+    new_status: int
+    reject_reason: Optional[str] = None
 
 class ProductUpdate(BaseModel):
     """Product update schema"""
-    category_id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
     price: Optional[Decimal] = None

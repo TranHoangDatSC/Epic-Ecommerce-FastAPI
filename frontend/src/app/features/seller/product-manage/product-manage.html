@@ -35,7 +35,13 @@
           </td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-primary me-2" (click)="openModal(p)">Sửa</button>
-            <button *ngIf="p.status === 0 || p.status === 1" class="btn btn-sm btn-warning me-2" (click)="updateStatus(p, 3)">Thu hồi</button>
+            <button 
+              *ngIf="p.status === 0 || p.status === 1" 
+              class="btn btn-sm btn-warning me-2" 
+              [disabled]="isUpdatingStatus"
+              (click)="updateStatus(p, 3)">
+              {{ isUpdatingStatus ? 'Đang xử lý...' : 'Thu hồi' }}
+            </button>
             <button *ngIf="p.status === 3" class="btn btn-sm btn-success me-2" (click)="updateStatus(p, 0)">Đăng lại</button>
           </td>
         </tr>
