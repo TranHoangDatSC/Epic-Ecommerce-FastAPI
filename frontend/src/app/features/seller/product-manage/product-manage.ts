@@ -24,7 +24,6 @@ export class ProductManageComponent implements OnInit {
   productForm!: FormGroup;
   selectedFiles: File[] = [];
   
-  // States
   currentStatus = 0;
   currentPage = 1;
   pageSize = 5;
@@ -46,7 +45,7 @@ export class ProductManageComponent implements OnInit {
       title: ['', [Validators.required, Validators.maxLength(255)]],
       description: [''],
       category_id: ['', Validators.required],
-      price: ['', [Validators.required, Validators.min(1)]], // Vẫn để số nguyên cho API
+      price: ['', [Validators.required, Validators.min(1)]],
       quantity: ['', [Validators.required, Validators.min(1)]],
       video_url: [''],
       weight_grams: [''],
@@ -59,13 +58,9 @@ export class ProductManageComponent implements OnInit {
 
   loadProducts() {
     this.http.get<any[]>(`${this.apiUrl}/products/seller/my-products`).subscribe({
-      next: (data) => { 
-        this.products = data; 
+      next: (data) => {
+        this.products = data;
         this.updateTotal();
-        this.cdr.detectChanges(); 
-      }, 
-      error: (err) => {
-        this.uiService.showError('Không thể tải danh sách sản phẩm', 'Lỗi');
         this.cdr.detectChanges();
       }
     });
@@ -73,50 +68,39 @@ export class ProductManageComponent implements OnInit {
 
   loadCategories() {
     this.http.get<any[]>(`${this.apiUrl}/categories`).subscribe({
-      next: (data) => { this.categories = data; this.cdr.detectChanges(); }
+      next: (data) => {
+        this.categories = data;
+        this.cdr.detectChanges();
+      }
     });
   }
 
   getPrimaryImage(product: any): string {
     const primaryImage = product.product_images?.find((img: any) => img.is_primary);
     const raw = primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '');
-    
-    if (!raw) {
-      return 'assets/placeholder.jpg'; 
-    }
-
-    if (raw.startsWith('/')) {
-      const base = environment.imageBaseUrl || 'http://localhost:8000';
-      return `${base}${raw}`;
-    }
-    
+    if (!raw) return 'assets/placeholder.jpg';
+    if (raw.startsWith('/')) return `${environment.imageBaseUrl || 'http://localhost:8000'}${raw}`;
     return raw;
   }
 
-  // --- UI Helpers ---
-  get filteredProducts() {
-    return this.products.filter(p => p.status === this.currentStatus);
-  }
-
+  get filteredProducts() { return this.products.filter(p => p.status === this.currentStatus); }
   get pagedProducts() {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredProducts.slice(start, start + this.pageSize);
   }
 
-  updateTotal() {
-    this.totalItems = this.products.filter(p => p.status === this.currentStatus).length;
-  }
+  updateTotal() { this.totalItems = this.filteredProducts.length; }
 
-  switchTab(s: number) { 
-    this.currentStatus = s; 
-    this.currentPage = 1; 
+  switchTab(s: number) {
+    this.currentStatus = s;
+    this.currentPage = 1;
     this.updateTotal();
-    this.cdr.detectChanges(); 
+    this.cdr.detectChanges();
   }
 
-  changePage(page: number) { 
+  changePage(page: number) {
     if (page >= 1 && page <= Math.ceil(this.filteredProducts.length / this.pageSize)) {
-      this.currentPage = page; 
+      this.currentPage = page;
     }
   }
 
@@ -131,136 +115,84 @@ export class ProductManageComponent implements OnInit {
   }
 
   openModal(p?: any) {
-    this.showModal = true;
     this.isEditMode = !!p;
     this.editingProductId = p ? p.product_id : null;
     
+    // Gán dữ liệu trước khi show modal để DOM không bị "lỏ"
     if (p) {
       const patchData = { ...p };
-      // Nếu dimensions là "10x20x30", tách nó ra
-      if (p.dimensions && p.dimensions.includes('x')) {
+      if (p.dimensions && typeof p.dimensions === 'string' && p.dimensions.includes('x')) {
         const parts = p.dimensions.split('x');
-        patchData.d = parts[0];
-        patchData.r = parts[1];
-        patchData.c = parts[2];
+        patchData.d = parts[0]; patchData.r = parts[1]; patchData.c = parts[2];
       }
       this.productForm.patchValue(patchData);
     } else {
       this.productForm.reset({ condition_rating: '8', warranty_months: '0', transfer_method: '1' });
       this.selectedFiles = [];
     }
+    this.showModal = true;
   }
 
-  onFileSelected(event: any) {
-    if (event.target.files.length > 0) this.selectedFiles = Array.from(event.target.files);
-  }
+  onFileSelected(event: any) { if (event.target.files.length > 0) this.selectedFiles = Array.from(event.target.files); }
 
   get displayPrice(): string {
     const price = this.productForm.get('price')?.value;
     return price ? price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : '';
-  } 
+  }
 
   onPriceInput(event: any) {
-    const rawValue = event.target.value.replace(/\./g, ''); 
-    if (!isNaN(rawValue)) {
-      this.productForm.patchValue({ price: rawValue }, { emitEvent: false });
-    }
+    const rawValue = event.target.value.replace(/\./g, '');
+    if (!isNaN(rawValue)) this.productForm.patchValue({ price: rawValue }, { emitEvent: false });
   }
 
   onSubmit() {
-    if (this.productForm.invalid) { 
-      this.productForm.markAllAsTouched(); 
+    if (this.productForm.invalid) {
+      this.productForm.markAllAsTouched();
       this.uiService.showError('Vui lòng kiểm tra lại thông tin.', 'Cảnh báo');
-      this.cdr.detectChanges();
-      return; 
-    }
-
-    if (!this.isEditMode && this.selectedFiles.length === 0) {
-      this.uiService.showError('Vui lòng chọn ít nhất 1 ảnh sản phẩm.', 'Cảnh báo');
       return;
     }
-
+    if (!this.isEditMode && this.selectedFiles.length === 0) {
+      this.uiService.showError('Vui lòng chọn ảnh.', 'Cảnh báo');
+      return;
+    }
     this.isSubmitting = true;
     const formData = new FormData();
     const formValue = this.productForm.value;
     const dimensions = `${formValue.d || 0}x${formValue.r || 0}x${formValue.c || 0}`;
-    Object.keys(formValue).forEach(key => {
-      if (['d', 'r', 'c'].includes(key)) return; 
-      const val = formValue[key];
-      if (val !== null) formData.append(key, val);
-    });
+    Object.keys(formValue).forEach(key => { if (!['d', 'r', 'c'].includes(key)) formData.append(key, formValue[key]); });
     formData.append('dimensions', dimensions);
     this.selectedFiles.forEach(file => formData.append('files', file));
-        
-    const payload = { ...formValue, dimensions };
-    delete payload.d; delete payload.r; delete payload.c; 
 
-    if (this.isEditMode) {
-      this.http.put(`${this.apiUrl}/products/${this.editingProductId}`, payload).subscribe({
-        next: () => { 
-          this.uiService.showSuccess('Cập nhật thành công', 'Thành công'); 
-          this.closeModal(); 
-          this.cdr.detectChanges(); 
-        },
-        error: (err) => { 
-          this.isSubmitting = false; 
-          this.uiService.showError(err.error?.message || 'Lỗi cập nhật', 'Lỗi');
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      this.http.post(`${this.apiUrl}/products`, formData).subscribe({
-        next: () => { 
-          this.uiService.showSuccess('Đăng sản phẩm thành công', 'Thành công'); 
-          this.closeModal(); 
-          this.cdr.detectChanges(); 
-        },
-        error: (err) => { 
-          this.isSubmitting = false; 
-          this.uiService.showError(err.error?.message || 'Lỗi đăng sản phẩm', 'Lỗi');
-          this.cdr.detectChanges();
-        }
-      });
-    }
+    const obs = this.isEditMode ? this.http.put(`${this.apiUrl}/products/${this.editingProductId}`, { ...formValue, dimensions }) : this.http.post(`${this.apiUrl}/products`, formData);
+    
+    obs.subscribe({
+      next: () => {
+        this.uiService.showSuccess('Thành công', 'Thành công');
+        this.closeModal();
+        this.loadProducts();
+      },
+      error: (err) => { this.isSubmitting = false; this.uiService.showError(err.error?.message || 'Lỗi', 'Lỗi'); }
+    });
   }
 
   updateStatus(product: any, newStatus: number) {
     if (this.isUpdatingStatus) return;
-    
     this.isUpdatingStatus = true;
-    this.http.patch(`${this.apiUrl}/products/${product.product_id}/status`, { 
-      new_status: newStatus 
-    }).subscribe({
+    this.http.patch(`${this.apiUrl}/products/${product.product_id}/status`, { new_status: newStatus }).subscribe({
       next: () => {
-        // 1. Tải lại danh sách để reset trạng thái pagedProducts
-        this.loadProducts(); 
-        this.uiService.showSuccess('Đã cập nhật trạng thái', 'Thành công');
-      },
-      error: (err) => {
-        this.uiService.showError(err.error?.message || 'Không thể cập nhật', 'Lỗi');
-      },
-      complete: () => {
+        this.loadProducts();
         this.isUpdatingStatus = false;
-        this.cdr.detectChanges();
-      }
+      },
+      error: () => { this.isUpdatingStatus = false; }
     });
   }
 
   deleteProduct(id: number) {
-    if (confirm('Xóa sản phẩm?')) {
-      this.http.delete(`${this.apiUrl}/products/${id}`).subscribe(() => this.loadProducts());
-    }
+    if (confirm('Xóa sản phẩm?')) this.http.delete(`${this.apiUrl}/products/${id}`).subscribe(() => this.loadProducts());
   }
 
   closeModal() {
     this.showModal = false;
-    this.isSubmitting = false; 
-    this.selectedFiles = [];   
-    this.productForm.reset({   
-      condition_rating: '8', 
-      warranty_months: '0', 
-      transfer_method: '1' 
-    });
-    this.cdr.detectChanges();
+    this.isSubmitting = false;
   }
 }
