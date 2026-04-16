@@ -186,6 +186,7 @@ class ProductCreate(ProductBase):
 
 class ProductUpdate(BaseModel):
     """Product update schema"""
+    category_id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
     price: Optional[Decimal] = None

@@ -230,7 +230,6 @@ async def get_my_products(
     )
     return products
 
-
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
     product_id: int,
@@ -238,40 +237,26 @@ async def update_product(
     current_user: User = Depends(check_user_role([1, 2, 3])),
     db: Session = Depends(get_db)
 ) -> ProductResponse:
-    """
-    Update a product.
-    
-    Only the seller or admin can update the product.
-    """
     product = crud_product.get_by_id(db, product_id=product_id)
-    
     if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-    
-    # Check permission (seller or admin)
+        raise HTTPException(status_code=404, detail="Product not found")
+
     user_roles = [role.role_id for role in current_user.user_roles]
     is_admin = 1 in user_roles
     is_seller = product.seller_id == current_user.user_id
     
     if not (is_admin or is_seller):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only seller or admin can update this product"
-        )
-    
-    # If category is being updated, verify it exists
-    if product_update.category_id and product_update.category_id != product.category_id:
-        category = crud_category.get_by_id(db, category_id=product_update.category_id)
+        raise HTTPException(status_code=403, detail="Only seller or admin can update this product")
+
+    new_cat_id = getattr(product_update, 'category_id', None)
+    if new_cat_id and new_cat_id != product.category_id:
+        category = crud_category.get_by_id(db, category_id=new_cat_id)
         if not category:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Category not found"
-            )
+            raise HTTPException(status_code=400, detail="Category not found")
+
+    update_data = product_update.model_dump(exclude_unset=True)
+    updated_product = crud_product.update(db=db, db_obj=product, obj_in=update_data)
     
-    updated_product = crud_product.update(db=db, db_obj=product, obj_in=product_update)
     return updated_product
 
 @router.patch("/{product_id}/status")
