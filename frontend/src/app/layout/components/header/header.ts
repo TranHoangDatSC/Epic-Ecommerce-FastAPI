@@ -188,35 +188,7 @@ import { CartItem } from '../../../core/services/cart.service';
     <div class="modal-backdrop fade show" *ngIf="isErrorModalOpen"></div>
     
     <!-- Login Modal (Moved inside component for easier state access) -->
-    <div class="modal fade" id="loginModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content text-dark">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title">Login with Gmail</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeLoginModal"></button>
-          </div>
-          <div class="modal-body">
-            <form (ngSubmit)="login()">
-              <div class="mb-3 text-start">
-                <label for="loginEmail" class="form-label">Gmail Address</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                  <input type="email" class="form-control" id="loginEmail" name="email" [(ngModel)]="email" required placeholder="example@gmail.com">
-                </div>
-              </div>
-              <div class="mb-3 text-start">
-                <label for="loginPassword" class="form-label">Password</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                  <input type="password" class="form-control" id="loginPassword" name="password" [(ngModel)]="password" required>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm fw-bold">Đăng nhập</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    <app-login></app-login>
   `,
   styles: [`
     .navbar-brand {

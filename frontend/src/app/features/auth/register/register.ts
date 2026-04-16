@@ -1,97 +1,73 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common'; 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../shared/services/auth.service';
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule],
-  template: `
-    <div class="modal fade" id="registerModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <div class="modal-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" class="form-control" formControlName="username">
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-control" formControlName="full_name">
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" formControlName="email">
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Address</label>
-                    <input type="text" class="form-control" formControlName="address">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" formControlName="password">
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" formControlName="confirmPassword">
-                    <small class="text-danger" *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.dirty">
-                      Mật khẩu không khớp!
-                    </small>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Phone</label>
-                    <input type="tel" class="form-control" formControlName="phone_number">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid">Register</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  `
+  imports: [ReactiveFormsModule, CommonModule],
+  templateUrl: './register.html',
+  styleUrls: ['./register.scss']
 })
 export class RegisterComponent {
+  @ViewChild('closeButton') closeButton!: ElementRef;
   registerForm: FormGroup;
+  isLoading = false;
+  message: { type: 'success' | 'error', text: string } | null = null;
 
-  constructor(private fb: FormBuilder, private authService: AuthService) {
+  constructor(
+    private fb: FormBuilder, 
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef 
+  ) {
     this.registerForm = this.fb.group({
-      username: ['', Validators.required],
+      username: ['', [Validators.required, Validators.minLength(4)]],
       full_name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       address: [''],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
-      phone_number: ['']
+      phone_number: ['', [Validators.required, Validators.pattern(/^[0-9]{9,10}$/)]]
     }, { validators: this.passwordMatchValidator });
   }
 
-  // Custom Validator để so khớp 2 mật khẩu
-  passwordMatchValidator(g: AbstractControl): ValidationErrors | null {
-    const password = g.get('password')?.value;
-    const confirm = g.get('confirmPassword')?.value;
-    return password === confirm ? null : { 'passwordMismatch': true };
+  passwordMatchValidator(g: any) {
+    return g.get('password')?.value === g.get('confirmPassword')?.value ? null : { passwordMismatch: true };
   }
 
   onSubmit() {
-    if (this.registerForm.valid) {
-      // Loại bỏ confirmPassword trước khi gửi lên Backend
-      const { confirmPassword, ...dataToSend } = this.registerForm.value;
-      
-      console.log(">>> Gửi dữ liệu:", dataToSend);
-      this.authService.register(dataToSend).subscribe({
-        next: (res) => alert('Đăng ký thành công!'),
-        error: (err) => alert('Lỗi: ' + JSON.stringify(err.error))
-      });
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
     }
+
+    this.isLoading = true;
+    this.message = null; 
+
+    this.authService.register(this.registerForm.value).subscribe({
+      next: () => {
+        this.message = { type: 'success', text: 'Đăng ký thành công! Đang đóng...' };
+        this.isLoading = false;
+        this.cdr.markForCheck();
+
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(this.closeButton.nativeElement.closest('.modal'));
+          modal?.hide();
+          this.registerForm.reset();
+          this.message = null;
+          this.cdr.detectChanges();
+        }, 2000);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.message = { 
+          type: 'error', 
+          text: err.error?.detail || 'Đăng ký thất bại, kiểm tra lại thông tin!' 
+        };
+        this.cdr.markForCheck();
+      }
+    });
   }
 }
