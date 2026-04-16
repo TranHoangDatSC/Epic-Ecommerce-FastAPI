@@ -19,6 +19,10 @@ export class ProfileComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   
   user: User | null = null;
+  currentPassword: string = '';
+  newPassword: string = '';
+  confirmPassword: string = '';
+  passwordError: string | null = null;
   readonly defaultAvatar = 'assets/images/default-avt.png';
 
   // Getter an toàn để template sử dụng
@@ -75,6 +79,44 @@ export class ProfileComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Lỗi khi lưu:', err);
+      }
+    });
+  }
+
+  changePassword() {
+    if (!this.user) return;
+    if (!this.currentPassword || !this.newPassword) {
+      alert('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      alert('Mật khẩu mới không khớp');
+      return;
+    }
+
+    this.authService.changePassword(this.currentPassword, this.newPassword).subscribe({
+      next: () => {
+        alert('Đổi mật khẩu thành công');
+        this.currentPassword = this.newPassword = this.confirmPassword = '';
+        this.passwordError = null;
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        console.error('Lỗi đổi mật khẩu:', err);
+        // Parse validation errors from backend (Pydantic -> { detail: [ { msg, ... } ] })
+        const detail = err?.error?.detail;
+        if (Array.isArray(detail)) {
+          try {
+            this.passwordError = detail.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
+          } catch (e) {
+            this.passwordError = JSON.stringify(detail);
+          }
+        } else if (typeof detail === 'string') {
+          this.passwordError = detail;
+        } else {
+          this.passwordError = err?.error?.message || 'Không thể đổi mật khẩu';
+        }
+        this.cdr.markForCheck();
       }
     });
   }

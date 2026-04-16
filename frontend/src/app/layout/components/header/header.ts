@@ -186,9 +186,6 @@ import { CartItem } from '../../../core/services/cart.service';
       </div>
     </div>
     <div class="modal-backdrop fade show" *ngIf="isErrorModalOpen"></div>
-    
-    <!-- Login Modal (Moved inside component for easier state access) -->
-    <app-login></app-login>
   `,
   styles: [`
     .navbar-brand {

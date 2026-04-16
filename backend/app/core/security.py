@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from passlib.exc import UnknownHashError
 from app.config import get_settings
 from app.schemas import TokenData
 
@@ -18,7 +19,16 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hashed password"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except UnknownHashError:
+        # Stored hash format is unknown to passlib; treat as verification failure
+        print(f"verify_password: UnknownHashError for hash={hashed_password[:10]}...")
+        return False
+    except Exception as e:
+        # Any other error during verification should be treated as failure
+        print(f"verify_password: error verifying password: {e}")
+        return False
 
 
 def create_access_token(
