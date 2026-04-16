@@ -8,10 +8,10 @@ import { take } from 'rxjs/operators';
 @Component({
   selector: 'app-customer-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Đã thêm các module cần thiết
+  imports: [CommonModule, FormsModule],
   templateUrl: './profile.html',
   styleUrls: ['./profile.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush // Tối ưu hóa render
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class ProfileComponent implements OnInit {

@@ -25,6 +25,10 @@ export const adminRoutes: Routes = [
       {
         path: 'feedback-manage',
         loadComponent: () => import('./feedback-manage/feedback-manage').then(m => m.FeedbackManageComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./profile/profile').then(m => m.ProfileComponent)
       }
     ]
   }

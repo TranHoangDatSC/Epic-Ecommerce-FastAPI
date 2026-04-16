@@ -35,6 +35,13 @@ export class AdminLayoutComponent {
       items: [
         { path: 'feedback-manage', label: 'Phản hồi hệ thống', icon: 'bi bi-chat-dots' }
       ]
+    },
+    {
+      title: 'Hồ sơ cá nhân',
+      icon: 'bi bi-person-fill',
+      items: [
+        { path: 'profile', label: 'Thông tin cá nhân', icon: 'bi bi-person' }
+      ]
     }
   ];
 
