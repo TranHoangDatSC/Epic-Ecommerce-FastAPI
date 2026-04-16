@@ -127,6 +127,14 @@ export class AuthService {
     );
   }
 
+  changePassword(currentPassword: string, newPassword: string) {
+    const userApiUrl = `${environment.apiUrl}/users`;
+    return this.http.post<any>(`${userApiUrl}/me/change-password`, {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+  }
+
   logout() {
     sessionStorage.clear();
     this.currentUser.set(null);
