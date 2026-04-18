@@ -28,6 +28,13 @@ export class ModeratorLayoutComponent {
         { path: 'user-manage', label: 'Quản lý người dùng', icon: 'bi bi-people' },
         { path: 'product-manage', label: 'Kiểm duyệt sản phẩm', icon: 'bi bi-box-seam' }
       ]
+    },
+    {
+      title: 'Hồ sơ cá nhân',
+      icon: 'bi bi-person-fill',
+      items: [
+        { path: 'profile', label: 'Thông tin cá nhân', icon: 'bi bi-person' }
+      ]
     }
   ];
 

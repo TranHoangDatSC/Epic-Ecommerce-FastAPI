@@ -23,6 +23,10 @@ export const moderatorRoutes: Routes = [
         loadComponent: () => import('./product-manage/product-manage').then(m => m.ModeratorProductManageComponent)
       },
       {
+        path: 'profile',
+        loadComponent: () => import('./profile/profile').then(m => m.ModeratorProfileComponent)
+      },
+      {
         path: '**',
         redirectTo: 'dashboard'
       }
