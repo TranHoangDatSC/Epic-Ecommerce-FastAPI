@@ -1,99 +1,176 @@
-<div class="container mt-5" *ngIf="user; else loading">
-  <div class="row">
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-body text-center py-4">
-          <div class="avatar-wrapper position-relative d-inline-block">
-            <img [src]="getAvatarUrl(userProfile.avatar_url)" 
-                 (error)="onImageError($event)" 
-                 class="rounded-circle border border-4 border-white shadow-lg" 
-                 style="width: 160px; height: 160px; object-fit: cover;" 
-                 alt="Avatar">
-            <button class="btn btn-primary btn-sm rounded-circle position-absolute bottom-0 end-0 shadow-sm"
-                    style="width: 40px; height: 40px; border: 3px solid #fff;"
-                    (click)="triggerFileUpload()"
-                    type="button"
-                    title="Change Avatar">
-              <i class="bi bi-camera-fill"></i>
-            </button>
-            <input type="file" id="avatarInput" hidden (change)="onFileSelected($event)" accept="image/*">
+<div class="profile-container container py-5" *ngIf="user; else loading">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card profile-card border-0 shadow-sm h-100">
+        <div class="card-body text-center pt-5 pb-4">
+          <div class="avatar-section mb-4">
+            <div class="avatar-inner position-relative d-inline-block">
+              <img
+                [src]="getAvatarUrl(userProfile.avatar_url)"
+                (error)="onImageError($event)"
+                class="rounded-circle img-thumbnail shadow-sm"
+                style="width: 160px; height: 160px; object-fit: cover; border-width: 4px"
+                alt="User Avatar"
+              />
+              <label
+                class="avatar-edit-btn shadow-sm position-absolute bottom-0 end-0 btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
+                style="width: 40px; height: 40px; cursor: pointer; border: 3px solid #fff"
+                (click)="triggerFileUpload()"
+              >
+                <i class="bi bi-camera-fill text-white"></i>
+              </label>
+              <input
+                type="file"
+                id="avatarInput"
+                hidden
+                (change)="onFileSelected($event)"
+                accept="image/*"
+              />
+            </div>
           </div>
-          <h4 class="mt-3 fw-bold">{{ userProfile.full_name }}</h4>
-          <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-2">
-            <i class="bi bi-person-badge me-1"></i>{{ userProfile.role }}
-          </span>
+
+          <h4 class="mb-1 fw-bold text-dark">{{ userProfile.full_name }}</h4>
+          <p class="text-muted small mb-3">
+            Thành viên từ: {{ userProfile.created_at | date: 'MM/yyyy' }}
+          </p>
+
+          <div class="d-flex justify-content-center gap-2 mb-4">
+            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-2">
+              <i class="bi bi-person-badge me-1"></i>{{ userProfile.role }}
+            </span>
+            <span
+              class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2"
+              *ngIf="userProfile.is_verified"
+            >
+              <i class="bi bi-check-circle-fill me-1"></i>Đã xác minh
+            </span>
+          </div>
+
+          <div
+            class="trust-score-box p-3 rounded-3 bg-light border border-dashed border-primary border-opacity-25"
+          >
+            <div class="small text-muted mb-1">Điểm tin cậy</div>
+            <div class="h5 mb-0 fw-bold text-primary">{{ userProfile.trust_score || 0 }}</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="col-md-8">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-          <h5 class="mb-0 text-primary">Chi tiết tài khoản</h5>
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent py-3 border-bottom-0">
+          <h5 class="mb-0 fw-bold text-primary">
+            <i class="bi bi-person-lines-fill me-2"></i>Chi tiết tài khoản
+          </h5>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-4 pt-2">
           <form (ngSubmit)="saveChanges()">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label text-muted">Họ và tên</label>
-                <input type="text" class="form-control" [(ngModel)]="userProfile.full_name" name="fullName">
+                <label class="form-label text-muted small fw-bold">Họ và tên</label>
+                <input
+                  type="text"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="userProfile.full_name"
+                  name="fullName"
+                />
               </div>
               <div class="col-md-6">
-                <label class="form-label text-muted">Tên đăng nhập</label>
-                <input type="text" class="form-control bg-light" [value]="userProfile.username" readonly>
+                <label class="form-label text-muted small fw-bold">Tên đăng nhập</label>
+                <input
+                  type="text"
+                  class="form-control bg-light"
+                  [value]="userProfile.username"
+                  readonly
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-bold">Email</label>
+                <input
+                  type="email"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="userProfile.email"
+                  name="email"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-bold">Số điện thoại</label>
+                <input
+                  type="text"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="userProfile.phone_number"
+                  name="phone"
+                />
               </div>
               <div class="col-12">
-                <label class="form-label text-muted">Email</label>
-                <input type="email" class="form-control" [(ngModel)]="userProfile.email" name="email">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted">Số điện thoại</label>
-                <input type="text" class="form-control" [(ngModel)]="userProfile.phone_number" name="phone">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted">Điểm tin cậy</label>
-                <input type="text" class="form-control bg-light" [value]="userProfile.trust_score || 0" readonly>
-              </div>
-              <div class="col-12">
-                <label class="form-label text-muted">Địa chỉ</label>
-                <textarea class="form-control" [(ngModel)]="userProfile.address" name="address" rows="2"></textarea>
+                <label class="form-label text-muted small fw-bold">Địa chỉ</label>
+                <textarea
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="userProfile.address"
+                  name="address"
+                  rows="2"
+                ></textarea>
               </div>
             </div>
-
             <div class="mt-4 text-end">
-              <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+              <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                Lưu thay đổi
+              </button>
             </div>
           </form>
         </div>
       </div>
-      
-      <div class="card shadow-sm border-0 mt-4">
-        <div class="card-header bg-white py-3">
-          <h5 class="mb-0 text-primary">Đổi mật khẩu</h5>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent py-3 border-bottom-0">
+          <h5 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-shield-lock-fill me-2 text-warning"></i>Đổi mật khẩu
+          </h5>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-4 pt-2">
           <form (ngSubmit)="changePassword()">
             <div class="row g-3">
               <div class="col-12">
-                <label class="form-label text-muted">Mật khẩu hiện tại</label>
-                <input type="password" class="form-control" [(ngModel)]="currentPassword" name="currentPassword">
+                <label class="form-label text-muted small fw-bold">Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="currentPassword"
+                  name="currentPassword"
+                />
               </div>
               <div class="col-md-6">
-                <label class="form-label text-muted">Mật khẩu mới</label>
-                <input type="password" class="form-control" [(ngModel)]="newPassword" name="newPassword">
+                <label class="form-label text-muted small fw-bold">Mật khẩu mới</label>
+                <input
+                  type="password"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="newPassword"
+                  name="newPassword"
+                />
               </div>
               <div class="col-md-6">
-                <label class="form-label text-muted">Xác nhận mật khẩu mới</label>
-                <input type="password" class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword">
+                <label class="form-label text-muted small fw-bold">Xác nhận mật khẩu</label>
+                <input
+                  type="password"
+                  class="form-control bg-light-subtle"
+                  [(ngModel)]="confirmPassword"
+                  name="confirmPassword"
+                />
               </div>
             </div>
 
             <div *ngIf="passwordError" class="mt-3">
-              <div class="alert alert-danger mb-0">{{ passwordError }}</div>
+              <div
+                class="alert alert-danger py-2 px-3 small border-0 shadow-sm d-flex align-items-center"
+              >
+                <i class="bi bi-exclamation-circle-fill me-2"></i> {{ passwordError }}
+              </div>
             </div>
 
             <div class="mt-4 text-end">
-              <button type="submit" class="btn btn-warning px-4">Đổi mật khẩu</button>
+              <button type="submit" class="btn btn-warning px-5 rounded-pill shadow-sm text-white">
+                Cập nhật mật khẩu
+              </button>
             </div>
           </form>
         </div>
@@ -103,7 +180,10 @@
 </div>
 
 <ng-template #loading>
-  <div class="text-center mt-5">
-    <div class="spinner-border text-primary"></div>
+  <div class="d-flex justify-content-center align-items-center" style="min-height: 400px">
+    <div class="text-center">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <p class="text-muted">Đang tải thông tin...</p>
+    </div>
   </div>
 </ng-template>

@@ -1,10 +1,116 @@
-.card {
-  transition: transform 0.2s;
-  &:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+// Variables cho màu sắc tinh tế hơn
+$primary-color: #4361ee;
+$warning-color: #ff9f43;
+$bg-body: #f8f9fa;
+$border-radius-custom: 16px;
+
+.profile-container {
+  background-color: $bg-body;
+  min-height: 100vh;
+
+  // Tùy chỉnh Card chung
+  .card {
+    border-radius: $border-radius-custom;
+    transition: transform 0.3s ease;
+
+    .card-header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  // Hiệu ứng Avatar
+  .avatar-section {
+    .avatar-inner {
+      position: relative;
+      display: inline-block;
+
+      img {
+        width: 160px;
+        height: 160px;
+        object-fit: cover;
+        border: 5px solid #fff;
+        transition: all 0.3s ease;
+      }
+
+      .avatar-edit-btn {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: $primary-color;
+        color: white;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 3px solid #fff;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: darken($primary-color, 10%);
+          transform: scale(1.1);
+        }
+      }
+    }
+  }
+
+  // Badge phong cách hiện đại (Soft Badge)
+  .badge-soft-primary {
+    background-color: rgba($primary-color, 0.1);
+    color: $primary-color;
+    padding: 8px 16px;
+  }
+
+  .badge-soft-success {
+    background-color: rgba(#28c76f, 0.1);
+    color: #28c76f;
+    padding: 8px 16px;
+  }
+
+  // Tùy chỉnh Input
+  .custom-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6e6b7b;
+    margin-bottom: 8px;
+  }
+
+  .custom-input {
+    border: 1px solid #d8d6de;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 3px 10px rgba($primary-color, 0.1);
+    }
+
+    &[readonly] {
+      background-color: #f3f2f7 !important;
+    }
+  }
+
+  // Nút bấm
+  .btn-primary {
+    background-color: $primary-color;
+    border: none;
+    font-weight: 500;
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    &:hover {
+      background-color: darken($primary-color, 5%);
+      box-shadow: 0 8px 15px rgba($primary-color, 0.2) !important;
+    }
   }
 }
-.form-label {
-  font-size: 0.85rem;
-  font-weight: 600;
+
+// Responsive
+@media (max-width: 768px) {
+  .profile-container {
+    padding-top: 20px;
+  }
 }
