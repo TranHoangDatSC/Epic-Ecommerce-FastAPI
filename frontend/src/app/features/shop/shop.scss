@@ -47,6 +47,39 @@ $brand-border: #e9ecef;
   }
 }
 
+.sidebar-card {
+  .category-scroll-container {
+    max-height: 400px; /* Chiều cao xấp xỉ cho 8 item (mỗi item khoảng 50px) */
+    overflow-y: auto;
+    
+    /* Tùy chỉnh thanh cuộn cho đẹp hơn trên Chrome/Edge/Safari */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 10px;
+      &:hover {
+        background: $brand-primary;
+      }
+    }
+  }
+
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    border-radius: 0 !important; // Để các item không bị bo góc khi nằm trong danh sách cuộn
+    
+    &:first-child {
+      border-top: none;
+    }
+  }
+}
+
 .card-title {
   font-weight: 700;
   color: #1f2d3d;
