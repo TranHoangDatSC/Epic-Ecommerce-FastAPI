@@ -1,0 +1,198 @@
+.cat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  border: 1px solid #4a5568;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #48bb78;
+
+  &.trash-icon {
+    background: linear-gradient(135deg, #2d1810 0%, #451a03 100%);
+    border-color: #92400e;
+    color: #f59e0b;
+  }
+}
+
+.cat-name {
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.cat-desc {
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
+.parent-badge {
+  background: rgba(45, 55, 72, 0.8);
+  border: 1px solid #4a5568;
+  color: #cbd5e0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &.primary {
+    background: rgba(99, 179, 237, 0.1);
+    color: #63b3ed;
+    border-color: rgba(99, 179, 237, 0.2);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+
+  .btn-primary-custom {
+    background: rgba(99, 179, 237, 0.15) !important;
+    color: #63b3ed !important; 
+    border: 1px solid rgba(99, 179, 237, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+    
+    &:hover {
+      background: #63b3ed !important;
+      color: #1a202c !important; 
+      box-shadow: 0 0 12px rgba(99, 179, 237, 0.4);
+    }
+  }
+
+  .btn-danger-custom {
+    background: rgba(245, 101, 101, 0.15) !important; 
+    color: #fc8181 !important; 
+    border: 1px solid rgba(245, 101, 101, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+
+    &:hover {
+      background: #f56565 !important;
+      color: white !important;
+      box-shadow: 0 0 12px rgba(245, 101, 101, 0.4);
+    }
+  }
+
+  .btn-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+
+    &:hover {
+      background: #f59e0b !important;
+      color: #1a202c !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+  }
+}
+
+// Nav tabs styles
+.nav-tabs {
+  .nav-link {
+    transition: all 0.3s ease;
+
+    &.active {
+      background: rgba(72, 187, 120, 0.1) !important;
+      color: #48bb78 !important;
+      border-bottom: 2px solid #48bb78 !important;
+    }
+
+    &:hover:not(.active) {
+      color: #e2e8f0 !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+  }
+}
+
+// Modal styles
+.modal-content.dark-theme {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 16px !important;
+
+  .modal-header.dark-theme {
+    border-bottom: 1px solid #4a5568 !important;
+    background: linear-gradient(135deg, rgba(72,187,120,0.1) 0%, transparent 100%) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.5rem !important;
+
+    .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%) !important;
+    }
+  }
+
+  .modal-body.dark-theme, .modal-footer.dark-theme {
+    padding: 1.5rem !important;
+  }
+
+  .modal-footer.dark-theme {
+    border-top: 1px solid #4a5568 !important;
+  }
+
+  .form-label.dark-theme {
+    color: #a0aec0 !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .form-control.dark-theme, .form-select.dark-theme {
+    background: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #e2e8f0 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+
+    &:focus {
+      border-color: #48bb78 !important;
+      box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2) !important;
+    }
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #4a5568;
+  margin-top: 1rem;
+}
+
+.pagination-info {
+  color: #a0aec0;
+  font-size: 0.95rem;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  background: #1a202c;
+  color: #cbd5e0;
+  border: 1px solid #4a5568;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #4a5568;
+    color: #ffffff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

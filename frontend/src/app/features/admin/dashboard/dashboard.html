@@ -1,0 +1,79 @@
+<div class="admin-dashboard-wrapper delay-animation">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div>
+      <h1>Trung tâm Quản trị Hệ thống</h1>
+      <p style="color: #a0aec0; margin: 0; font-size: 0.9rem; margin-top: 0.5rem;">Giám sát toàn bộ hoạt động, người dùng và doanh thu nền tảng.</p>
+    </div>
+    <div class="header-meta">
+      <div class="status-badge">
+        <i class="bi bi-activity"></i> Hệ thống Ổn định
+      </div>
+      <button class="btn-refresh" (click)="loadStats()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <div class="stat-header">
+        <h3>Người dùng Active</h3>
+        <i class="bi bi-people-fill stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_users }}</p>
+    </div>
+
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <h3>Doanh thu Thuần</h3>
+        <i class="bi bi-currency-dollar stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_revenue | currency:'VND':'symbol':'1.0-0' }}</p>
+    </div>
+
+    <!-- <div class="stat-card pending">
+      <div class="stat-header">
+        <h3>Sản phẩm Chờ Duyệt</h3>
+        <i class="bi bi-hourglass-split stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.pending_products }}</p>
+    </div> -->
+
+    <div class="stat-card orders">
+      <div class="stat-header">
+        <h3>Tổng Giao dịch</h3>
+        <i class="bi bi-cart-check-fill stat-icon"></i>
+      </div>
+      <p class="stat-value">{{ stats.total_orders }}</p>
+    </div>
+  </div>
+
+  <!-- Bottom section -->
+  <div class="system-details">
+    <div class="info-card">
+      <h4><i class="bi bi-shield-check me-2" style="color: #48bb78;"></i>Trạng thái Bảo mật</h4>
+      <div style="color: #cbd5e0; font-size: 0.95rem; line-height: 1.6;">
+        <p class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Database Backup: Hoàn thành lúc 02:00 AM</p>
+        <p class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>SSL Certificate: Valid (Exp 2027)</p>
+        <p class="mb-0"><i class="bi bi-exclamation-triangle text-warning me-2"></i>User Reports: 12 báo cáo mới chưa xử lý</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h4><i class="bi bi-lightning-charge me-2" style="color: #ed8936;"></i>Thao tác Nhanh</h4>
+      <div class="quick-action-grid">
+        <a [routerLink]="['/admin', 'moderator-manage']" class="quick-action-btn">
+          <i class="bi bi-person-plus"></i> Quản lý Kiểm duyệt viên
+        </a>
+        <a [routerLink]="['/admin', 'category-manage']" class="quick-action-btn">
+          <i class="bi bi-tags"></i> Quản lý Danh mục
+        </a>
+        <a [routerLink]="['/admin', 'feedback-manage']" class="quick-action-btn" style="grid-column: span 2;">
+          <i class="bi bi-chat-dots text-warning"></i> Xem Hệ thống Logs & Phản hồi
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

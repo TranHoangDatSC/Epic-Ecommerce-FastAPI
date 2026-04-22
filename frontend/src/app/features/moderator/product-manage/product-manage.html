@@ -1,0 +1,227 @@
+<div class="product-manage-container">
+  <header class="page-header">
+    <div class="header-info">
+      <h2 class="text-white">Kiểm duyệt sản phẩm</h2>
+      <p class="text-secondary">Hệ thống phê duyệt nội dung và kiểm soát chất lượng sàn thương mại.</p>
+    </div>
+  </header>
+
+  <div class="table-container">
+    <div class="tabs-navigation">
+      <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="selectTab('pending')">
+        <i class="bi bi-clock-history"></i> Chờ phê duyệt
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'approved'" (click)="selectTab('approved')">
+        <i class="bi bi-check-circle"></i> Đã phê duyệt
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'rejected'" (click)="selectTab('rejected')">
+        <i class="bi bi-x-circle"></i> Đã từ chối
+      </button>
+    </div>
+
+    <div class="custom-table-wrapper" *ngIf="!isLoading; else loadingState">
+      <table class="custom-table" *ngIf="products.length > 0; else emptyState">
+        <thead>
+          <tr>
+            <th>SẢN PHẨM & DANH MỤC</th>
+            <th>GIÁ NIÊM YẾT</th>
+            <th>NGƯỜI ĐĂNG</th>
+            <th class="text-end">THAO TÁC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of paginatedProducts">
+            <td>
+              <div class="product-cell d-flex align-items-center">
+                <img [src]="getPrimaryImage(product)" 
+                     class="rounded me-2 border border-secondary" 
+                     style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" 
+                     (click)="viewProductDetail(product)" 
+                     (error)="$any($event.target).src = 'assets/placeholder.jpg'">
+                <div class="product-info">
+                  <span class="name fw-bold d-block" (click)="viewProductDetail(product)" 
+                        style="cursor: pointer; color: #3498db; font-size: 0.95rem;">
+                    {{ product.product_name }}
+                  </span>
+                  <span class="badge bg-secondary text-white mt-1" style="font-size: 0.7rem; font-weight: 500;">
+                    {{ product.category_name }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="align-middle">
+              <span class="fw-bold text-warning">{{ product.price | number }} đ</span>
+            </td>
+            <td class="align-middle">
+              <div class="seller-info">
+                <span class="text-light d-block small">
+                  <i class="bi bi-person-circle me-1"></i>{{ product.seller_name }}
+                </span>
+              </div>
+            </td>
+            <td class="text-end align-middle">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-info" (click)="viewProductDetail(product)" title="Xem chi tiết">
+                  <i class="bi bi-eye"></i>
+                </button>
+                
+                <ng-container *ngIf="activeTab === 'pending' || activeTab === 'approved'">
+                  <button *ngIf="activeTab === 'pending'" class="btn btn-outline-success mx-1" 
+                          (click)="openModal(product, 'approved')" title="Duyệt">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" (click)="openModal(product, 'rejected')" title="Từ chối">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </ng-container>
+
+                <button *ngIf="activeTab === 'rejected'" class="btn btn-outline-warning" 
+                        (click)="showFullReason(product)" title="Lý do">
+                  <i class="bi bi-chat-left-text"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="d-flex justify-content-between align-items-center mt-4 px-3 py-2 bg-dark rounded border border-secondary shadow-sm" 
+           *ngIf="products.length > pageSize">
+        <span class="text-secondary small">
+          Hiển thị <b>{{ paginatedProducts.length }}</b> / <b>{{ products.length }}</b> sản phẩm
+        </span>
+        <div class="pagination-controls d-flex align-items-center gap-3">
+          <button class="btn btn-sm btn-outline-info" 
+                  [disabled]="currentPage === 1" 
+                  (click)="currentPage = currentPage - 1">
+            <i class="bi bi-chevron-left"></i> Trước
+          </button>
+          
+          <span class="text-white fw-bold small">Trang {{ currentPage }} / {{ totalPages }}</span>
+          
+          <button class="btn btn-sm btn-outline-info" 
+                  [disabled]="currentPage >= totalPages" 
+                  (click)="currentPage = currentPage + 1">
+            Tiếp <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #loadingState>
+      <div class="loading-state text-center p-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-secondary">Đang đồng bộ dữ liệu...</p>
+      </div>
+    </ng-template>
+
+    <ng-template #emptyState>
+      <div class="empty-state text-center p-5">
+        <i class="bi bi-inbox text-secondary fs-1"></i>
+        <p class="text-secondary mt-2">Hiện không có sản phẩm nào trong danh mục này.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="modal fade" id="reasonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold">{{ isViewMode ? 'Lý do từ chối' : 'Xác nhận thao tác' }}</h5>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="isViewMode" class="p-3 bg-secondary bg-opacity-10 rounded border border-secondary text-white">
+            {{ rejectionReason }}
+          </div>
+          <div *ngIf="!isViewMode">
+            <label class="mb-2 text-info">Lý do Bắt buộc):</label>
+            <textarea class="form-control bg-dark text-white border-secondary focus-ring" 
+                      [(ngModel)]="rejectionReason" rows="3" 
+                      placeholder="Nhập lý do tại sao sản phẩm không được duyệt..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button class="btn btn-outline-secondary" (click)="closeModal()">
+            {{ isViewMode ? 'Đóng' : 'Hủy' }}
+          </button>
+          <button *ngIf="!isViewMode" class="btn btn-primary" (click)="confirmAction()">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-info">{{ selectedProduct?.product_name }}</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeDetailModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row" *ngIf="selectedProduct">
+            <div class="col-md-5">
+              <div class="mb-3">
+                <label class="text-secondary small d-block mb-1">Hình ảnh chính:</label>
+                <img [src]="getPrimaryImage(selectedProduct)" class="img-fluid rounded border border-secondary shadow">
+              </div>
+            </div>
+
+            <div class="col-md-7">
+              <div class="info-details shadow-sm p-3 bg-secondary bg-opacity-10 rounded">
+                <p class="mb-2"><strong class="text-secondary">Người bán:</strong> <span class="ms-2 fw-bold" style="color: white;">{{ selectedProduct.seller_name }}</span></p>
+                <p class="mb-2"><strong class="text-secondary">Danh mục:</strong> <span class="ms-2 fw-bold text-info">{{ selectedProduct.category_name }}</span></p>
+                <p class="mb-2"><strong class="text-secondary">Giá bán:</strong> <span class="ms-2 fw-bold text-warning fs-5">{{ selectedProduct.price | number }} đ</span></p>
+                <p class="mb-0"><strong class="text-secondary">Số lượng kho:</strong> <span class="ms-2 fw-bold" style="color: white;">{{ selectedProduct.quantity || 0 }} sản phẩm</span></p>
+              </div>
+              
+              <hr class="border-secondary opacity-50">
+              
+              <p><strong class="text-secondary d-block mb-2">Mô tả sản phẩm:</strong></p>
+              <div class="p-3 bg-dark rounded border border-secondary text-white-50" 
+                   style="max-height: 200px; overflow-y: auto; line-height: 1.6; font-size: 0.9rem;">
+                {{ selectedProduct.description || 'Chưa có thông tin mô tả chi tiết cho sản phẩm này.' }}
+              </div>
+            </div>
+            
+          </div>
+          <div *ngIf="selectedProduct?.video_url" class="mt-3 p-3 rounded border border-info bg-info bg-opacity-10">
+            <label class="text-info small d-block mb-2 fw-bold">
+              <i class="bi bi-camera-video-fill me-1"></i> Video đính kèm:
+            </label>
+            
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="text-truncate text-white-50 small me-2" style="max-width: 200px;">
+                {{ selectedProduct.video_url }}
+              </span>
+              
+              <a [href]="getRawVideoUrl(selectedProduct)" 
+                target="_blank" 
+                class="btn btn-sm btn-info text-dark fw-bold">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Xem Video
+              </a>
+            </div>
+            
+            <small class="text-secondary d-block mt-2" style="font-size: 0.75rem;">
+              * Nhấn để mở video trong tab mới để kiểm duyệt nội dung.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <ng-container *ngIf="activeTab === 'pending'">
+            <button class="btn btn-success px-4" (click)="quickAction('approved')">
+              <i class="bi bi-check-circle me-1"></i> Phê duyệt ngay
+            </button>
+            <button class="btn btn-danger px-4" (click)="quickAction('rejected')">
+              <i class="bi bi-x-circle me-1"></i> Từ chối
+            </button>
+          </ng-container>
+          <button class="btn btn-outline-light" (click)="closeDetailModal()">Đóng cửa sổ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-info mt-4 delay-animation shadow-sm" *ngIf="message">
+    <i class="bi bi-info-circle me-2"></i> {{ message }}
+  </div>
+</div>

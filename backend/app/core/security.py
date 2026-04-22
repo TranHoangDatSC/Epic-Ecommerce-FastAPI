@@ -1,0 +1,170 @@
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from passlib.exc import UnknownHashError
+from app.config import get_settings
+from app.schemas import TokenData
+
+settings = get_settings()
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt"""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a hashed password"""
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except UnknownHashError:
+        # Stored hash format is unknown to passlib; treat as verification failure
+        print(f"verify_password: UnknownHashError for hash={hashed_password[:10]}...")
+        return False
+    except Exception as e:
+        # Any other error during verification should be treated as failure
+        print(f"verify_password: error verifying password: {e}")
+        return False
+
+
+def create_access_token(
+    data: dict,
+    expires_delta: Optional[timedelta] = None
+) -> str:
+    """Create JWT access token"""
+    to_encode = data.copy()
+    
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+    return encoded_jwt
+
+
+# backend/app/core/security.py (Dòng 62)
+
+def decode_token(token: str) -> Optional[TokenData]:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("user_id")
+        username = payload.get("username")
+        
+        # LOGIC MỚI: Lấy 1 cái role_id thôi
+        # Nếu payload có role_id thì lấy, không thì check role_ids cũ
+        role_id = payload.get("role_id")
+        if role_id is None:
+            role_ids = payload.get("role_ids", [])
+            role_id = role_ids[0] if role_ids else 3 # Mặc định là 3 (User)
+
+        if user_id is None:
+            return None
+            
+        # QUAN TRỌNG: Truyền role_id (số ít) vào đây
+        return TokenData(user_id=user_id, username=username, role_id=role_id)
+    except Exception:
+        return None
+
+
+# FastAPI dependencies
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app import models
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
+    """Get current authenticated user"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    token_data = decode_token(token)
+    if token_data is None:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(
+        models.User.user_id == token_data.user_id,
+        models.User.is_deleted == False
+    ).first()
+    
+    if user is None:
+        raise credentials_exception
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated"
+        )
+    
+    return user
+
+
+def get_current_moderator(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> models.User:
+    """Get current user from DB and verify they are a moderator (Admin or Mod)"""
+    db_user = db.query(models.User).filter(
+        models.User.user_id == current_user.user_id,
+        models.User.is_deleted == False
+    ).first()
+
+    if not db_user or not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account not active or not found"
+        )
+
+    if db_user.user_roles not in (1, 2):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions - Admin or Mod role required"
+        )
+
+    return db_user
+
+
+def get_current_admin(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> models.User:
+    """Get current user from DB and verify they are an admin (Role ID 1)"""
+    db_user = db.query(models.User).filter(
+        models.User.user_id == current_user.user_id,
+        models.User.is_deleted == False
+    ).first()
+
+    if not db_user or not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account not active or not found"
+        )
+
+    print(f"Checking Admin: {current_user.email} - Role: {current_user.user_roles}")
+
+    if db_user.user_roles != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cút ngay!"
+        )
+
+    return db_user
+

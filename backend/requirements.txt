@@ -1,0 +1,46 @@
+# Core FastAPI dependencies (Python 3.12/3.13 compatible - pre-built wheels only)
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# Data validation (Pydantic v2 - pre-built wheels available)
+pydantic
+pydantic-settings
+email-validator
+
+# Authentication & Security (pre-built wheels)
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Environment & Configuration
+python-dotenv
+
+# Database migrations
+alembic
+
+# Testing (optional - pre-built wheels)
+pytest
+pytest-asyncio
+httpx
+
+# Database migrations
+alembic
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# Email
+emails
+
+yagmail
+sweetalert2
+
+joblib
+pandas
+scikit-learn
