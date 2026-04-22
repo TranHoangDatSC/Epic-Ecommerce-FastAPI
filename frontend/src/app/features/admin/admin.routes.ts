@@ -23,8 +23,8 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./category-manage/category-manage').then(m => m.CategoryManageComponent)
       },
       {
-        path: 'feedback-manage',
-        loadComponent: () => import('./feedback-manage/feedback-manage').then(m => m.FeedbackManageComponent)
+        path: 'violation-log',
+        loadComponent: () => import('./violation-log/violation-log').then(m => m.ViolationLogComponent)
       },
       {
         path: 'profile',

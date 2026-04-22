@@ -30,10 +30,10 @@ export class AdminLayoutComponent {
       ]
     },
     {
-      title: 'PHẢN HỒI & HỖ TRỢ',
+      title: 'NHẬT KÝ QUẢN TRỊ',
       icon: 'bi bi-chat-quote-fill',
       items: [
-        { path: 'feedback-manage', label: 'Phản hồi hệ thống', icon: 'bi bi-chat-dots' }
+        { path: 'violation-log', label: 'Nhật ký quản trị', icon: 'bi bi-chat-dots' }
       ]
     },
     {

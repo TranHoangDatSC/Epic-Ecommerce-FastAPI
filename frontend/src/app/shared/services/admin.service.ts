@@ -48,6 +48,13 @@ export class AdminService {
   deleteUser(userId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/users/${userId}`);
   }
+  
+  getViolationLogs(skip: number = 0, limit: number = 100): Observable<any[]> {
+    // Đảm bảo URL là: http://localhost:8000/api/v1/admin/violation-logs
+    return this.http.get<any[]>(`${this.apiUrl}/admin/violation-logs`, {
+      params: { skip: skip.toString(), limit: limit.toString() }
+    });
+  }
 
   // Feedback Management
   getFeedbacks(skip: number = 0, limit: number = 100): Observable<any[]> {

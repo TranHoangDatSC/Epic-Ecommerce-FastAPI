@@ -566,6 +566,7 @@ class ViolationLogResponse(BaseModel):
     """Violation log response"""
     log_id: int
     user_id: int
+    username: Optional[str] = None
     reason: str
     action_taken: str
     created_at: datetime

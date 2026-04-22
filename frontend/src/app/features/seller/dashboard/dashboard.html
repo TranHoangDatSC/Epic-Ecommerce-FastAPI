@@ -1,0 +1,66 @@
+<div class="seller-content-wrapper p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Bảng điều khiển</h2>
+      <p class="text-muted">Theo dõi hiệu suất kinh doanh của bạn.</p>
+    </div>
+    <button class="btn btn-primary rounded-pill shadow-sm px-4" routerLink="/seller/product-manage">
+      <i class="bi bi-plus-lg me-2"></i>Thêm sản phẩm
+    </button>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-3" *ngFor="let card of [
+      {label: 'Sản phẩm', val: stats.totalProducts, icon: 'bi-box-seam', color: 'primary'},
+      {label: 'Đơn mới', val: stats.newOrders, icon: 'bi-cart-check', color: 'success'},
+      {label: 'Doanh thu', val: (stats.revenue | number) + '₫', icon: 'bi-wallet2', color: 'warning'},
+      {label: 'Đánh giá', val: stats.rating, icon: 'bi-star', color: 'danger'}
+    ]">
+      <div class="card border-0 shadow-sm p-3 stat-card h-100">
+        <div class="d-flex align-items-center">
+          <div class="icon-box" [ngClass]="'bg-' + card.color + '-light'">
+            <i class="bi" [ngClass]="card.icon + ' text-' + card.color"></i>
+          </div>
+          <div class="ms-3">
+            <h4 class="fw-bold mb-0">{{ card.val }}</h4>
+            <span class="text-muted small">{{ card.label }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="fw-bold mb-0">Biểu đồ Doanh thu</h5>
+          <span class="badge bg-light text-primary border border-primary-subtle px-3 py-2">7 ngày qua</span>
+        </div>
+        <div class="chart-container" style="position: relative; height:350px;">
+          <canvas #revenueChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm p-4 h-100">
+        <h5 class="fw-bold mb-4">Truy cập nhanh</h5>
+        <div class="quick-links d-flex flex-column gap-3">
+          <a *ngFor="let item of quickActions" 
+             [routerLink]="item.path" 
+             class="quick-link-item d-flex align-items-center p-3 rounded-4 border text-decoration-none">
+            <div class="quick-icon-sm me-3">
+              <i class="bi" [ngClass]="item.icon + ' ' + item.color"></i>
+            </div>
+            <div class="grow">
+              <h6 class="mb-0 text-dark fw-semibold">{{ item.label }}</h6>
+              <small class="text-muted">Quản lý {{ item.label.toLowerCase() }}</small>
+            </div>
+            <i class="bi bi-chevron-right text-secondary"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,4 @@
 <div class="admin-dashboard-wrapper delay-animation">
-  <!-- Header -->
   <header class="dashboard-header">
     <div>
       <h1>Trung tâm Quản trị Hệ thống</h1>
@@ -15,14 +14,13 @@
     </div>
   </header>
 
-  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card users">
       <div class="stat-header">
         <h3>Người dùng Active</h3>
         <i class="bi bi-people-fill stat-icon"></i>
       </div>
-      <p class="stat-value">{{ stats.total_users }}</p>
+      <p class="stat-value">{{ stats.total_users | number }}</p>
     </div>
 
     <div class="stat-card revenue">
@@ -33,24 +31,25 @@
       <p class="stat-value">{{ stats.total_revenue | currency:'VND':'symbol':'1.0-0' }}</p>
     </div>
 
-    <!-- <div class="stat-card pending">
-      <div class="stat-header">
-        <h3>Sản phẩm Chờ Duyệt</h3>
-        <i class="bi bi-hourglass-split stat-icon"></i>
-      </div>
-      <p class="stat-value">{{ stats.pending_products }}</p>
-    </div> -->
-
     <div class="stat-card orders">
       <div class="stat-header">
         <h3>Tổng Giao dịch</h3>
         <i class="bi bi-cart-check-fill stat-icon"></i>
       </div>
-      <p class="stat-value">{{ stats.total_orders }}</p>
+      <p class="stat-value">{{ stats.total_orders | number }}</p>
     </div>
   </div>
 
-  <!-- Bottom section -->
+  <div class="chart-container-main shadow-lg">
+    <div class="chart-header">
+      <h4><i class="bi bi-graph-up-arrow me-2 text-info"></i>Tăng trưởng Doanh thu Tuần</h4>
+      <div class="small text-muted">Dữ liệu cập nhật theo thời gian thực</div>
+    </div>
+    <div class="chart-canvas-wrapper">
+      <canvas #adminChart></canvas>
+    </div>
+  </div>
+
   <div class="system-details">
     <div class="info-card">
       <h4><i class="bi bi-shield-check me-2" style="color: #48bb78;"></i>Trạng thái Bảo mật</h4>

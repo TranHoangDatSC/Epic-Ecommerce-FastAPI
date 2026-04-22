@@ -1,3 +1,4 @@
+from app.models import OrderDetail
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 import os
 from pathlib import Path
@@ -9,6 +10,8 @@ from app.models import User
 from app.schemas import UserResponse, UserUpdate, UserDetailResponse
 from app.core.dependencies import get_current_user, check_admin
 from app.crud.user import crud_user
+from sqlalchemy import func
+from app.models import Product, Order, Review
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -309,3 +312,38 @@ async def delete_contact(
     contact.is_deleted = True
     db.commit()
     return None
+
+@router.get("/seller/dashboard-stats")
+async def get_seller_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # 1. Tổng số sản phẩm
+    total_products = db.query(Product).filter(
+        Product.seller_id == current_user.user_id, 
+        Product.is_deleted == False
+    ).count()
+
+    # 2. Đơn hàng mới (status = 0: Chờ xác nhận)
+    new_orders = db.query(Order).join(OrderDetail).join(Product).filter(
+        Product.seller_id == current_user.user_id,
+        Order.order_status == 0
+    ).count()
+
+    # 3. Doanh thu (Đơn hàng đã giao thành công status = 3)
+    revenue = db.query(func.sum(Order.final_amount)).join(OrderDetail).join(Product).filter(
+        Product.seller_id == current_user.user_id,
+        Order.order_status == 3
+    ).scalar() or 0
+
+    # 4. Đánh giá trung bình
+    avg_rating = db.query(func.avg(Review.rating)).join(Product).filter(
+        Product.seller_id == current_user.user_id
+    ).scalar() or 0.0
+
+    return {
+        "totalProducts": total_products,
+        "newOrders": new_orders,
+        "revenue": float(revenue),
+        "rating": round(float(avg_rating), 1)
+    }

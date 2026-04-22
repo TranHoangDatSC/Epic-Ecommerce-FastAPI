@@ -1,3 +1,4 @@
+from app.core.dependencies import check_admin
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -122,3 +123,26 @@ def toggle_moderator_status(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Không thể cập nhật trạng thái, vui lòng kiểm tra lại ID."
         )
+        
+@router.get("/violation-logs", response_model=list[schemas.ViolationLogResponse])
+async def get_violation_logs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(check_admin)
+):
+    # Thực hiện JOIN để lấy username của người bị xử lý
+    logs = db.query(
+        models.ViolationLog.log_id,
+        models.ViolationLog.user_id,
+        models.ViolationLog.reason,
+        models.ViolationLog.action_taken,
+        models.ViolationLog.created_at,
+        models.User.username.label("username") # Lấy username gán vào label
+    ).join(
+        models.User, models.ViolationLog.user_id == models.User.user_id
+    ).order_by(
+        models.ViolationLog.created_at.desc()
+    ).offset(skip).limit(limit).all()
+    
+    return logs

@@ -158,3 +158,32 @@
     color: white;
   }
 }
+.chart-container-main {
+  background: #2d3748;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  .chart-header {
+    margin-bottom: 1.5rem;
+    h4 {
+      margin: 0;
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+
+  .chart-canvas-wrapper {
+    height: 350px; // Độ cao biểu đồ to rõ
+    position: relative;
+  }
+}
+
+// Hover effect cho stat cards để đồng bộ
+.stat-card {
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
