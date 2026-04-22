@@ -41,6 +41,19 @@ export class CartComponent implements OnInit {
       }
     });
   }
+  onManualQuantityChange(item: CartItem) {
+    let val = Math.floor(item.quantity);
+    const max = item.product.quantity;
+
+    if (isNaN(val) || val < 1) {
+      val = 1;
+    } else if (val > max) {
+      val = max;
+    }
+
+    item.quantity = val;
+    this.cartService.updateQuantity(item.product.product_id, val);
+  }
 
   updatePagedItems() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;

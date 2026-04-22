@@ -54,9 +54,47 @@
     min-width: 0; 
 }
 
-.quantity-control span {
-    display: inline-block;
-    transition: none; 
+.quantity-control {
+  height: 38px;
+  transition: border-color 0.2s;
+  
+  &:focus-within {
+    border-color: #0d6efd !important;
+  }
+
+  .btn-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    
+    &:hover:not(:disabled) {
+      background-color: #f8f9fa !important;
+      color: #0d6efd;
+    }
+    
+    i { font-size: 1rem; }
+  }
+
+  input[type="number"] {
+    width: 40px;
+    color: #212529;
+    
+    /* Ẩn mũi tên tăng giảm mặc định của trình duyệt */
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    appearance: textfield; // Cho Firefox
+  }
+}
+
+/* Đảm bảo chữ số lượng không bị lệch */
+.hide-arrows {
+  -moz-appearance: textfield;
 }
 
 .product-thumb {

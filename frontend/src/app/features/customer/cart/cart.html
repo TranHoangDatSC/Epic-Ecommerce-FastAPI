@@ -47,19 +47,26 @@
                     </td>
 
                     <td class="py-4 text-center">
-                      <div class="quantity-control mx-auto bg-light rounded-pill p-1 d-flex align-items-center" style="width: 100px;">
-                        <button class="btn btn-icon btn-sm btn-white rounded-circle shadow-xs" 
+                      <div class="quantity-control mx-auto bg-white rounded-pill shadow-sm d-flex align-items-center p-1" style="width: 120px; border: 1px solid #dee2e6;">
+                        <button class="btn btn-icon btn-sm rounded-circle border-0 bg-transparent" 
                                 (click)="updateQuantity(item.product.product_id, item.quantity - 1)" 
                                 [disabled]="item.quantity <= 1">
-                          <i class="bi bi-dash"></i>
+                          <i class="bi bi-dash-lg"></i>
                         </button>
-                        <span class="grow text-center fw-bold small text-dark">{{ item.quantity }}</span>
-                        <button class="btn btn-icon btn-sm btn-white rounded-circle shadow-xs" 
+                        
+                        <input type="number" 
+                              class="form-control form-control-sm border-0 text-center fw-bold p-0 bg-transparent hide-arrows" 
+                              [(ngModel)]="item.quantity"
+                              (change)="onManualQuantityChange(item)"
+                              style="box-shadow: none; font-size: 0.9rem;">
+
+                        <button class="btn btn-icon btn-sm rounded-circle border-0 bg-transparent" 
                                 (click)="updateQuantity(item.product.product_id, item.quantity + 1)" 
                                 [disabled]="item.quantity >= item.product.quantity">
-                          <i class="bi bi-plus"></i>
+                          <i class="bi bi-plus-lg"></i>
                         </button>
                       </div>
+                      <div class="x-small text-muted mt-1">Kho: {{ item.product.quantity }}</div>
                     </td>
 
                     <td class="text-end py-4 small text-muted">
