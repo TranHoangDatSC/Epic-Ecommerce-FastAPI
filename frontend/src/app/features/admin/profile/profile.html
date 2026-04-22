@@ -8,7 +8,7 @@
         <div class="card-body text-center p-4">
           <div class="position-relative d-inline-block mb-3">
             <img [src]="getAvatarUrl(userProfile.avatar_url)" (error)="onImageError($event)" 
-                 class="rounded-circle border border-4 border-light shadow" 
+                 class="rounded-circle border-4 border-light shadow" 
                  style="width: 150px; height: 150px; object-fit: cover;">
             <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0" 
                     (click)="triggerFileUpload()">
