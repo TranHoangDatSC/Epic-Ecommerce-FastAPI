@@ -94,35 +94,36 @@ def create_moderator(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
 
+
 @router.patch("/moderators/{user_id}/status", response_model=schemas.UserResponse)
 def toggle_moderator_status(
-    user_id: int,
-    status_update: schemas.UserLockRequest,
-    db: Session = Depends(get_db),
+    user_id: int, 
+    status_update: schemas.UserLockRequest, 
+    db: Session = Depends(get_db), 
     admin: models.User = Depends(get_current_admin)
 ):
     """Lock or unlock a moderator account (Admin only)"""
     try:
-        new_log = models.ViolationLog(
-            user_id=user_id,
-            reason=status_update.reason,
-            action_taken=f"ADMIN_ACTION: {status_update.action.upper()}"
-        )
-        db.add(new_log)
+        # XÓA HOÀN TOÀN đoạn models.ViolationLog(...) và db.add(new_log) ở đây
+        # Vì nó đang gây ra loop nếu bên trong crud_moderator cũng ghi log
         
-        is_active = status_update.action == "unlock"
+        is_active = (status_update.action == "unlock")
+        
+        # Gọi hàm CRUD - Đảm bảo bên trong hàm này chỉ ghi log 1 lần
         updated_moderator = crud_moderator.toggle_moderator_status(
-            db, user_id=user_id, is_active=is_active, reason=status_update.reason, admin_id=admin.user_id
+            db, 
+            user_id=user_id, 
+            is_active=is_active, 
+            reason=status_update.reason, 
+            admin_id=admin.user_id
         )
+        
         db.commit()
-        return schemas.UserResponse.model_validate(updated_moderator)
+        return updated_moderator
     except Exception as e:
         db.rollback()
-        # Chỉ trả về thông báo an toàn, không trả về chi tiết Exception
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Không thể cập nhật trạng thái, vui lòng kiểm tra lại ID."
-        )
+        print(f"Error toggling status: {str(e)}")
+        raise HTTPException(status_code=400, detail="Không thể cập nhật trạng thái.")
         
 @router.get("/violation-logs", response_model=list[schemas.ViolationLogResponse])
 async def get_violation_logs(

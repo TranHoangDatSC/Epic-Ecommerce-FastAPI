@@ -32,11 +32,12 @@
           <tbody>
             @for (log of logs; track log.log_id) {
               <tr>
-                <td class="text-muted small">
-                  {{ log.created_at | date:'dd/MM/yyyy' }}<br>
-                  <span class="text-secondary opacity-50">{{ log.created_at | date:'HH:mm:ss' }}</span>
+                <td class="text-white small">
+                  <div class="fw-bold">{{ log.created_at | date:'dd/MM/yyyy' }}</div>
+                  <div style="opacity: 0.6; font-size: 0.75rem;">
+                    {{ log.created_at | date:'HH:mm:ss' }}
+                  </div>
                 </td>
-
                 <td>
                   <div class="d-flex align-items-center">
                     <div class="user-avatar-sm me-2">
@@ -48,35 +49,24 @@
                     </div>
                   </div>
                 </td>
-
                 <td>
                   <span class="badge-pill" [ngClass]="getActionClass(log.action_taken)">
                     {{ getFriendlyAction(log.action_taken) }}
                   </span>
                 </td>
-
                 <td>
-                  <div class="d-flex align-items-center">
-                    @if (log.action_taken?.includes('MODERATOR')) {
-                      <span class="text-info small fw-bold">
-                        <i class="bi bi-person-badge-fill me-1"></i>Admin
-                      </span>
-                    } @else {
-                      <span class="text-warning small fw-bold">
-                        <i class="bi bi-person-check me-1"></i>mod1
-                      </span>
-                    }
-                  </div>
+                  <span [ngClass]="log.action_taken?.includes('MODERATOR') ? 'text-info' : 'text-warning'" class="small fw-bold">
+                    <i class="bi" [ngClass]="log.action_taken?.includes('MODERATOR') ? 'bi-person-badge-fill' : 'bi-person-check'"></i>
+                    {{ getExecutioner(log.action_taken) }}
+                  </span>
                 </td>
-
                 <td class="text-secondary italic small">
-                  <i class="bi bi-quote opacity-50"></i> {{ log.reason }}
+                  "{{ log.reason }}"
                 </td>
               </tr>
             } @empty {
               <tr>
                 <td colspan="5" class="text-center py-5 text-muted">
-                  <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
                   Chưa có dữ liệu vi phạm nào được ghi nhận.
                 </td>
               </tr>
@@ -85,24 +75,30 @@
         </table>
       </div>
     }
-    <div class="d-flex justify-content-between align-items-center mt-4 px-3 pb-4">
-      <div class="text-muted small">
-        Đang xem trang <b class="text-info">{{ (skip / limit) + 1 }}</b>
+
+    <div class="d-flex justify-content-between align-items-center mt-4 px-4 pb-4">
+      <div class="text-muted small" style="text-align: left;">
+        <b style="color: #f3f4f6;">Tổng số bản ghi: {{ rawLogsCount }}| Trang {{ currentPage }} ({{ limit }} dòng/trang) </b>
       </div>
-      
-      <div class="pagination-container d-flex align-items-center gap-2">
-        <button 
-          class="btn-nav" 
-          (click)="prevPage()" 
-          [disabled]="skip === 0 || isLoading">
-          <i class="bi bi-chevron-left"></i> Trước
+
+      <div class="pagination-advanced d-flex align-items-center gap-3">
+        <button class="btn-nav" (click)="prevPage()" [disabled]="skip === 0 || isLoading">
+          <i class="bi bi-chevron-left"></i>
         </button>
 
-        <button 
-          class="btn-nav" 
-          (click)="nextPage()" 
-          [disabled]="rawLogsCount < limit || isLoading">
-          Tiếp <i class="bi bi-chevron-right"></i>
+        <div class="page-input-wrapper d-flex align-items-center gap-2">
+          <span class="text-secondary small">Trang</span>
+          <input 
+            type="number" 
+            class="form-control page-input" 
+            [value]="currentPage"
+            (keyup.enter)="goToPage($event)"
+            (blur)="goToPage($event)"
+            [disabled]="isLoading">
+        </div>
+
+        <button class="btn-nav" (click)="nextPage()" [disabled]="rawLogsCount < limit || isLoading">
+          <i class="bi bi-chevron-right"></i>
         </button>
       </div>
     </div>

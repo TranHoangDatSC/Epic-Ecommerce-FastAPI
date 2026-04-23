@@ -1,13 +1,26 @@
--- violation_logs_seed.sql
+-- ===========================================================================
+-- FULL SEEDING DATA: VIOLATION LOGS
+-- ===========================================================================
+
+-- Xóa sạch dữ liệu cũ và reset ID tự tăng để khớp với bộ init sạch
+TRUNCATE TABLE violation_log RESTART IDENTITY;
 
 INSERT INTO violation_log (user_id, reason, action_taken, created_at) VALUES 
-(2, 'Vi phạm quy định đăng bài nhiều lần, spam nội dung không phù hợp', 'DEACTIVATE_MODERATOR', '2026-04-20 08:30:00'),
-(15, 'Sử dụng ngôn từ thô tục trong phần đánh giá sản phẩm', 'DEACTIVATE', '2026-04-20 14:15:22'),
-(9, 'Nghi vấn gian lận trong giao dịch thanh toán trực tuyến', 'DEACTIVATE', '2026-04-21 09:10:05'),
-(12, 'Cung cấp thông tin sản phẩm sai lệch, gây hiểu lầm cho người mua', 'DEACTIVATE', '2026-04-21 16:45:30'),
-(2, 'Đã hoàn thành khóa đào tạo lại quy trình kiểm duyệt', 'ACTIVATE_MODERATOR', '2026-04-22 10:00:00'),
-(12, 'Người dùng đã giải trình và bổ sung giấy tờ chứng minh nguồn gốc hàng hóa', 'ACTIVATE', '2026-04-22 11:20:00'),
-(5, 'Đăng sản phẩm thuộc danh mục cấm của sàn', 'DEACTIVATE', '2026-04-23 07:55:12'),
-(8, 'Bị báo cáo 5 lần bởi các người dùng khác nhau về thái độ phục vụ', 'ADMIN_ACTION: LOCK', '2026-04-23 08:20:45'),
-(11, 'Thực hiện hành vi buff đơn ảo nhằm tăng uy tín cửa hàng', 'DEACTIVATE', '2026-04-23 13:40:00'),
-(14, 'Nghi vấn đăng nhập trái phép từ nhiều địa chỉ IP lạ', 'ADMIN_ACTION: LOCK', '2026-04-23 15:10:11');
+-- NGÀY 20/04: Bắt đầu phát hiện các vi phạm nghiêm trọng của Moderator
+(2, 'Phê duyệt hàng loạt sản phẩm không rõ nguồn gốc, vi phạm quy trình kiểm duyệt đồ điện tử', 'DEACTIVATE_MODERATOR', '2026-04-20 08:30:00'),
+(5, 'Lạm dụng quyền hạn để ưu tiên hiển thị bài đăng của tài khoản người thân', 'DEACTIVATE_MODERATOR', '2026-04-20 14:15:22'),
+
+-- NGÀY 21/04: Phát hiện vi phạm của người dùng (bao gồm cả Buyer 7 và các Seller)
+(7, 'Gửi tin nhắn rác quảng cáo hàng loạt cho các chủ shop trong hệ thống', 'DEACTIVATE', '2026-04-21 09:10:05'),
+(3, 'Cố tình lách bộ lọc để đăng bán sản phẩm thuộc danh mục hàng cấm (thuốc lá/rượu)', 'DEACTIVATE', '2026-04-21 16:45:30'),
+(4, 'Nghi vấn sử dụng nhiều tài khoản phụ để buff đơn ảo tăng uy tín gian hàng', 'DEACTIVATE', '2026-04-21 20:30:12'),
+
+-- NGÀY 22/04: Giai đoạn xem xét giải trình và xử lý thêm
+(6, 'Hệ thống bảo mật phát hiện dấu hiệu chiếm đoạt tài khoản từ IP lạ', 'DEACTIVATE_MODERATOR', '2026-04-22 07:55:12'),
+(7, 'Đã hoàn thành xác minh danh tính và cam kết không tái phạm hành vi spam', 'ACTIVATE', '2026-04-22 11:20:00'),
+(2, 'Hoàn thành khóa đào tạo lại nghiệp vụ kiểm duyệt sau thời gian đình chỉ', 'ACTIVATE_MODERATOR', '2026-04-22 15:45:00'),
+
+-- NGÀY 23/04: Giai đoạn khôi phục cuối cùng (Để dữ liệu dashboard hiện lên là tất cả đã Active trở lại)
+(4, 'Chủ shop đã giải trình và cung cấp hóa đơn chứng từ hợp lệ cho các đơn hàng nghi vấn', 'ACTIVATE', '2026-04-23 09:30:00'),
+(5, 'Hệ thống xác nhận nhầm lẫn trong quá trình quét tự động, khôi phục quyền hạn Moderator', 'ACTIVATE_MODERATOR', '2026-04-23 13:40:00'),
+(6, 'Người dùng đã đổi mật khẩu và kích hoạt bảo mật 2 lớp thành công', 'ACTIVATE_MODERATOR', '2026-04-23 16:20:45');
