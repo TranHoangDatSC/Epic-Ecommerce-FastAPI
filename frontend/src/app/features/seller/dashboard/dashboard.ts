@@ -1,9 +1,10 @@
-// dashboard.ts
 import { Component, OnInit, inject, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -20,7 +21,6 @@ export class SellerDashboardComponent implements OnInit, AfterViewInit {
 
   @ViewChild('revenueChart') revenueChart!: ElementRef;
 
-  // Cải tiến 1: Khởi tạo dữ liệu mẫu ngay lập tức để tránh số 0 bị khựng
   stats = {
     totalProducts: 0,
     newOrders: 0,
@@ -38,19 +38,41 @@ export class SellerDashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Biểu đồ vẽ sau khi View đã sẵn sàng
     this.renderChart();
   }
 
   loadDashboardData() {
-    this.http.get<any>(`${this.apiUrl}/users/seller/dashboard-stats`).subscribe({
+    // Gọi song song Sản phẩm và Đơn hàng để tính toán
+    forkJoin({
+      products: this.http.get<any[]>(`${this.apiUrl}/products/seller/my-products`).pipe(catchError(() => of([]))),
+      orders: this.http.get<any[]>(`${this.apiUrl}/orders/seller`).pipe(catchError(() => of([])))
+    }).subscribe({
       next: (res) => {
-        this.stats = res;
-        // Cải tiến 2: Ép Angular kiểm tra thay đổi ngay khi dữ liệu API về
-        this.cdr.detectChanges(); 
+        // 1. Tổng số sản phẩm
+        const totalProducts = res.products.length;
+
+        // 2. Đơn hàng mới (Trạng thái 0: Chờ xác nhận)
+        const newOrders = res.orders.filter(o => o.order_status === 0).length;
+
+        // 3. Tính doanh thu: Chỉ cộng các đơn có trạng thái 3 (Đã giao)
+        const totalRevenue = res.orders
+          .filter(o => o.order_status === 3)
+          .reduce((sum, order) => sum + Number(order.final_amount), 0);
+
+        // 4. Đánh giá (Tạm thời fix cứng hoặc lấy từ profile seller nếu có)
+        const avgRating = 4.8; 
+
+        this.stats = {
+          totalProducts: totalProducts,
+          newOrders: newOrders,
+          revenue: totalRevenue,
+          rating: avgRating
+        };
+
+        this.cdr.detectChanges();
       },
-      error: () => {
-        this.stats = { totalProducts: 12, newOrders: 5, revenue: 3500000, rating: 4.8 };
+      error: (err) => {
+        console.error('Lỗi load dữ liệu dashboard:', err);
         this.cdr.detectChanges();
       }
     });
@@ -59,12 +81,13 @@ export class SellerDashboardComponent implements OnInit, AfterViewInit {
   renderChart() {
     if (!this.revenueChart) return;
 
+    // Giữ nguyên setup cứng đại của bạn
     new Chart(this.revenueChart.nativeElement, {
       type: 'line',
       data: {
         labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
         datasets: [{
-          label: 'Doanh thu',
+          label: 'Doanh thu dự kiến',
           data: [500000, 1200000, 800000, 2500000, 1800000, 3000000, 2800000],
           borderColor: '#4285F4',
           backgroundColor: 'rgba(66, 133, 244, 0.1)',

@@ -49,6 +49,7 @@
 \i 03_seeds/contact_info/seed.sql
 \i 03_seeds/shopping_cart/seed.sql
 \i 03_seeds/order/seed.sql
+\i 03_seeds/violation_logs/seed.sql
 
 -- Final setup: Analyze tables for query optimization
 ANALYZE;
