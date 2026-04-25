@@ -1,11 +1,18 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
+
+RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Cài đặt thư viện
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt psycopg2-binary
 
-COPY . .
+# Copy ruột folder backend vào /app
+COPY backend/ .
 
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy folder database (ngang hàng backend ở ngoài) vào /database_src ở gốc container
+COPY database/ /database_src/
+
+# Chạy đúng file setup.py nằm trong app/database/
+CMD ["sh", "-c", "python /app/app/database/setup.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

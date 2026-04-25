@@ -39,7 +39,6 @@ httpx
 emails
 
 yagmail
-sweetalert2
 
 joblib
 pandas

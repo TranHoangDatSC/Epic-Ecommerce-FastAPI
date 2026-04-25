@@ -1,77 +1,36 @@
-version: '3.8'
-
 services:
-  postgres:
+  db:
     image: postgres:15-alpine
-    container_name: oldshop_postgres
+    container_name: oldshop_db
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-      POSTGRES_DB: ${DB_NAME:-oldshop}
-      TZ: 'UTC'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: oldshop
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - oldshop_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  adminer:
-    image: adminer:latest
-    container_name: oldshop_adminer
-    ports:
-      - "8080:8080"
-    networks:
-      - oldshop_network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
-    restart: unless-stopped
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: oldshop_backend
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - db
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - DB_NAME=oldshop
     ports:
       - "8000:8000"
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      DB_NAME: ${DB_NAME:-oldshop}
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:${DB_PORT:-5432}/${DB_NAME:-oldshop}
-    networks:
-      - oldshop_network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    container_name: oldshop_frontend
-    ports:
-      - "4200:80"
-    networks:
-      - oldshop_network
-    depends_on:
-      - backend
-    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - ./database:/app/database # Ánh xạ trái tim DB vào đây
 
 volumes:
   postgres_data:
-    driver: local
-
-networks:
-  oldshop_network:
-    driver: bridge

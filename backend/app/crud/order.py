@@ -115,84 +115,69 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         )
 
     def create_order(
-        self,
-        db: Session,
-        buyer_id: int,
-        contact_id: int,
-        payment_method_id: int,
-        order_items: List[dict],
-        shipping_fee: Decimal = Decimal("0"),
-        discount_amount: Decimal = Decimal("0"),
-        voucher_id: Optional[int] = None,
-        notes: Optional[str] = None,
-        shipping_address: Optional[str] = None,
+        self, db: Session, buyer_id: int, contact_id: int, payment_method_id: int, 
+        order_items: List[dict], shipping_fee: Decimal = Decimal("0"), 
+        discount_amount: Decimal = Decimal("0"), voucher_id: Optional[int] = None, 
+        notes: Optional[str] = None, shipping_address: Optional[str] = None, 
         phone_number: Optional[str] = None
     ) -> Order:
-        """Create a new order with items"""
-        from app.models import OrderDetail, Product
-        
-        # Calculate total amount
+        from app.models import OrderDetail, Product, Transaction
+        from app.core.fraud_detection import verify_transaction_ml
+        import uuid
+
+        # 1. Tính toán tiền bạc
         total_amount = Decimal("0")
         for item in order_items:
             product = db.query(Product).filter(Product.product_id == item['product_id']).first()
             if product:
                 total_amount += product.price * Decimal(str(item['quantity']))
-        
-        # Calculate final amount
+
         final_amount = total_amount - discount_amount + shipping_fee
-        
-        # Create order
+
+        # 2. Tạo đơn hàng (Trạng thái mặc định là PENDING - 0)
         order = Order(
-            buyer_id=buyer_id,
-            contact_id=contact_id,
-            payment_method_id=payment_method_id,
-            voucher_id=voucher_id,
-            total_amount=total_amount,
-            shipping_fee=shipping_fee,
-            discount_amount=discount_amount,
-            final_amount=final_amount,
-            notes=notes,
-            shipping_address=shipping_address,
-            tracking_number=phone_number, 
-            order_status=0,  # Pending
-            is_deleted=False
+            buyer_id=buyer_id, contact_id=contact_id, payment_method_id=payment_method_id,
+            voucher_id=voucher_id, total_amount=total_amount, shipping_fee=shipping_fee,
+            discount_amount=discount_amount, final_amount=final_amount, notes=notes,
+            shipping_address=shipping_address, tracking_number=phone_number,
+            order_status=0, is_deleted=False
         )
         db.add(order)
-        db.flush()  # Get the order_id
+        db.flush() 
 
-        # Lấy số dư thực tế của User từ DB
+        # 3. Lấy số dư thực tế để chạy ML (Đây là bước ép balance thực)
         user = db.query(models.User).filter(models.User.user_id == buyer_id).first()
-        db.refresh(user) # Ép lấy dữ liệu mới nhất từ DB
-        current_wallet_balance = user.balance if user else Decimal("0")
-        unique_ref = f"REF-{uuid.uuid4().hex[:8].upper()}-{order.order_id}"
+        db.refresh(user) 
+        current_balance = user.balance if user else Decimal("0")
 
+        # CHẠY ML NGAY LÚC NÀY
+        ml_check = verify_transaction_ml(final_amount, current_balance)
+
+        # 4. Tạo Transaction kèm theo Fraud Score
         new_trans = Transaction(
             order_id=order.order_id,
             user_id=buyer_id,
             payment_method_id=payment_method_id,
             amount=final_amount,
-            balance_before=current_wallet_balance,
-            balance_after=current_wallet_balance, # Giữ nguyên vì đang PENDING
-            reference_number=unique_ref,
+            balance_before=current_balance,
+            balance_after=current_balance, # Chưa trừ vì đơn đang Pending
+            reference_number=f"REF-{uuid.uuid4().hex[:8].upper()}-{order.order_id}",
             transaction_status=0,
             address=f"{order.shipping_address}",
-            fraud_score=0.0
+            fraud_score=ml_check["score"] # Ghi điểm số vào đây
         )
         db.add(new_trans)
 
-        # Add order details
+        # 5. Thêm chi tiết đơn hàng
         for item in order_items:
             product = db.query(Product).filter(Product.product_id == item['product_id']).first()
             if product:
-                order_detail = OrderDetail(
-                    order_id=order.order_id,
-                    product_id=item['product_id'],
-                    quantity=item['quantity'],
-                    price_at_purchase=product.price,
+                db.add(OrderDetail(
+                    order_id=order.order_id, product_id=item['product_id'],
+                    quantity=item['quantity'], price_at_purchase=product.price,
                     subtotal=product.price * Decimal(str(item['quantity']))
-                )
-                db.add(order_detail)
-        print(f"DEBUG: Before={new_trans.balance_before}, After={new_trans.balance_after}")
+                ))
+
         db.commit()
         db.refresh(order)
         return order

@@ -59,10 +59,34 @@ INSERT INTO "order_detail" (order_id, product_id, quantity, price_at_purchase, s
 
 
 -- 3. INSERT TRANSACTIONS
-INSERT INTO "transaction" (order_id, user_id, payment_method_id, amount, transaction_status, fraud_score, reference_number) VALUES 
-(1, 7, 1, 180000, 1, 0, 'TXN-7-1'), (2, 7, 2, 230000, 1, 0, 'TXN-7-2'), (3, 7, 3, 280000, 1, 0, 'TXN-7-3'), (4, 7, 4, 330000, 1, 0, 'TXN-7-4'), (5, 7, 5, 380000, 4, 0, 'TXN-7-5'), 
-(6, 7, 1, 430000, 0, 0, 'TXN-7-6'), (7, 7, 2, 480000, 1, 0, 'TXN-7-7'), (8, 7, 3, 530000, 1, 0, 'TXN-7-8'), (9, 7, 4, 580000, 1, 0, 'TXN-7-9'), (10, 7, 5, 630000, 4, 0, 'TXN-7-10'), 
-(11, 7, 1, 680000, 1, 0, 'TXN-7-11'), (12, 7, 2, 730000, 1, 0, 'TXN-7-12'), (13, 7, 3, 780000, 2, 92.5, 'TXN-7-13'), (14, 7, 4, 830000, 1, 0, 'TXN-7-14'), (15, 7, 5, 880000, 4, 0, 'TXN-7-15'), 
-(16, 7, 1, 930000, 0, 0, 'TXN-7-16'), (17, 7, 2, 980000, 1, 0, 'TXN-7-17'), (18, 7, 3, 1030000, 1, 0, 'TXN-7-18'), (19, 7, 4, 1130000, 1, 0, 'TXN-7-19'), (20, 7, 5, 1230000, 0, 0, 'TXN-7-20'), 
-(21, 3, 5, 2050000, 1, 0, 'TXN-3-21'), (22, 3, 4, 1850000, 1, 0, 'TXN-3-22'), (23, 3, 2, 1550000, 1, 0, 'TXN-3-23'), (24, 3, 1, 2250000, 1, 0, 'TXN-3-24'), (25, 3, 3, 3050000, 4, 0, 'TXN-3-25'), 
-(26, 4, 2, 1240000, 1, 0, 'TXN-4-26'), (27, 4, 5, 1440000, 1, 0, 'TXN-4-27'), (28, 4, 4, 940000, 1, 0, 'TXN-4-28'), (29, 4, 1, 540000, 0, 0, 'TXN-4-29'), (30, 4, 3, 2540000, 4, 0, 'TXN-4-30');
+INSERT INTO "transaction" (order_id, user_id, payment_method_id, amount, transaction_status, fraud_score, reference_number,balance_before,balance_after, address, created_at, updated_at) VALUES 
+(1, 7, 1, 180000, 1, 0.05, 'REF-4F8876EB-01',1000000, 820000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(2, 7, 2, 230000, 1, 0.04, 'REF-4F8876EB-02',480000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(3, 7, 3, 280000, 1, 0.01, 'REF-4F8876EB-03',530000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(4, 7, 4, 330000, 1, 0.02, 'REF-4F8876EB-04',580000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(5, 7, 5, 380000, 4, 0.10, 'REF-4F8876EB-05',630000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(6, 7, 1, 430000, 0, 0.01, 'REF-4F8876EB-06', 680000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(7, 7, 2, 480000, 1, 0.00, 'REF-4F8876EB-07', 730000, 250000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(8, 7, 3, 530000, 1, 0.03, 'REF-4F8876EB-08', 830000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(9, 7, 4, 580000, 1, 0.11, 'REF-4F8876EB-09', 880000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(10, 7, 5, 630000, 4, 0.04, 'REF-4F8876EB-10', 930000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(11, 7, 1, 680000, 1, 0.05, 'REF-4F8876EB-11', 980000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(12, 7, 2, 730000, 1, 0.06, 'REF-4F8876EB-12', 1030000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(13, 7, 3, 780000, 2, 0.15, 'REF-4F8876EB-13', 1080000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(14, 7, 4, 830000, 1, 0.07, 'REF-4F8876EB-14', 1130000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(15, 7, 5, 880000, 4, 0.22, 'REF-4F8876EB-15', 1180000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(16, 7, 1, 930000, 0, 0.13, 'REF-4F8876EB-16', 1230000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(17, 7, 2, 980000, 1, 0.09, 'REF-4F8876EB-17', 1280000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(18, 7, 3, 1030000, 1, 0.11, 'REF-4F8876EB-18', 1330000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(19, 7, 4, 1130000, 1, 0.08, 'REF-4F8876EB-19', 1430000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(20, 7, 5, 1230000, 0, 0.12, 'REF-4F8876EB-20', 1530000, 300000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(21, 3, 5, 2050000, 1, 0.44, 'REF-4F8876EB-21', 7050000, 5000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(22, 3, 4, 1850000, 1, 0.33, 'REF-4F8876EB-22', 4850000, 3000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(23, 3, 2, 1550000, 1, 0.20, 'REF-4F8876EB-23', 5550000, 4000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(24, 3, 1, 2250000, 1, 0.11, 'REF-4F8876EB-24', 6250000, 4000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(25, 3, 3, 3050000, 4, 0.12, 'REF-4F8876EB-25', 7050000, 4000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(26, 4, 2, 1240000, 1, 0.13, 'REF-4F8876EB-26', 3240000, 2000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(27, 4, 5, 1440000, 1, 0.14, 'REF-4F8876EB-27', 3440000, 2000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(28, 4, 4, 940000, 1, 0.15, 'REF-4F8876EB-28', 2940000, 2000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(29, 4, 1, 540000, 0, 0.16, 'REF-4F8876EB-29', 2540000, 2000000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW()), 
+(30, 4, 3, 2540000, 4, 0.17, 'REF-4F8876EB-30', 2540000, 10000, '123A Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', NOW(), NOW());

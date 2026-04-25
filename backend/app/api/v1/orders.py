@@ -281,9 +281,9 @@ async def create_paypal_order(
     
 @router.post("/{order_id}/capture-paypal")
 async def capture_paypal_payment(
-    order_id: int,
-    paypal_order_id: str = Query(...),
-    db: Session = Depends(get_db),
+    order_id: int, 
+    paypal_order_id: str = Query(...), 
+    db: Session = Depends(get_db), 
     current_user: User = Depends(check_user_role([3]))
 ):
     paypal_res = await capture_paypal_order(paypal_order_id)
@@ -293,38 +293,37 @@ async def capture_paypal_payment(
         if not order_obj:
             raise HTTPException(status_code=404, detail="Order not found")
 
-        cart = db.query(models.ShoppingCart).filter(models.ShoppingCart.user_id == current_user.user_id).first()
-        if cart:
-            product_ids = [detail.product_id for detail in order_obj.order_details]
-            db.query(models.ShoppingCartItem).filter(
-                models.ShoppingCartItem.cart_id == cart.cart_id,
-                models.ShoppingCartItem.product_id.in_(product_ids)
-            ).delete(synchronize_session=False)
-            db.commit()
-
+        db.refresh(current_user)
         ml_res = verify_transaction_ml(order_obj.final_amount, current_user.balance)
+
+        # --- FIX LỖI: Xóa giỏ hàng thủ công thay vì gọi hàm CRUD lỗi ---
+        try:
+            cart = db.query(models.ShoppingCart).filter(models.ShoppingCart.user_id == current_user.user_id).first()
+            if cart:
+                product_ids = [detail.product_id for detail in order_obj.order_details]
+                db.query(models.ShoppingCartItem).filter(
+                    models.ShoppingCartItem.cart_id == cart.cart_id,
+                    models.ShoppingCartItem.product_id.in_(product_ids)
+                ).delete(synchronize_session=False)
+        except Exception as e:
+            print(f"Lỗi xóa giỏ hàng: {e}")
+        # -------------------------------------------------------------
+
         transaction = db.query(Transaction).filter(Transaction.order_id == order_id).first()
-        
         if transaction:
             transaction.fraud_score = ml_res["score"]
-            transaction.address = f"PayPal Ref: {paypal_order_id} | ML: {ml_res['score']} | Đ/C: {order_obj.shipping_address}"
+            transaction.address = f"PayPal Ref: {paypal_order_id} | AI: {ml_res['score']}"
             
             if ml_res["is_fraud"]:
-                transaction.transaction_status = 2
-                order_obj.order_status = 0
-                message = "Giao dịch bị tạm giữ do phát hiện rủi ro cao."
+                transaction.transaction_status = 2 
+                order_obj.order_status = 0 
+                message = "Giao dịch bị tạm giữ do rủi ro cao."
             else:
                 transaction.transaction_status = 1
-                current_user.balance -= order_obj.final_amount
-                order_obj.order_status = 1
+                order_obj.order_status = 1 
                 message = "Thanh toán thành công."
-        
-        db.commit()
-        return {
-            "status": "success", 
-            "fraud_detected": ml_res["is_fraud"], 
-            "detail": message,
-            "order_id": order_id
-        }
 
+        db.commit()
+        return {"status": "success", "fraud_detected": ml_res["is_fraud"], "detail": message}
+    
     raise HTTPException(status_code=400, detail="PayPal Capture failed")
