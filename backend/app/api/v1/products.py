@@ -172,7 +172,10 @@ async def create_product(
             file_path = media_dir / new_filename
 
             # Read file content
+            MAX_FILE_SIZE = 2 * 1024 * 1024 # 2MB
             content = await file.read()
+            if len(content) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File quá lớn (Tối đa 2MB)")
 
             # Save file
             with open(file_path, "wb") as f:

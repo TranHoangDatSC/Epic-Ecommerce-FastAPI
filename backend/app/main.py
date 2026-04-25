@@ -10,6 +10,17 @@ from app.database import engine, Base
 from app.api.v1 import auth, users, categories, products, orders, moderator, cart, admin, system
 import os
 
+import logging
+import warnings
+from sqlalchemy.exc import SAWarning
+
+warnings.filterwarnings("ignore", category=SAWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING) 
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
 # --- Helper để lấy IP Network ---
 def get_ip_address():
     try:
@@ -22,29 +33,25 @@ def get_ip_address():
         return "127.0.0.1"
 
 # ==================== Lifespan (Startup/Shutdown) ====================
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    # Khởi tạo tables (Chỉ dùng nếu không dùng Alembic)
     Base.metadata.create_all(bind=engine)
     
-    # Banner Terminal theo phong cách HEMIS
     local_ip = "127.0.0.1"
     network_ip = get_ip_address()
     port = 8000
     
-    print("\n" + "="*70)
-    print(f"  {settings.PROJECT_NAME.upper()} API Server")
-    print("="*70)
-    print(f"  Local:   http://{local_ip}:{port}")
-    print(f"  Network: http://{network_ip}:{port}")
-    print(f"  Docs:    http://{local_ip}:{port}/api/docs")
-    print(f"  ReDoc:   http://{local_ip}:{port}/api/redoc")
-    print("="*70 + "\n")
-    
+    # Giao diện khởi động Clean & Pro
+    print("\n" + "╔" + "═"*68 + "╗")
+    print(f"║  🚀 {settings.PROJECT_NAME.upper()} - BACKEND SERVICES READY".ljust(69) + "║")
+    print("╠" + "═"*68 + "╣")
+    print(f"║  ▸ Local:    http://{local_ip}:{port}".ljust(69) + "║")
+    print(f"║  ▸ Network:  http://{network_ip}:{port}".ljust(69) + "║")
+    print(f"║  ▸ API Docs: http://{local_ip}:{port}/api/docs".ljust(69) + "║")
+    print(f"║  ▸ Status:   HEALTHY - DEBUG: {settings.DEBUG}".ljust(69) + "║")
+    print("╚" + "═"*68 + "╝\n")
     yield
-    print(f"\n--- Shutting down {settings.PROJECT_NAME} ---")
 
 # ==================== Initialize App ====================
 
