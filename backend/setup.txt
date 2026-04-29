@@ -1,0 +1,9 @@
+#deactivate
+#Remove-Item -Recurse -Force venv
+
+py -3.13 -m venv venv
+python --version
+.\venv\Scripts\activate
+pip install --no-cache-dir psycopg2-binary pydantic-core
+pip install passlib[bcrypt]
+pip install -r requirements.txt

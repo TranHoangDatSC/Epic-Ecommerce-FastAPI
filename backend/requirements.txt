@@ -1,45 +1,54 @@
-# Core FastAPI dependencies (Python 3.12/3.13 compatible - pre-built wheels only)
+# ==========================================
+# 1. CORE WEB & API
+# ==========================================
 fastapi
 uvicorn[standard]
-
-# Database
-sqlalchemy
-psycopg2-binary
-
-# Data validation (Pydantic v2 - pre-built wheels available)
 pydantic
 pydantic-settings
-email-validator
-
-# Authentication & Security (pre-built wheels)
-python-jose[cryptography]
-passlib[bcrypt]
 python-multipart
 
-# Environment & Configuration
-python-dotenv
-
-# Database migrations
+# ==========================================
+# 2. DATABASE & ORM
+# ==========================================
+sqlalchemy
+psycopg2-binary
 alembic
 
-# Testing (optional - pre-built wheels)
-pytest
-pytest-asyncio
-httpx
+# ==========================================
+# 3. SECURITY & AUTHENTICATION
+# ==========================================
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1
 
-# Database migrations
-alembic
-
-# Testing
-pytest
-pytest-asyncio
-httpx
-
-# Email
-emails
-
-yagmail
-
+# ==========================================
+# 4. MACHINE LEARNING & DATA
+# (Đã ghim cứng version để tránh lỗi unpickle)
+# ==========================================
+scikit-learn==1.7.1
+scipy
 joblib
 pandas
-scikit-learn
+
+# ==========================================
+# 5. UTILITIES (Email, Validation, Config)
+# ==========================================
+python-dotenv
+email-validator
+emails
+yagmail
+
+# ==========================================
+# 6. TESTING & DEV
+# ==========================================
+pytest
+pytest-asyncio
+httpx
+
+# 7. ML TOOLS (Tùy chọn - chỉ cài nếu cần)
+# Joblib: Cần cho mô hình scikit-learn cũ
+# Joblib==1.5.3
+# NumPy==2.4.4
+# SciPy==1.17.1
+
+# Command: pip install -r requirements.txt
