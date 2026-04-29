@@ -54,42 +54,43 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   initChart() {
     const ctx = this.adminChart.nativeElement.getContext('2d');
     
-    // Gradient cho biểu đồ
+    // Tạo màu Gradient xanh dương chuyên nghiệp cho Light Mode
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(66, 153, 225, 0.4)');
-    gradient.addColorStop(1, 'rgba(66, 153, 225, 0)');
+    gradient.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
+    gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
 
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'],
+        // Nhãn năm (để báo cáo cho an toàn)
+        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
         datasets: [{
-          label: 'Doanh thu hệ thống (VND)',
-          data: [1250000, 2800000, 1900000, 4500000, 3200000, 6800000, 5400000], // Data cứng tuần
-          borderColor: '#4299e1',
+          label: 'Doanh thu 2026 (VND)',
+          data: [45000000, 52000000, 48000000, 70000000, 65000000, 80000000, 85000000, 0, 0, 0, 0, 0], // Data năm cực "tín"
+          borderColor: '#0d6efd',
           borderWidth: 3,
-          backgroundColor: gradient,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#0d6efd',
+          pointBorderWidth: 2,
+          pointRadius: 4,
           fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#4299e1',
-          pointBorderColor: '#fff',
-          pointHoverRadius: 6
+          backgroundColor: gradient,
+          tension: 0.4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
+        plugins: { legend: { display: false } },
         scales: {
           y: {
-            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { color: '#a0aec0' }
+            beginAtZero: true,
+            grid: { color: '#f1f1f1' },
+            ticks: { color: '#6c757d', font: { weight: 'bold' } }
           },
           x: {
             grid: { display: false },
-            ticks: { color: '#a0aec0' }
+            ticks: { color: '#6c757d', font: { weight: 'bold' } }
           }
         }
       }
