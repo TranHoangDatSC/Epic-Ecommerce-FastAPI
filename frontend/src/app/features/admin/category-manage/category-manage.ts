@@ -20,15 +20,13 @@ export class CategoryManageComponent implements OnInit {
   activeTab: 'active' | 'trash' = 'active';
   allCategories: any[] = [];
 
+  searchTerm: string = '';
+
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
   confirmActionType: 'delete' | 'restore' | 'hardDelete' | 'warning' | null = null;
   pendingCategoryId: number | null = null;
-
-  get pagedCategories(): any[] {
-    return this.categories.slice(this.skip, this.skip + this.limit);
-  }
 
   categoryForm = { name: '', description: '', parent_id: null as number | null, is_active: true };
 
@@ -36,6 +34,17 @@ export class CategoryManageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
+  }
+
+  get filteredCategories(): any[] {
+    if (!this.searchTerm.trim()) {
+      return this.categories;
+    }
+    const lowerTerm = this.searchTerm.toLowerCase();
+    return this.categories.filter(cat => 
+      cat.name.toLowerCase().includes(lowerTerm) || 
+      (cat.description && cat.description.toLowerCase().includes(lowerTerm))
+    );
   }
 
   loadCategories() {
@@ -72,6 +81,44 @@ export class CategoryManageComponent implements OnInit {
     this.activeTab = tab;
     this.skip = 0;
     this.loadCategories();
+  }
+  get pagedCategories(): any[] {
+    return this.filteredCategories.slice(this.skip, this.skip + this.limit);
+  }
+
+  get currentPage(): number {
+    return Math.floor(this.skip / this.limit) + 1;
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const current = this.currentPage;
+
+    let start = Math.max(1, current - 1);
+    let end = Math.min(total, current + 1);
+
+    if (current === 1) end = Math.min(total, 3);
+    if (current === total) start = Math.max(1, total - 2);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  onSearchChange() {
+    this.skip = 0; 
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.skip = (page - 1) * this.limit;
+    }
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredCategories.length / this.limit);
   }
 
   nextPage(): void { if (this.skip + this.limit < this.categories.length) this.skip += this.limit; }
