@@ -15,18 +15,20 @@ export class ModeratorUserManageComponent implements OnInit {
   filteredUsers: any[] = [];
   isLoading = false;
   actionLoading = false;
-  searchTerm = '';
   message: string | null = null;
+  
   currentTab: 'active' | 'locked' = 'active';
+  searchTerm: string = '';
+  
+  // Phân trang
+  currentPage = 1;
+  pageSize = 5;
 
-  // Modal control
+  // Modal Khóa/Mở Khóa
   showStatusModal = false;
+  isBanAction = false;
   selectedUser: any = null;
   statusReason = '';
-  isBanAction = true;
-
-  currentPage: number = 1;
-  pageSize: number = 5;
 
   constructor(
     private moderatorService: ModeratorService,
@@ -37,39 +39,23 @@ export class ModeratorUserManageComponent implements OnInit {
     this.loadUsers();
   }
 
-  get paginatedUsers() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    return this.filteredUsers.slice(start, end);
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.filteredUsers.length / this.pageSize);
-  }
-
   loadUsers(): void {
     this.isLoading = true;
-    this.message = null;
     this.moderatorService.getUsers().subscribe({
       next: (data) => {
-        console.log('Data user nhận được:', data);
+        // Lấy tất cả user có Role 3 (Seller/Khách)
+        let role3Users = data.filter((u: any) => u.roles && u.roles.some((r: any) => r.role_id === 3));
         
-        // LOG ĐỂ KIỂM TRA CHÍNH XÁC TÊN TRƯỜNG
-        if (data && data.length > 0) {
-          console.log('User đầu tiên có cấu trúc:', data[0]);
+        // Chia tab
+        if (this.currentTab === 'active') {
+          this.users = role3Users.filter((u: any) => u.is_active);
+        } else {
+          this.users = role3Users.filter((u: any) => !u.is_active);
         }
-
-        this.users = data.filter((user: any) => {
-          // Kiểm tra xem mảng roles có tồn tại và có role nào mang id = 3 không
-          return user.roles && user.roles.some((r: any) => Number(r.role_id) === 3);
-        });
-
-        this.filterUsers();
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        this.filterUsers(); // Lọc tìm kiếm & Render
       },
       error: (err) => {
-        this.message = 'Không tải được danh sách.';
+        console.error(err);
         this.isLoading = false;
         this.cdr.detectChanges();
       }
@@ -78,68 +64,89 @@ export class ModeratorUserManageComponent implements OnInit {
 
   selectTab(tab: 'active' | 'locked'): void {
     this.currentTab = tab;
-    this.currentPage = 1;
-    this.filterUsers();
+    this.searchTerm = ''; // Đổi tab thì reset search
+    this.loadUsers();
   }
 
   filterUsers(): void {
-    let list = [...this.users];
-    if (this.currentTab === 'active') {
-      list = list.filter(u => u.is_active);
+    if (!this.searchTerm.trim()) {
+      this.filteredUsers = [...this.users];
     } else {
-      list = list.filter(u => !u.is_active);
-    }
-    const term = this.searchTerm.trim().toLowerCase();
-    if (term) {
-      list = list.filter((user) => 
-        user.username?.toLowerCase().includes(term) || 
-        user.email?.toLowerCase().includes(term) || 
-        user.full_name?.toLowerCase().includes(term) || 
-        user.user_id?.toString().includes(term)
+      const term = this.searchTerm.toLowerCase();
+      this.filteredUsers = this.users.filter(u => 
+        u.username?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        u.full_name?.toLowerCase().includes(term)
       );
     }
-    this.filteredUsers = list;
-    this.currentPage = 1;
+    this.currentPage = 1; // Search xong tự nhảy về trang 1
+    this.isLoading = false;
+    this.cdr.detectChanges();
   }
 
+  // --- LOGIC PHÂN TRANG THÔNG MINH ---
+  get paginatedUsers(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredUsers.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredUsers.length / this.pageSize) || 1;
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const current = this.currentPage;
+
+    let start = Math.max(1, current - 1);
+    let end = Math.min(total, current + 1);
+
+    if (current === 1) end = Math.min(total, 3);
+    if (current === total) start = Math.max(1, total - 2);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  // --- MODAL & ACTIONS ---
   openStatusModal(user: any): void {
     this.selectedUser = user;
-    this.isBanAction = user.is_active;
+    this.isBanAction = user.is_active; // Đang active thì modal là KHÓA
     this.statusReason = '';
     this.showStatusModal = true;
-    this.cdr.detectChanges();
   }
 
   closeStatusModal(): void {
     this.showStatusModal = false;
     this.selectedUser = null;
     this.statusReason = '';
-    this.cdr.detectChanges();
   }
 
   confirmStatusChange(): void {
-    if (!this.statusReason.trim() || !this.selectedUser) return;
-
+    if (!this.statusReason.trim()) return;
     this.actionLoading = true;
-    this.message = null;
-
-    const obs = this.isBanAction 
-      ? this.moderatorService.banUser(this.selectedUser.user_id, this.statusReason)
-      : this.moderatorService.unbanUser(this.selectedUser.user_id, this.statusReason);
-
-    obs.subscribe({
+    const action = this.isBanAction ? 'lock' : 'unlock';
+    
+    this.moderatorService.lockUnlockUser(this.selectedUser.user_id, action, this.statusReason).subscribe({
       next: () => {
-        const label = this.isBanAction ? 'khóa' : 'mở khóa';
-        this.message = `Người dùng đã được ${label} thành công.`;
+        this.message = `Thao tác thành công!`;
         this.actionLoading = false;
         this.closeStatusModal();
         this.loadUsers();
+        setTimeout(() => this.message = null, 3000);
       },
       error: (err) => {
-        console.error('Error updating account status:', err);
-        this.message = err?.error?.detail || 'Không thể cập nhật trạng thái người dùng.';
         this.actionLoading = false;
-        this.cdr.detectChanges();
+        alert(err?.error?.detail || 'Lỗi hệ thống');
       }
     });
   }

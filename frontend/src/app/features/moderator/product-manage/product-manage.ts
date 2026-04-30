@@ -29,7 +29,7 @@ export class ModeratorProductManageComponent implements OnInit {
   categoryMap: Map<number, string> = new Map();
   userMap: Map<number, string> = new Map();
   isViewMode: boolean = false;
-
+  
   currentPage: number = 1;
   pageSize: number = 5;
 
@@ -61,7 +61,31 @@ export class ModeratorProductManageComponent implements OnInit {
   }
 
   get totalPages(): number {
-    return Math.ceil(this.products.length / this.pageSize);
+    return Math.ceil(this.products.length / this.pageSize) || 1;
+  }
+
+  // Phân trang thông minh: Hiển thị các trang lân cận
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const current = this.currentPage;
+
+    let start = Math.max(1, current - 1);
+    let end = Math.min(total, current + 1);
+
+    if (current === 1) end = Math.min(total, 3);
+    if (current === total) start = Math.max(1, total - 2);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
   getVideoUrl(product: any): string | null {
@@ -72,69 +96,40 @@ export class ModeratorProductManageComponent implements OnInit {
     this.isLoading = true;
     const statusMap = { 'pending': 0, 'approved': 1, 'rejected': 2 };
     const status = statusMap[this.activeTab];
-
+    
     this.productService.getProductsByStatus(status).subscribe({
       next: (data) => {
         this.category.forEach(c => this.categoryMap.set(c.category_id, c.name));
-
         this.products = (data || []).map(p => ({
           ...p,
           category_name: this.categoryMap.get(p.category_id) || 'Chưa phân loại',
           seller_name: this.userMap.get(p.seller_id) || 'User #' + p.seller_id,
-          product_name: p.title || 'Sản phẩm không tên' 
+          product_name: p.title || 'Sản phẩm không tên'
         }));
         this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: () => { this.isLoading = false; }
+      error: () => {
+        this.isLoading = false;
+      }
     });
   }
 
   selectTab(tab: 'pending' | 'approved' | 'rejected'): void {
     this.activeTab = tab;
-    this.currentPage = 1; 
+    this.currentPage = 1;
     this.loadProducts();
-  }
-
-
-  updateStatus(product: any, targetStatus: 'approved' | 'rejected') {
-    const statusMap = { 'approved': 1, 'rejected': 2 };
-    const numericStatus = statusMap[targetStatus];
-    let reason: string | undefined;
-
-    if (targetStatus === 'rejected') {
-      const input = prompt('Lý do');
-      if (!input || input.trim() === '') {
-          return;
-      }
-      reason = input;
-    }
-
-    this.actionLoading = true;
-    this.productService.updateProductStatus(product.product_id, numericStatus, reason).subscribe({
-      next: () => {
-        this.message = `Đã cập nhật trạng thái sản phẩm thành công.`;
-        this.actionLoading = false;
-        this.loadProducts(); // Tải lại danh sách
-      },
-      error: (err) => {
-        this.message = 'Lỗi cập nhật: ' + (err.error?.detail || 'Vui lòng thử lại.');
-        this.actionLoading = false;
-      }
-    });
   }
 
   openModal(product: any, status: 'approved' | 'rejected', viewMode: boolean = false) {
     this.selectedProduct = product;
     this.isViewMode = viewMode;
     this.targetStatus = status === 'approved' ? 1 : 2;
-    
     if (viewMode) {
       this.rejectionReason = product.reject_reason || 'Không có lý do.';
     } else {
       this.rejectionReason = '';
     }
-    
     new bootstrap.Modal(document.getElementById('reasonModal')).show();
   }
 
@@ -148,7 +143,6 @@ export class ModeratorProductManageComponent implements OnInit {
       return;
     }
     
-    // Gọi API cập nhật
     this.productService.updateProductStatus(
       this.selectedProduct.product_id, 
       this.targetStatus!, 
@@ -156,8 +150,9 @@ export class ModeratorProductManageComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.closeModal();
-        this.loadProducts(); // <--- CỰC KỲ QUAN TRỌNG: Load lại để cập nhật video_url và images
+        this.loadProducts();
         this.message = "Thao tác thành công!";
+        setTimeout(() => this.message = null, 3000);
       },
       error: (err) => {
         alert("Lỗi: " + (err.error?.detail || "Không thể cập nhật"));
@@ -169,10 +164,8 @@ export class ModeratorProductManageComponent implements OnInit {
     this.selectedProduct = product;
     const modalEl = document.getElementById('productDetailModal');
     if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    } else {
-        console.error("Không tìm thấy element productDetailModal trong HTML!");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
     }
   }
 
@@ -182,50 +175,29 @@ export class ModeratorProductManageComponent implements OnInit {
     if (modal) modal.hide();
   }
 
-  currentPreviewImage: string | null = null;
   getFullUrl(url: string): string {
     if (!url) return 'assets/placeholder.jpg';
-    
     let baseUrl = environment.imageBaseUrl;
     if (baseUrl.startsWith('https') && isDevMode()) {
       console.warn('Using HTTPS in local, may cause ERR_SSL error');
     }
-
     if (url.startsWith('/')) return `${baseUrl}${url}`;
     return url;
   }
+
   getPrimaryImage(product: any): string {
     const primary = product.product_images?.find((img: any) => img.is_primary);
     return this.getFullUrl(primary ? primary.image_url : (product.product_images?.[0]?.image_url || ''));
   }
 
-  getSafeVideoUrl(url: string): SafeResourceUrl | string | null {
-    if (!url) return null;
-      const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(youtubeRegExp);
-
-      if (match && match[2].length === 11) {
-          const embedUrl = `https://www.youtube.com/embed/${match[2]}`;
-          return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
-      }
-      return this.getFullUrl(url);
-  }
-
-  isVideoType(url: string, type: 'youtube' | 'direct'): boolean {
-    if (!url) return false;
-    const isYoutube = /^(link_với_regex_youtube)/; 
-    const checkYoutube = url.includes('youtube.com') || url.includes('youtu.be');
-    return type === 'youtube' ? checkYoutube : !checkYoutube;
-  }
-
   quickAction(status: 'approved' | 'rejected') {
     const modalDetail = bootstrap.Modal.getInstance(document.getElementById('productDetailModal'));
     modalDetail.hide();
-    
     setTimeout(() => {
       this.openModal(this.selectedProduct, status);
     }, 400);
   }
+
   getRawVideoUrl(product: any): string {
     if (!product || !product.video_url) return '';
     if (product.video_url.includes('yout')) {
@@ -237,6 +209,6 @@ export class ModeratorProductManageComponent implements OnInit {
   closeModal() {
     const modalEl = document.getElementById('reasonModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
+    if (modal) modal.hide();
   }
 }
