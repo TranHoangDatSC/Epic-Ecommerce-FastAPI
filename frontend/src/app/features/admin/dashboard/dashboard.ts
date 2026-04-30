@@ -57,10 +57,9 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
 
   switchChartView(view: 'year' | 'month') {
     if (this.chartView === view) return;
-    
     this.chartView = view;
-    this.cdr.detectChanges(); // Cập nhật màu nút UI
-    this.updateChartData();   // Gọi hàm update để Chart.js chuyển động mượt
+    this.cdr.detectChanges();
+    this.updateChartData();  
   }
 
   initChart() {

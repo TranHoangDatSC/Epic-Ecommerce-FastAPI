@@ -21,85 +21,120 @@ export class SellerDashboardComponent implements OnInit, AfterViewInit {
 
   @ViewChild('revenueChart') revenueChart!: ElementRef;
 
-  stats = {
-    totalProducts: 0,
-    newOrders: 0,
-    revenue: 0,
-    rating: 0
-  };
+  stats = { totalProducts: 0, newOrders: 0, revenue: 0, rating: 4.8 };
+  isLoading = true;
 
   quickActions = [
-    { path: '/seller/product-manage', label: 'Quản lý sản phẩm', icon: 'bi-box-seam-fill', color: 'text-primary' },
-    { path: '/seller/order-manage', label: 'Quản lý đơn hàng', icon: 'bi-cart-check-fill', color: 'text-success' }
+    { path: '/seller/product-manage', label: 'Quản lý Sản phẩm', desc: 'Thêm, sửa, xóa sản phẩm', icon: 'bi-box-seam-fill', color: 'text-primary', bg: 'bg-primary-light' },
+    { path: '/seller/order-manage', label: 'Quản lý Đơn hàng', desc: 'Xử lý và giao hàng', icon: 'bi-cart-check-fill', color: 'text-success', bg: 'bg-success-light' }
   ];
+
+  // Biến điều khiển Chart
+  chartView: 'year' | 'month' = 'year';
+  chartInstance: any;
 
   ngOnInit() {
     this.loadDashboardData();
   }
 
   ngAfterViewInit() {
-    this.renderChart();
+    this.initChart();
   }
 
   loadDashboardData() {
-    // Gọi song song Sản phẩm và Đơn hàng để tính toán
+    this.isLoading = true;
     forkJoin({
       products: this.http.get<any[]>(`${this.apiUrl}/products/seller/my-products`).pipe(catchError(() => of([]))),
       orders: this.http.get<any[]>(`${this.apiUrl}/orders/seller`).pipe(catchError(() => of([])))
     }).subscribe({
       next: (res) => {
-        // 1. Tổng số sản phẩm
         const totalProducts = res.products.length;
-
-        // 2. Đơn hàng mới (Trạng thái 0: Chờ xác nhận)
         const newOrders = res.orders.filter(o => o.order_status === 0).length;
-
-        // 3. Tính doanh thu: Chỉ cộng các đơn có trạng thái 3 (Đã giao)
         const totalRevenue = res.orders
           .filter(o => o.order_status === 3)
           .reduce((sum, order) => sum + Number(order.final_amount), 0);
-
-        // 4. Đánh giá (Tạm thời fix cứng hoặc lấy từ profile seller nếu có)
-        const avgRating = 4.8; 
 
         this.stats = {
           totalProducts: totalProducts,
           newOrders: newOrders,
           revenue: totalRevenue,
-          rating: avgRating
+          rating: 4.8 // Tạm fix cứng
         };
-
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi load dữ liệu dashboard:', err);
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
-  renderChart() {
-    if (!this.revenueChart) return;
+  switchChartView(view: 'year' | 'month') {
+    if (this.chartView === view) return;
+    this.chartView = view;
+    this.cdr.detectChanges();
+    this.updateChartData();
+  }
 
-    // Giữ nguyên setup cứng đại của bạn
-    new Chart(this.revenueChart.nativeElement, {
+  initChart() {
+    const ctx = this.revenueChart.nativeElement.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(66, 133, 244, 0.2)');
+    gradient.addColorStop(1, 'rgba(66, 133, 244, 0)');
+
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+    }
+
+    this.chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
         datasets: [{
-          label: 'Doanh thu dự kiến',
-          data: [500000, 1200000, 800000, 2500000, 1800000, 3000000, 2800000],
+          label: 'Doanh thu (VND)',
+          data: [1500000, 2200000, 1800000, 4500000, 3100000, 5000000, 4200000, 0, 0, 0, 0, 0],
           borderColor: '#4285F4',
-          backgroundColor: 'rgba(66, 133, 244, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#4285F4',
+          pointBorderWidth: 2,
+          pointRadius: 4,
           fill: true,
+          backgroundColor: gradient,
           tension: 0.4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f1f1' },
+            ticks: { color: '#6c757d', font: { weight: 'bold' } }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#6c757d', font: { weight: 'bold' } }
+          }
+        }
       }
     });
+  }
+
+  updateChartData() {
+    if (!this.chartInstance) return;
+
+    if (this.chartView === 'year') {
+      this.chartInstance.data.labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+      this.chartInstance.data.datasets[0].data = [1500000, 2200000, 1800000, 4500000, 3100000, 5000000, 4200000, 0, 0, 0, 0, 0];
+    } else {
+      this.chartInstance.data.labels = Array.from({length: 30}, (_, i) => `Ngày ${i + 1}`);
+      this.chartInstance.data.datasets[0].data = Array.from({length: 30}, () => Math.floor(Math.random() * 500000) + 100000);
+    }
+    this.chartInstance.update();
   }
 }
