@@ -22,6 +22,10 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   };
   isLoading = true;
 
+  // Biến điều khiển Chart
+  chartView: 'year' | 'month' = 'year';
+  chartInstance: any;
+
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef
@@ -51,22 +55,31 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
+  switchChartView(view: 'year' | 'month') {
+    if (this.chartView === view) return;
+    
+    this.chartView = view;
+    this.cdr.detectChanges(); // Cập nhật màu nút UI
+    this.updateChartData();   // Gọi hàm update để Chart.js chuyển động mượt
+  }
+
   initChart() {
     const ctx = this.adminChart.nativeElement.getContext('2d');
-    
-    // Tạo màu Gradient xanh dương chuyên nghiệp cho Light Mode
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
     gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
 
-    new Chart(ctx, {
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+    }
+
+    this.chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        // Nhãn năm (để báo cáo cho an toàn)
         labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
         datasets: [{
-          label: 'Doanh thu 2026 (VND)',
-          data: [45000000, 52000000, 48000000, 70000000, 65000000, 80000000, 85000000, 0, 0, 0, 0, 0], // Data năm cực "tín"
+          label: 'Doanh thu (VND)',
+          data: [45000000, 52000000, 48000000, 70000000, 65000000, 80000000, 85000000, 0, 0, 0, 0, 0],
           borderColor: '#0d6efd',
           borderWidth: 3,
           pointBackgroundColor: '#ffffff',
@@ -81,7 +94,9 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false }
+        },
         scales: {
           y: {
             beginAtZero: true,
@@ -95,5 +110,21 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
         }
       }
     });
+  }
+
+  updateChartData() {
+    if (!this.chartInstance) return;
+
+    if (this.chartView === 'year') {
+      this.chartInstance.data.labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+      this.chartInstance.data.datasets[0].data = [45000000, 52000000, 48000000, 70000000, 65000000, 80000000, 85000000, 0, 0, 0, 0, 0];
+    } else {
+      // Fake data 30 ngày cho tháng
+      this.chartInstance.data.labels = Array.from({length: 30}, (_, i) => `Ngày ${i + 1}`);
+      this.chartInstance.data.datasets[0].data = Array.from({length: 30}, () => Math.floor(Math.random() * 5000000) + 1000000);
+    }
+
+    // Cập nhật lại biểu đồ với animation
+    this.chartInstance.update();
   }
 }
