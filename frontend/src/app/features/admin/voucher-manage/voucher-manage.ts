@@ -1,14 +1,16 @@
+// voucher-manage.component.ts
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../shared/services/admin.service';
+import { UIService } from '../../../core/services/ui.service';
 
 @Component({
   selector: 'app-voucher-manage',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './voucher-manage.html',
-  styleUrl: './voucher-manage.scss' // Dùng chung style với Category
+  styleUrl: './voucher-manage.scss'
 })
 export class VoucherManageComponent implements OnInit {
   vouchers: any[] = [];
@@ -19,14 +21,17 @@ export class VoucherManageComponent implements OnInit {
   activeTab: 'active' | 'trash' = 'active';
   searchTerm: string = '';
   
-  // Phân trang
+  // Biến hiển thị cho định dạng tiền tệ
+  displayDiscountValue: string = '';
+  displayMinOrder: string = '';
+
   skip = 0;
   limit = 5;
 
   voucherForm = {
     code: '',
     description: '',
-    discount_type: 0, // 0: Fixed, 1: Percentage
+    discount_type: 0,
     discount_value: 0,
     max_usage: 100,
     min_order_amount: 0,
@@ -35,10 +40,28 @@ export class VoucherManageComponent implements OnInit {
     is_active: true
   };
 
-  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private adminService: AdminService, 
+    private cdr: ChangeDetectorRef,
+    private uiService: UIService
+  ) {}
 
-  ngOnInit(): void {
-    this.loadVouchers();
+  ngOnInit(): void { this.loadVouchers(); }
+
+  // --- HÀM ĐỊNH DẠNG TIỀN TỆ REAL-TIME ---
+  formatCurrencyInput(event: any, field: 'discount' | 'minOrder') {
+    let value = event.target.value.replace(/\./g, '');
+    if (isNaN(value) || value === '') value = '0';
+    
+    const formatted = Number(value).toLocaleString('vi-VN');
+    
+    if (field === 'discount') {
+      this.displayDiscountValue = formatted;
+      this.voucherForm.discount_value = Number(value);
+    } else {
+      this.displayMinOrder = formatted;
+      this.voucherForm.min_order_amount = Number(value);
+    }
   }
 
   loadVouchers() {
@@ -50,46 +73,36 @@ export class VoucherManageComponent implements OnInit {
         this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Lỗi tải voucher:', err);
+      error: () => {
         this.isLoading = false;
+        this.uiService.showError('Không thể tải danh sách voucher');
       }
     });
   }
 
   applyFilterAndTab() {
     let filtered = this.allVouchers;
-    
-    // Tab Filter
-    if (this.activeTab === 'trash') {
-      filtered = filtered.filter(v => v.is_deleted);
-    } else {
-      filtered = filtered.filter(v => !v.is_deleted);
-    }
+    filtered = (this.activeTab === 'trash') 
+      ? filtered.filter(v => v.is_deleted) 
+      : filtered.filter(v => !v.is_deleted);
 
-    // Search Filter
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(v => v.code.toLowerCase().includes(term) || v.description?.toLowerCase().includes(term));
     }
-
     this.vouchers = filtered;
   }
 
-  get pagedVouchers() {
-    return this.vouchers.slice(this.skip, this.skip + this.limit);
-  }
-
-  // Logic Modal
   openModal(voucher: any = null) {
     this.editingVoucher = voucher;
     if (voucher) {
       this.voucherForm = { 
         ...voucher,
-        // Chuyển format date ISO sang datetime-local cho input
         valid_from: voucher.valid_from.substring(0, 16),
         valid_to: voucher.valid_to.substring(0, 16)
       };
+      this.displayDiscountValue = voucher.discount_value.toLocaleString('vi-VN');
+      this.displayMinOrder = voucher.min_order_amount.toLocaleString('vi-VN');
     } else {
       this.resetForm();
     }
@@ -108,31 +121,67 @@ export class VoucherManageComponent implements OnInit {
       valid_to: '',
       is_active: true
     };
+    this.displayDiscountValue = '0';
+    this.displayMinOrder = '0';
   }
 
   saveVoucher() {
+    // 1. Clone dữ liệu
+    const payload = { ...this.voucherForm };
+
+    // 2. ÉP KIỂU DỮ LIỆU SỐ (Quan trọng: Tránh lỗi 422 do input gửi string)
+    payload.discount_value = Number(this.voucherForm.discount_value);
+    payload.min_order_amount = Number(this.voucherForm.min_order_amount);
+    payload.max_usage = Number(this.voucherForm.max_usage);
+
+    // 3. FORMAT NGÀY THÁNG SANG ISO STRING
+    // Backend cần định dạng 2026-05-03T08:21:13.364Z
+    if (payload.valid_from) payload.valid_from = new Date(payload.valid_from).toISOString();
+    if (payload.valid_to) payload.valid_to = new Date(payload.valid_to).toISOString();
+
     const request = this.editingVoucher 
-      ? this.adminService.updateVoucher(this.editingVoucher.voucher_id, this.voucherForm)
-      : this.adminService.createVoucher(this.voucherForm);
+        ? this.adminService.updateVoucher(this.editingVoucher.voucher_id, payload)
+        : this.adminService.createVoucher({ ...payload, code: payload.code.toUpperCase() });
 
     request.subscribe({
-      next: () => {
-        this.loadVouchers();
+        next: () => {
+        this.uiService.showSuccess('Lưu thành công');
         this.showModal = false;
-      },
-      error: (err) => alert(err.error?.detail || 'Lỗi lưu voucher')
+        this.loadVouchers();
+        },
+        error: (err) => {
+        console.error("Chi tiết lỗi API:", err);
+        // Hiển thị lỗi cụ thể từ Backend để debug
+        const msg = err.error?.detail;
+        this.uiService.showError(typeof msg === 'string' ? msg : 'Dữ liệu nhập vào không hợp lệ (Lỗi 422/400)');
+        }
     });
   }
 
-  deleteVoucher(id: number) {
-    if (confirm('Xác nhận xóa voucher này?')) {
-      this.adminService.deleteVoucher(id).subscribe(() => this.loadVouchers());
-    }
+  softDelete(id: number) {
+    this.adminService.deleteVoucher(id).subscribe(() => {
+      this.uiService.showSuccess('Đã đưa voucher vào thùng rác');
+      this.loadVouchers();
+    });
   }
 
-  switchTab(tab: 'active' | 'trash') {
-    this.activeTab = tab;
-    this.skip = 0;
-    this.applyFilterAndTab();
-  }
+  restoreVoucher(id: number) {
+    const restoreData = {
+        is_deleted: false,
+        is_active: true
+    };
+
+    this.adminService.updateVoucher(id, restoreData).subscribe({
+        next: () => {
+        this.uiService.showSuccess('Đã khôi phục và kích hoạt voucher');
+        this.loadVouchers();
+        },
+        error: (err) => {
+        this.uiService.showError('Lỗi khôi phục: ' + (err.error?.detail || 'Không xác định'));
+        }
+    });
+ }
+
+  get pagedVouchers() { return this.vouchers.slice(this.skip, this.skip + this.limit); }
+  switchTab(tab: 'active' | 'trash') { this.activeTab = tab; this.skip = 0; this.applyFilterAndTab(); }
 }

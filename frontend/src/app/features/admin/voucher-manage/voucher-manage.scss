@@ -266,3 +266,45 @@
   align-items: center;
   z-index: 10;
 }
+
+/* Modal animation */
+.modal.show {
+  .modal-content {
+    animation: modalSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+}
+
+@keyframes modalSpring {
+  from { opacity: 0; transform: scale(0.8) translateY(50px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voucher-row {
+  &:hover {
+    background-color: #f8f9fa !important;
+  }
+}
+
+.date-info {
+  line-height: 1.4;
+  i { width: 18px; }
+}
+
+// Chỉnh lại input range cho đẹp hơn
+.form-range {
+  &::-webkit-slider-thumb {
+    background: #0d6efd;
+  }
+}
+
+// Khóa input code khi edit
+input[readonly] {
+  cursor: not-allowed;
+  border-style: dashed;
+}

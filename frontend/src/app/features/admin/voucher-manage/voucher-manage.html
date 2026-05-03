@@ -1,63 +1,83 @@
-<div class="admin-content-wrapper category-light-theme">
-  <header class="bg-white rounded-3 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center border">
-    <div>
-      <h2 class="fw-bold text-dark mb-1">Quản lý Voucher</h2>
-      <p class="text-muted mb-0">Quản lý mã giảm giá và chương trình khuyến mãi.</p>
+<!-- voucher-manage.html -->
+<div class="admin-content-wrapper category-light-theme delay-animation">
+  <header class="bg-white rounded-4 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center border-0">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-icon-box bg-primary-subtle text-primary rounded-3 p-3">
+        <i class="bi bi-ticket-perforated-fill fs-3"></i>
+      </div>
+      <div>
+        <h2 class="fw-bold text-dark mb-1">Quản lý Voucher</h2>
+        <p class="text-muted mb-0">Hệ thống khuyến mãi và mã giảm giá</p>
+      </div>
     </div>
-    <button class="btn btn-primary px-4" (click)="openModal()">
+    <button class="btn btn-primary px-4 py-2 custom-btn-primary rounded-3" (click)="openModal()">
       <i class="bi bi-plus-lg me-2"></i> Tạo Voucher Mới
     </button>
   </header>
 
-  <div class="bg-white rounded-3 shadow-sm border p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-      <ul class="nav nav-tabs custom-tabs border-bottom-0 mb-0">
+  <div class="bg-white rounded-4 shadow-sm border-0 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+      <ul class="nav nav-tabs custom-tabs border-bottom-0">
         <li class="nav-item">
-          <a class="nav-link fw-bold" [class.active]="activeTab === 'active'" (click)="switchTab('active')">Đang hoạt động</a>
+          <a class="nav-link fw-bold" [class.active]="activeTab === 'active'" (click)="switchTab('active')">Đang chạy</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link fw-bold" [class.active]="activeTab === 'trash'" (click)="switchTab('trash')">Đã xóa</a>
+          <a class="nav-link fw-bold" [class.active]="activeTab === 'trash'" (click)="switchTab('trash')">Thùng rác</a>
         </li>
       </ul>
-      <input type="text" class="form-control rounded-pill border-0 bg-light ps-3" style="width: 300px;" 
-             placeholder="Tìm mã voucher..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilterAndTab()">
+      <div class="search-box position-relative" style="width: 300px;">
+        <i class="bi bi-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
+        <input type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
+               placeholder="Tìm mã..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilterAndTab()">
+      </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="table align-middle">
+    <div class="table-responsive mt-3">
+      <table class="table custom-light-table align-middle">
         <thead>
           <tr>
-            <th>Mã & Mô tả</th>
-            <th>Loại giảm</th>
-            <th>Sử dụng</th>
-            <th>Hiệu lực</th>
-            <th class="text-end">Hành động</th>
+            <th width="30%">Mã & Mô tả</th>
+            <th width="15%">Loại giảm</th>
+            <th width="20%">Sử dụng</th>
+            <th width="20%">Hiệu lực</th>
+            <th width="15%" class="text-end">Hành động</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of pagedVouchers">
+          <tr *ngFor="let v of pagedVouchers" class="voucher-row">
             <td>
-              <div class="fw-bold text-primary">{{ v.code }}</div>
-              <small class="text-muted">{{ v.description }}</small>
+              <div class="d-flex align-items-center gap-3">
+                <div class="voucher-code-badge">{{ v.code }}</div>
+                <div class="text-truncate" style="max-width: 200px;">
+                  <!-- TOOLTIP HOẶC TITLE ĐỂ XEM ĐẦY ĐỦ KHI HOVER -->
+                  <span class="d-block fw-bold text-dark text-truncate" [title]="v.description">{{ v.description || 'N/A' }}</span>
+                  <small class="text-muted">Min: {{ v.min_order_amount | number }}đ</small>
+                </div>
+              </div>
             </td>
             <td>
-              <span class="badge" [class.bg-info]="v.discount_type === 0" [class.bg-warning]="v.discount_type === 1">
-                {{ v.discount_type === 0 ? '-' + (v.discount_value | number) + 'đ' : '-' + v.discount_value + '%' }}
-              </span>
+              <div class="discount-pill" [class.percent]="v.discount_type === 1">
+                {{ v.discount_type === 0 ? (v.discount_value | number) + 'đ' : v.discount_value + '%' }}
+              </div>
             </td>
             <td>
-              <div class="progress" style="height: 6px; width: 100px;">
+              <div class="progress rounded-pill mb-1" style="height: 6px; background: #eee;">
                 <div class="progress-bar bg-success" [style.width]="(v.usage_count / v.max_usage * 100) + '%'"></div>
               </div>
-              <small>{{ v.usage_count }}/{{ v.max_usage }} lượt</small>
+              <small class="fw-bold">{{ v.usage_count }} / {{ v.max_usage }}</small>
             </td>
             <td>
-              <small class="d-block">Từ: {{ v.valid_from | date:'dd/MM/yyyy HH:mm' }}</small>
-              <small class="d-block text-danger">Đến: {{ v.valid_to | date:'dd/MM/yyyy HH:mm' }}</small>
+              <div class="date-info small">
+                <div class="text-success"><i class="bi bi-calendar-check me-1"></i> {{ v.valid_from | date:'dd/MM/yyyy' }}</div>
+                <div class="text-danger"><i class="bi bi-calendar-x me-1"></i> {{ v.valid_to | date:'dd/MM/yyyy' }}</div>
+              </div>
             </td>
             <td class="text-end">
-              <button class="btn btn-sm btn-action btn-edit me-2" (click)="openModal(v)"><i class="bi bi-pencil"></i></button>
-              <button class="btn btn-sm btn-action btn-del" (click)="deleteVoucher(v.voucher_id)"><i class="bi bi-trash"></i></button>
+              <div class="action-buttons">
+                <button *ngIf="activeTab === 'active'" class="btn-action btn-edit" (click)="openModal(v)"><i class="bi bi-pencil-fill"></i></button>
+                <button *ngIf="activeTab === 'active'" class="btn-action btn-del" (click)="softDelete(v.voucher_id)"><i class="bi bi-trash3-fill"></i></button>
+                <button *ngIf="activeTab === 'trash'" class="btn-action btn-warn" (click)="restoreVoucher(v.voucher_id)"><i class="bi bi-arrow-counterclockwise"></i></button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -65,56 +85,66 @@
     </div>
   </div>
 
-  <!-- Modal Thêm/Sửa -->
-  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" style="background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ editingVoucher ? 'Cập nhật Voucher' : 'Tạo Voucher' }}</h5>
-          <button type="button" class="btn-close" (click)="showModal = false"></button>
+  <!-- MODERN MODAL -->
+  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header bg-dark p-4">
+          <h5 class="modal-title fw-bold text-white">{{ editingVoucher ? 'CHỈNH SỬA CHIẾN DỊCH' : 'TẠO MÃ MỚI' }}</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="showModal = false"></button>
         </div>
         <div class="modal-body p-4">
-          <div class="row g-3">
+          <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Mã Voucher</label>
-              <input type="text" class="form-control" [(ngModel)]="voucherForm.code" placeholder="VÍ DỤ: GIAM20K" [disabled]="!!editingVoucher">
+              <label class="form-label fw-bold text-uppercase small">Mã Voucher (Không thể sửa sau khi tạo)</label>
+              <input type="text" class="form-control py-3" [(ngModel)]="voucherForm.code" 
+                     [readonly]="!!editingVoucher" [class.bg-light]="editingVoucher"
+                     placeholder="Ví dụ: QUYETCHAM" style="text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Loại giảm giá</label>
-              <select class="form-select" [(ngModel)]="voucherForm.discount_type">
-                <option [ngValue]="0">Số tiền cố định (VND)</option>
-                <option [ngValue]="1">Phần trăm (%)</option>
+              <label class="form-label fw-bold text-uppercase small">Loại ưu đãi</label>
+              <select class="form-select py-3" [(ngModel)]="voucherForm.discount_type">
+                <option [ngValue]="0">Giảm tiền mặt (VND)</option>
+                <option [ngValue]="1">Giảm phần trăm (%)</option>
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Giá trị giảm</label>
-              <input type="number" class="form-control" [(ngModel)]="voucherForm.discount_value">
+              <label class="form-label fw-bold text-uppercase small">Giá trị giảm</label>
+              <div class="input-group">
+                <input type="text" class="form-control py-3 fw-bold" [value]="displayDiscountValue" 
+                       (input)="formatCurrencyInput($event, 'discount')" placeholder="0">
+                <span class="input-group-text">{{ voucherForm.discount_type === 0 ? 'đ' : '%' }}</span>
+              </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Số lượng phát hành</label>
-              <input type="number" class="form-control" [(ngModel)]="voucherForm.max_usage">
+              <label class="form-label fw-bold text-uppercase small">Đơn hàng tối thiểu</label>
+              <div class="input-group">
+                <input type="text" class="form-control py-3 fw-bold" [value]="displayMinOrder" 
+                       (input)="formatCurrencyInput($event, 'minOrder')" placeholder="0">
+                <span class="input-group-text">đ</span>
+              </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Bắt đầu</label>
-              <input type="datetime-local" class="form-control" [(ngModel)]="voucherForm.valid_from">
+              <label class="form-label fw-bold text-uppercase small">Thời gian bắt đầu</label>
+              <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_from">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Kết thúc</label>
-              <input type="datetime-local" class="form-control" [(ngModel)]="voucherForm.valid_to">
+              <label class="form-label fw-bold text-uppercase small">Thời gian kết thúc</label>
+              <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_to">
             </div>
             <div class="col-12">
-              <label class="form-label fw-bold">Đơn tối thiểu (VND)</label>
-              <input type="number" class="form-control" [(ngModel)]="voucherForm.min_order_amount">
+              <label class="form-label fw-bold text-uppercase small">Số lượt phát hành: <span class="text-primary">{{ voucherForm.max_usage | number }} lượt</span></label>
+              <input type="range" class="form-range" min="1" max="5000" step="10" [(ngModel)]="voucherForm.max_usage">
             </div>
             <div class="col-12">
-              <label class="form-label fw-bold">Mô tả</label>
-              <textarea class="form-control" [(ngModel)]="voucherForm.description" rows="2"></textarea>
+              <label class="form-label fw-bold text-uppercase small">Mô tả chương trình</label>
+              <textarea class="form-control" [(ngModel)]="voucherForm.description" rows="3"></textarea>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="showModal = false">Đóng</button>
-          <button class="btn btn-primary" (click)="saveVoucher()">Lưu Voucher</button>
+        <div class="modal-footer bg-light p-4">
+          <button class="btn btn-outline-secondary px-4 fw-bold" (click)="showModal = false">Đóng</button>
+          <button class="btn btn-primary px-5 fw-bold" (click)="saveVoucher()">Xác nhận lưu</button>
         </div>
       </div>
     </div>

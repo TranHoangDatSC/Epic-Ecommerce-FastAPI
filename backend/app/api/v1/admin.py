@@ -185,22 +185,25 @@ def create_new_voucher(
 @router.patch("/vouchers/{voucher_id}", response_model=schemas.VoucherResponse)
 def update_voucher(
     voucher_id: int,
-    voucher_update: schemas.VoucherUpdate,
+    voucher_update: schemas.VoucherUpdate, # Kiểm tra schema này có is_active chưa
     db: Session = Depends(get_db),
     admin: models.User = Depends(get_current_admin)
 ):
-    """Chỉnh sửa số lượng, thời gian, giá trị voucher (Admin only)"""
     db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
     if not db_voucher:
         raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
-    
+
     update_data = voucher_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_voucher, key, value)
     
-    db.commit()
-    db.refresh(db_voucher)
-    return db_voucher
+    try:
+        db.commit() 
+        db.refresh(db_voucher)
+        return db_voucher
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Lỗi cập nhật Database")
 
 @router.delete("/vouchers/{voucher_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_voucher(

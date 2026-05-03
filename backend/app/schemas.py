@@ -443,6 +443,7 @@ class VoucherUpdate(BaseModel):
     valid_to: Optional[datetime] = None
     min_order_amount: Optional[Decimal] = None
     is_active: Optional[bool] = None
+    is_deleted: Optional[bool] = None
 
 class VoucherResponse(VoucherBase):
     """Voucher response"""
