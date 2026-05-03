@@ -29,6 +29,10 @@ export const adminRoutes: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('./profile/profile').then(m => m.AdminProfileComponent)
+      },
+      {
+        path: 'voucher-manage',
+        loadComponent: () => import('./voucher-manage/voucher-manage').then(m => m.VoucherManageComponent)
       }
     ]
   }

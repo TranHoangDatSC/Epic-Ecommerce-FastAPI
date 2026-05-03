@@ -26,7 +26,8 @@ export class AdminLayoutComponent {
       icon: 'bi bi-grid-fill',
       items: [
         { path: 'moderator-manage', label: 'Quản lý kiểm duyệt viên', icon: 'bi bi-people' },
-        { path: 'category-manage', label: 'Danh mục sản phẩm', icon: 'bi bi-tags' }
+        { path: 'category-manage', label: 'Danh mục sản phẩm', icon: 'bi bi-tags' },
+        { path: 'voucher-manage', label: 'Quản lý mã giảm giá', icon: 'bi bi-percent' }
       ]
     },
     {

@@ -436,12 +436,12 @@ class VoucherCreate(VoucherBase):
     pass
 
 class VoucherUpdate(BaseModel):
-    """Voucher update schema"""
     description: Optional[str] = None
     discount_value: Optional[Decimal] = None
-    max_usage: Optional[int] = None
-    min_order_amount: Optional[Decimal] = None
+    max_usage: Optional[int] = None      
+    valid_from: Optional[datetime] = None 
     valid_to: Optional[datetime] = None
+    min_order_amount: Optional[Decimal] = None
     is_active: Optional[bool] = None
 
 class VoucherResponse(VoucherBase):

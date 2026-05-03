@@ -56,6 +56,23 @@ export class AdminService {
     });
   }
 
+  // Voucher Management
+  getVouchers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/admin/vouchers`);
+  }
+
+  createVoucher(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/admin/vouchers`, data);
+  }
+
+  updateVoucher(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/admin/vouchers/${id}`, data);
+  }
+
+  deleteVoucher(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/vouchers/${id}`);
+  }
+
   // Feedback Management
   getFeedbacks(skip: number = 0, limit: number = 100): Observable<any[]> {
     let params = new HttpParams()

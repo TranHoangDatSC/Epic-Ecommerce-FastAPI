@@ -147,3 +147,73 @@ async def get_violation_logs(
     ).offset(skip).limit(limit).all()
     
     return logs
+
+# ==================== Voucher Management (Admin Only) ====================
+
+@router.get("/vouchers", response_model=List[schemas.VoucherResponse])
+def list_all_vouchers(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Liệt kê tất cả voucher bao gồm cả mã đã xóa/hết hạn (Admin only)"""
+    return db.query(models.Voucher).offset(skip).limit(limit).all()
+
+@router.post("/vouchers", response_model=schemas.VoucherResponse)
+def create_new_voucher(
+    voucher_in: schemas.VoucherCreate,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Tạo voucher mới với thiết lập số lượng và thời gian (Admin only)"""
+    # Kiểm tra mã code đã tồn tại chưa
+    existing = db.query(models.Voucher).filter(models.Voucher.code == voucher_in.code.upper()).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Mã voucher này đã tồn tại.")
+    
+    # Chuyển code thành in hoa để đồng bộ
+    voucher_dict = voucher_in.model_dump()
+    voucher_dict['code'] = voucher_dict['code'].upper()
+    
+    new_voucher = models.Voucher(**voucher_dict)
+    db.add(new_voucher)
+    db.commit()
+    db.refresh(new_voucher)
+    return new_voucher
+
+@router.patch("/vouchers/{voucher_id}", response_model=schemas.VoucherResponse)
+def update_voucher(
+    voucher_id: int,
+    voucher_update: schemas.VoucherUpdate,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Chỉnh sửa số lượng, thời gian, giá trị voucher (Admin only)"""
+    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
+    if not db_voucher:
+        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
+    
+    update_data = voucher_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_voucher, key, value)
+    
+    db.commit()
+    db.refresh(db_voucher)
+    return db_voucher
+
+@router.delete("/vouchers/{voucher_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_voucher(
+    voucher_id: int,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Xóa voucher (Soft delete) (Admin only)"""
+    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
+    if not db_voucher:
+        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
+    
+    db_voucher.is_deleted = True
+    db_voucher.is_active = False
+    db.commit()
+    return None

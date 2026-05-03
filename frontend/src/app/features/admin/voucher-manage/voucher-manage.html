@@ -1,0 +1,122 @@
+<div class="admin-content-wrapper category-light-theme">
+  <header class="bg-white rounded-3 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center border">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Quản lý Voucher</h2>
+      <p class="text-muted mb-0">Quản lý mã giảm giá và chương trình khuyến mãi.</p>
+    </div>
+    <button class="btn btn-primary px-4" (click)="openModal()">
+      <i class="bi bi-plus-lg me-2"></i> Tạo Voucher Mới
+    </button>
+  </header>
+
+  <div class="bg-white rounded-3 shadow-sm border p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+      <ul class="nav nav-tabs custom-tabs border-bottom-0 mb-0">
+        <li class="nav-item">
+          <a class="nav-link fw-bold" [class.active]="activeTab === 'active'" (click)="switchTab('active')">Đang hoạt động</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-bold" [class.active]="activeTab === 'trash'" (click)="switchTab('trash')">Đã xóa</a>
+        </li>
+      </ul>
+      <input type="text" class="form-control rounded-pill border-0 bg-light ps-3" style="width: 300px;" 
+             placeholder="Tìm mã voucher..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilterAndTab()">
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Mã & Mô tả</th>
+            <th>Loại giảm</th>
+            <th>Sử dụng</th>
+            <th>Hiệu lực</th>
+            <th class="text-end">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of pagedVouchers">
+            <td>
+              <div class="fw-bold text-primary">{{ v.code }}</div>
+              <small class="text-muted">{{ v.description }}</small>
+            </td>
+            <td>
+              <span class="badge" [class.bg-info]="v.discount_type === 0" [class.bg-warning]="v.discount_type === 1">
+                {{ v.discount_type === 0 ? '-' + (v.discount_value | number) + 'đ' : '-' + v.discount_value + '%' }}
+              </span>
+            </td>
+            <td>
+              <div class="progress" style="height: 6px; width: 100px;">
+                <div class="progress-bar bg-success" [style.width]="(v.usage_count / v.max_usage * 100) + '%'"></div>
+              </div>
+              <small>{{ v.usage_count }}/{{ v.max_usage }} lượt</small>
+            </td>
+            <td>
+              <small class="d-block">Từ: {{ v.valid_from | date:'dd/MM/yyyy HH:mm' }}</small>
+              <small class="d-block text-danger">Đến: {{ v.valid_to | date:'dd/MM/yyyy HH:mm' }}</small>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-action btn-edit me-2" (click)="openModal(v)"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-action btn-del" (click)="deleteVoucher(v.voucher_id)"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Thêm/Sửa -->
+  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingVoucher ? 'Cập nhật Voucher' : 'Tạo Voucher' }}</h5>
+          <button type="button" class="btn-close" (click)="showModal = false"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Mã Voucher</label>
+              <input type="text" class="form-control" [(ngModel)]="voucherForm.code" placeholder="VÍ DỤ: GIAM20K" [disabled]="!!editingVoucher">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Loại giảm giá</label>
+              <select class="form-select" [(ngModel)]="voucherForm.discount_type">
+                <option [ngValue]="0">Số tiền cố định (VND)</option>
+                <option [ngValue]="1">Phần trăm (%)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Giá trị giảm</label>
+              <input type="number" class="form-control" [(ngModel)]="voucherForm.discount_value">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Số lượng phát hành</label>
+              <input type="number" class="form-control" [(ngModel)]="voucherForm.max_usage">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Bắt đầu</label>
+              <input type="datetime-local" class="form-control" [(ngModel)]="voucherForm.valid_from">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Kết thúc</label>
+              <input type="datetime-local" class="form-control" [(ngModel)]="voucherForm.valid_to">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Đơn tối thiểu (VND)</label>
+              <input type="number" class="form-control" [(ngModel)]="voucherForm.min_order_amount">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Mô tả</label>
+              <textarea class="form-control" [(ngModel)]="voucherForm.description" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="showModal = false">Đóng</button>
+          <button class="btn btn-primary" (click)="saveVoucher()">Lưu Voucher</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
