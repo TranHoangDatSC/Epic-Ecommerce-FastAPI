@@ -1,4 +1,4 @@
--- =
+﻿-- =
 -- OLD SHOP DATABASE - COMPLETE SETUP SCRIPT
 -- ==============================================================================
 -- This script creates the entire OldShop PostgreSQL database from scratch
@@ -45,7 +45,8 @@ ALTER SYSTEM SET autovacuum_analyze_threshold = 50;
 -- 2. SCHEMA CREATION
 -- ==============================================================================
 
--- Roles table
+
+-- roles.sql
 CREATE TABLE role (
     role_id SERIAL PRIMARY KEY,
     role_name VARCHAR(50) NOT NULL UNIQUE,
@@ -55,20 +56,21 @@ CREATE TABLE role (
     updated_at TIMESTAMP
 );
 
--- Indexes for roles
+-- Indexes for performance
 CREATE INDEX idx_role_name ON role(role_name) WHERE is_deleted = FALSE;
 CREATE INDEX idx_role_created_at ON role(created_at);
 
--- Users table
+-- users.sql
 CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    random_key VARCHAR(64) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL, -- Increased length for hashed passwords
+    random_key VARCHAR(64) NOT NULL UNIQUE, -- Increased length for better security
     full_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15),
     address VARCHAR(255),
+    balance DECIMAL(18, 4) NOT NULL DEFAULT 10000000.00,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -78,17 +80,18 @@ CREATE TABLE "user" (
     email_verification_token VARCHAR(255),
     password_reset_token VARCHAR(255),
     password_reset_expires TIMESTAMP,
-    trust_score DECIMAL(5,2) DEFAULT 0.0
+    trust_score DECIMAL(5,2) DEFAULT 0.0,
+    avatar_url VARCHAR(500)
 );
 
--- Indexes for users
+-- Indexes for performance and constraints
 CREATE UNIQUE INDEX idx_user_username_active ON "user"(username) WHERE is_deleted = FALSE;
 CREATE UNIQUE INDEX idx_user_email_active ON "user"(email) WHERE is_deleted = FALSE;
 CREATE INDEX idx_user_created_at ON "user"(created_at);
 CREATE INDEX idx_user_is_active ON "user"(is_active) WHERE is_deleted = FALSE;
 CREATE INDEX idx_user_email_verified ON "user"(email_verified) WHERE is_deleted = FALSE;
 
--- User roles table
+-- user_roles.sql
 CREATE TABLE user_role (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
@@ -97,7 +100,7 @@ CREATE TABLE user_role (
     FOREIGN KEY (role_id) REFERENCES role(role_id)
 );
 
--- Categories table
+-- categories.sql
 CREATE TABLE category (
     category_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -109,13 +112,14 @@ CREATE TABLE category (
     updated_at TIMESTAMP
 );
 
--- Indexes for categories
+-- Indexes for performance
 CREATE UNIQUE INDEX idx_category_name_active ON category(name) WHERE is_deleted = FALSE;
 CREATE INDEX idx_category_parent ON category(parent_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_category_is_active ON category(is_active) WHERE is_deleted = FALSE;
 CREATE INDEX idx_category_created_at ON category(created_at);
 
--- Products table
+
+-- products.sql
 CREATE TABLE product (
     product_id SERIAL PRIMARY KEY,
     seller_id INT NOT NULL,
@@ -126,7 +130,7 @@ CREATE TABLE product (
     quantity INT NOT NULL CHECK (quantity >= 0),
     view_count INT NOT NULL DEFAULT 0,
     video_url VARCHAR(500),
-    status SMALLINT NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2, 3)),
+    status SMALLINT NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2, 3)), -- 0: Pending, 1: Approved, 2: Rejected, 3: Sold Out
     reject_reason VARCHAR(500),
     approved_by INT,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -134,15 +138,16 @@ CREATE TABLE product (
     updated_at TIMESTAMP,
     sold_at TIMESTAMP,
     weight_grams INTEGER,
-    dimensions VARCHAR(50),
-    condition_rating SMALLINT CHECK (condition_rating BETWEEN 1 AND 10),
+    dimensions VARCHAR(50), -- e.g., "10x20x5 cm"
+    condition_rating SMALLINT CHECK (condition_rating BETWEEN 1 AND 10), -- 1-10 scale
     warranty_months INTEGER DEFAULT 0,
+    transfer_method SMALLINT NOT NULL DEFAULT 1 CHECK (transfer_method IN (1, 2)),
     FOREIGN KEY (seller_id) REFERENCES "user"(user_id),
     FOREIGN KEY (category_id) REFERENCES category(category_id),
     FOREIGN KEY (approved_by) REFERENCES "user"(user_id)
 );
 
--- Indexes for products
+-- Indexes for performance
 CREATE INDEX idx_product_seller ON product(seller_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_product_category ON product(category_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_product_status ON product(status) WHERE is_deleted = FALSE;
@@ -150,7 +155,7 @@ CREATE INDEX idx_product_price ON product(price) WHERE is_deleted = FALSE;
 CREATE INDEX idx_product_created_at ON product(created_at) WHERE is_deleted = FALSE;
 CREATE INDEX idx_product_title ON product USING gin(to_tsvector('english', title)) WHERE is_deleted = FALSE;
 
--- Product images table
+-- product_images.sql
 CREATE TABLE product_image (
     image_id SERIAL PRIMARY KEY,
     product_id INT NOT NULL,
@@ -162,10 +167,11 @@ CREATE TABLE product_image (
     FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
 );
 
--- Indexes for product images
+-- Indexes for performance
 CREATE INDEX idx_product_image_product ON product_image(product_id);
 
--- Vouchers table
+
+-- vouchers.sql
 CREATE TABLE voucher (
     voucher_id SERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -182,12 +188,12 @@ CREATE TABLE voucher (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for vouchers
+-- Indexes for performance
 CREATE UNIQUE INDEX idx_voucher_code_active ON voucher(code) WHERE is_active = TRUE;
 CREATE INDEX idx_voucher_valid_to ON voucher(valid_to) WHERE is_active = TRUE;
 CREATE INDEX idx_voucher_created_at ON voucher(created_at);
 
--- Payment methods table
+-- payment_methods.sql
 CREATE TABLE payment_method (
     payment_method_id SERIAL PRIMARY KEY,
     method_name VARCHAR(50) NOT NULL UNIQUE,
@@ -195,7 +201,7 @@ CREATE TABLE payment_method (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
--- Contact info table
+-- contact_info.sql
 CREATE TABLE contact_info (
     contact_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
@@ -212,11 +218,12 @@ CREATE TABLE contact_info (
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
--- Indexes for contact info
+-- Indexes for performance
 CREATE INDEX idx_contact_info_user ON contact_info(user_id);
 CREATE INDEX idx_contact_info_default ON contact_info(is_default) WHERE is_deleted = FALSE;
 
--- Orders table
+
+-- orders.sql
 CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
     buyer_id INT NOT NULL,
@@ -227,8 +234,8 @@ CREATE TABLE "order" (
     total_amount DECIMAL(18, 2) NOT NULL,
     shipping_fee DECIMAL(18, 2) DEFAULT 0,
     discount_amount DECIMAL(18, 2) DEFAULT 0,
-    final_amount DECIMAL(18, 2) NOT NULL,
-    order_status SMALLINT NOT NULL DEFAULT 0 CHECK (order_status IN (0, 1, 2, 3, 4)),
+    final_amount DECIMAL(18, 2) NOT NULL, -- total_amount - discount_amount + shipping_fee
+    order_status SMALLINT NOT NULL DEFAULT 0 CHECK (order_status IN (0, 1, 2, 3, 4)), -- 0: Pending, 1: Confirmed, 2: Shipping, 3: Delivered, 4: Cancelled
     shipping_address TEXT,
     tracking_number VARCHAR(100),
     notes TEXT,
@@ -239,12 +246,12 @@ CREATE TABLE "order" (
     FOREIGN KEY (voucher_id) REFERENCES voucher(voucher_id)
 );
 
--- Indexes for orders
+-- Indexes for performance
 CREATE INDEX idx_order_buyer ON "order"(buyer_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_order_status ON "order"(order_status) WHERE is_deleted = FALSE;
 CREATE INDEX idx_order_date ON "order"(order_date) WHERE is_deleted = FALSE;
 
--- Order details table
+-- order_details.sql
 CREATE TABLE order_detail (
     order_detail_id SERIAL PRIMARY KEY,
     order_id INT NOT NULL,
@@ -256,32 +263,51 @@ CREATE TABLE order_detail (
     FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
 
--- Indexes for order details
+-- Indexes for performance
 CREATE INDEX idx_order_detail_order ON order_detail(order_id);
 
--- Transactions table
+
 CREATE TABLE transaction (
     transaction_id SERIAL PRIMARY KEY,
     order_id INT NOT NULL,
     user_id INT NOT NULL,
     payment_method_id INT NOT NULL,
-    amount DECIMAL(18, 2) NOT NULL,
+    
+    -- Dá»¯ liá»‡u tÃ i chÃ­nh (Chuáº©n PaySim: amount, oldbalanceOrg, newbalanceOrig)
+    amount DECIMAL(18, 4) NOT NULL CHECK (amount >= 0),
+    balance_before DECIMAL(18, 4) DEFAULT 0.0000, 
+    balance_after DECIMAL(18, 4) DEFAULT 0.0000,
+    
+    -- Tráº¡ng thÃ¡i
+    -- 0: Pending (Khá»Ÿi táº¡o)
+    -- 1: Success (ThÃ nh cÃ´ng)
+    -- 2: Flagged (Nghi váº¥n gian láº­n - Do AI Ä‘Ã¡nh dáº¥u)
+    -- 3: Fraud (XÃ¡c nháº­n gian láº­n - Cháº·n giao dá»‹ch)
+    -- 4: Failed (Lá»—i há»‡ thá»‘ng/PayPal tá»« chá»‘i)
     transaction_status SMALLINT NOT NULL DEFAULT 0,
-    reference_number VARCHAR(100),
-    description TEXT,
+    
+    -- AI & Security
+    fraud_score DECIMAL(5, 2) DEFAULT 0.00, -- Thang Ä‘iá»ƒm rá»§i ro
+    
+    -- Identity & Tracking
+    reference_number VARCHAR(100) UNIQUE,   -- MÃ£ Ä‘Æ¡n hÃ ng ná»™i bá»™ (vÃ­ dá»¥: ORD-12345)
+    provider_transaction_id VARCHAR(100),    -- ID tráº£ vá» tá»« PayPal (Capture ID)
+    address TEXT,
+    
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES "order"(order_id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES "user"(user_id),
     FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id)
 );
 
--- Indexes for transactions
 CREATE INDEX idx_transaction_order ON transaction(order_id);
 CREATE INDEX idx_transaction_user ON transaction(user_id);
 CREATE INDEX idx_transaction_status ON transaction(transaction_status);
+CREATE INDEX idx_transaction_fraud_score ON transaction(fraud_score);
 
--- Shopping carts table
+-- shopping_carts.sql
 CREATE TABLE shopping_cart (
     cart_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
@@ -289,7 +315,7 @@ CREATE TABLE shopping_cart (
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
--- Shopping cart items table
+-- shopping_cart_items.sql
 CREATE TABLE shopping_cart_item (
     cart_item_id SERIAL PRIMARY KEY,
     cart_id INT NOT NULL,
@@ -300,11 +326,12 @@ CREATE TABLE shopping_cart_item (
     FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
 
--- Indexes for shopping cart items
+-- Indexes for performance
 CREATE INDEX idx_shopping_cart_item_cart ON shopping_cart_item(cart_id);
 CREATE INDEX idx_shopping_cart_item_product ON shopping_cart_item(product_id);
 
--- Reviews table
+
+-- reviews.sql
 CREATE TABLE review (
     review_id SERIAL PRIMARY KEY,
     product_id INT NOT NULL,
@@ -321,7 +348,13 @@ CREATE TABLE review (
     FOREIGN KEY (buyer_id) REFERENCES "user"(user_id)
 );
 
--- System logs table
+-- Indexes for performance
+CREATE INDEX idx_review_product ON review(product_id);
+CREATE INDEX idx_review_buyer ON review(buyer_id);
+CREATE INDEX idx_review_rating ON review(rating);
+
+
+-- system_logs.sql
 CREATE TABLE system_log (
     log_id BIGSERIAL PRIMARY KEY,
     user_id INT,
@@ -334,12 +367,13 @@ CREATE TABLE system_log (
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
--- Indexes for system logs
+-- Indexes for performance
 CREATE INDEX idx_system_log_user ON system_log(user_id);
 CREATE INDEX idx_system_log_action ON system_log(action);
 CREATE INDEX idx_system_log_created_at ON system_log(created_at);
 
--- Violation logs table
+
+-- violation_logs.sql
 CREATE TABLE violation_log (
     log_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
@@ -349,11 +383,12 @@ CREATE TABLE violation_log (
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
--- Indexes for violation logs
+-- Indexes for performance
 CREATE INDEX idx_violation_log_user ON violation_log(user_id);
 CREATE INDEX idx_violation_log_created_at ON violation_log(created_at);
 
--- System feedback table
+
+-- system_feedback.sql
 CREATE TABLE system_feedback (
     feedback_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES "user"(user_id) ON DELETE SET NULL,
@@ -364,10 +399,11 @@ CREATE TABLE system_feedback (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for system feedback
+-- Indexes for performance
 CREATE INDEX idx_system_feedback_user ON system_feedback(user_id);
 CREATE INDEX idx_system_feedback_status ON system_feedback(status);
 CREATE INDEX idx_system_feedback_created_at ON system_feedback(created_at);
+
 
 -- ==============================================================================
 -- 3. FUNCTIONS AND TRIGGERS
@@ -581,9 +617,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Roles
 INSERT INTO role (role_name, description) VALUES
-('Admin', 'Quản trị viên có quyền cao nhất, quản lý toàn bộ hệ thống'),
-('Mod', 'Kiểm duyệt viên có quyền quản lý nội dung và người dùng'),
-('User', 'Người dùng thông thường, có quyền mua hàng và tương tác cơ bản');
+('Admin', 'Quáº£n trá»‹ viÃªn cÃ³ quyá»n cao nháº¥t, quáº£n lÃ½ toÃ n bá»™ há»‡ thá»‘ng'),
+('Mod', 'Kiá»ƒm duyá»‡t viÃªn cÃ³ quyá»n quáº£n lÃ½ ná»™i dung vÃ  ngÆ°á»i dÃ¹ng'),
+('User', 'NgÆ°á»i dÃ¹ng thÃ´ng thÆ°á»ng, cÃ³ quyá»n mua hÃ ng vÃ  tÆ°Æ¡ng tÃ¡c cÆ¡ báº£n');
 
 -- Users with hashed passwords
 INSERT INTO "user" (username, email, password_hash, random_key, full_name, phone_number, address, email_verified, trust_score) VALUES
@@ -598,14 +634,14 @@ INSERT INTO user_role (user_id, role_id) VALUES
 
 -- Categories
 INSERT INTO category (name, description) VALUES
-('Đồ điện tử', 'Electronic devices and gadgets'),
-('Trang trí', 'Decorative items for home'),
-('Quần áo', 'Clothing and apparel'),
-('Thời trang', 'Fashion accessories'),
-('Đồ chơi', 'Toys and games'),
-('Đồ gia dụng', 'Household items'),
-('Sách cũ', 'Used books and literature'),
-('Phụ kiện', 'Accessories and miscellaneous');
+('Äá»“ Ä‘iá»‡n tá»­', 'Electronic devices and gadgets'),
+('Trang trÃ­', 'Decorative items for home'),
+('Quáº§n Ã¡o', 'Clothing and apparel'),
+('Thá»i trang', 'Fashion accessories'),
+('Äá»“ chÆ¡i', 'Toys and games'),
+('Äá»“ gia dá»¥ng', 'Household items'),
+('SÃ¡ch cÅ©', 'Used books and literature'),
+('Phá»¥ kiá»‡n', 'Accessories and miscellaneous');
 
 -- Payment methods
 INSERT INTO payment_method (method_name, is_online) VALUES

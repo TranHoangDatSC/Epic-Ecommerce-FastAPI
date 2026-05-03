@@ -1,15 +1,10 @@
 from app import models
-from app.models import Transaction
-from app.models import PaymentMethod
-from app.models import User
-from app.models import OrderDetail
-from app.models import Product
+from app.models import Order, OrderDetail, Product, Transaction, PaymentMethod, User, Voucher
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime
 from app.crud.base import CRUDBase
-from app.models import Order
 from app.schemas import OrderCreate, OrderUpdate
 from decimal import Decimal
 import uuid
@@ -25,50 +20,6 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
             .filter(Order.is_deleted == False)
             .first()
         )
-        def get_sellers_by_order(self, db: Session, order_id: int) -> List[int]:
-            """
-            Lấy danh sách seller_id duy nhất từ tất cả sản phẩm trong một đơn hàng.
-            """
-            sellers = (
-                db.query(Product.seller_id)
-                .join(OrderDetail, Product.product_id == OrderDetail.product_id)
-                .filter(OrderDetail.order_id == order_id)
-                .distinct()
-                .all()
-            )
-            return [s[0] for s in sellers]
-
-    def get_by_seller(self, db: Session, seller_id: int, skip: int = 0, limit: int = 100) -> List[Order]:
-        """Lấy tất cả đơn hàng chứa sản phẩm của người bán này"""
-        return (
-            db.query(Order)
-            .join(OrderDetail) 
-            .join(Product)     
-            .filter(Product.seller_id == seller_id)     
-            .filter(Order.is_deleted == False)
-            .order_by(Order.order_date.desc())
-            .distinct() 
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-    def get_by_buyer(
-        self,
-        db: Session,
-        buyer_id: int,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Order]:
-        """Get all orders by buyer"""
-        return (
-            db.query(Order)
-            .filter(Order.buyer_id == buyer_id)
-            .filter(Order.is_deleted == False)
-            .order_by(Order.order_date.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
 
     def get_sellers_by_order(self, db: Session, order_id: int) -> List[int]:
         """ Lấy danh sách seller_id duy nhất từ tất cả sản phẩm trong một đơn hàng. """
@@ -81,13 +32,34 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         )
         return [s[0] for s in sellers]
 
-    def get_by_status(
-        self,
-        db: Session,
-        order_status: int,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Order]:
+    def get_by_seller(self, db: Session, seller_id: int, skip: int = 0, limit: int = 100) -> List[Order]:
+        """Lấy tất cả đơn hàng chứa sản phẩm của người bán này"""
+        return (
+            db.query(Order)
+            .join(OrderDetail)
+            .join(Product)
+            .filter(Product.seller_id == seller_id)
+            .filter(Order.is_deleted == False)
+            .order_by(Order.order_date.desc())
+            .distinct()
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def get_by_buyer(self, db: Session, buyer_id: int, skip: int = 0, limit: int = 100) -> List[Order]:
+        """Get all orders by buyer"""
+        return (
+            db.query(Order)
+            .filter(Order.buyer_id == buyer_id)
+            .filter(Order.is_deleted == False)
+            .order_by(Order.order_date.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def get_by_status(self, db: Session, order_status: int, skip: int = 0, limit: int = 100) -> List[Order]:
         """Get orders by status"""
         return (
             db.query(Order)
@@ -98,12 +70,7 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
             .all()
         )
 
-    def get_pending_orders(
-        self,
-        db: Session,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Order]:
+    def get_pending_orders(self, db: Session, skip: int = 0, limit: int = 100) -> List[Order]:
         """Get pending orders"""
         return (
             db.query(Order)
@@ -115,66 +82,113 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         )
 
     def create_order(
-        self, db: Session, buyer_id: int, contact_id: int, payment_method_id: int, 
-        order_items: List[dict], shipping_fee: Decimal = Decimal("0"), 
-        discount_amount: Decimal = Decimal("0"), voucher_id: Optional[int] = None, 
-        notes: Optional[str] = None, shipping_address: Optional[str] = None, 
-        phone_number: Optional[str] = None
+        self, db: Session, buyer_id: int, contact_id: int, payment_method_id: int,
+        order_items: List[dict], shipping_fee: Decimal = Decimal("0"),
+        voucher_code: Optional[str] = None, notes: Optional[str] = None,
+        shipping_address: Optional[str] = None, phone_number: Optional[str] = None
     ) -> Order:
-        from app.models import OrderDetail, Product, Transaction
         from app.core.fraud_detection import verify_transaction_ml
         import uuid
 
-        # 1. Tính toán tiền bạc
+        # 1. Tính toán tiền bạc tổng các sản phẩm
         total_amount = Decimal("0")
         for item in order_items:
             product = db.query(Product).filter(Product.product_id == item['product_id']).first()
             if product:
                 total_amount += product.price * Decimal(str(item['quantity']))
 
+        # 2. Xử lý Voucher (nếu có)
+        discount_amount = Decimal("0")
+        applied_voucher_id = None
+
+        if voucher_code:
+            # ĐÃ SỬA: Chuẩn hóa in hoa để tránh lỗi sai format chữ thường
+            voucher_code = voucher_code.strip().upper()
+            
+            now = datetime.utcnow()
+            voucher = db.query(Voucher).filter(
+                Voucher.code == voucher_code,
+                Voucher.is_active == True,
+                Voucher.is_deleted == False,
+                Voucher.valid_from <= now,
+                Voucher.valid_to >= now
+            ).first()
+
+            if not voucher:
+                raise Exception("Mã giảm giá không tồn tại hoặc đã hết hạn")
+            
+            if voucher.max_usage is not None and voucher.usage_count >= voucher.max_usage:
+                raise Exception("Mã giảm giá đã hết lượt sử dụng")
+                
+            if voucher.min_order_amount and total_amount < voucher.min_order_amount:
+                raise Exception(f"Đơn hàng tối thiểu {voucher.min_order_amount}đ để dùng mã này")
+
+            # Tính số tiền giảm
+            if voucher.discount_type == 0:  # Cố định (Fixed)
+                discount_amount = voucher.discount_value
+            else:  # Phần trăm (Percentage)
+                discount_amount = (total_amount * (voucher.discount_value / Decimal("100")))
+
+            # Đảm bảo tiền giảm không vượt quá tổng đơn
+            discount_amount = min(discount_amount, total_amount)
+            applied_voucher_id = voucher.voucher_id
+
+            # Tăng lượt sử dụng voucher
+            voucher.usage_count += 1
+
+        # Chốt số tiền thanh toán cuối cùng
         final_amount = total_amount - discount_amount + shipping_fee
 
-        # 2. Tạo đơn hàng (Trạng thái mặc định là PENDING - 0)
+        # 3. Tạo đơn hàng (order_status = 0: PENDING)
         order = Order(
-            buyer_id=buyer_id, contact_id=contact_id, payment_method_id=payment_method_id,
-            voucher_id=voucher_id, total_amount=total_amount, shipping_fee=shipping_fee,
-            discount_amount=discount_amount, final_amount=final_amount, notes=notes,
-            shipping_address=shipping_address, tracking_number=phone_number,
-            order_status=0, is_deleted=False
+            buyer_id=buyer_id,
+            contact_id=contact_id,
+            payment_method_id=payment_method_id,
+            voucher_id=applied_voucher_id,
+            total_amount=total_amount,
+            shipping_fee=shipping_fee,
+            discount_amount=discount_amount,
+            final_amount=final_amount,
+            notes=notes,
+            shipping_address=shipping_address,
+            tracking_number=phone_number,
+            order_status=0
         )
         db.add(order)
-        db.flush() 
+        db.flush()
 
-        # 3. Lấy số dư thực tế để chạy ML (Đây là bước ép balance thực)
+        # 4. Lấy số dư thực tế để chạy ML (Đây là bước ép balance thực)
         user = db.query(models.User).filter(models.User.user_id == buyer_id).first()
-        db.refresh(user) 
+        db.refresh(user)
         current_balance = user.balance if user else Decimal("0")
 
         # CHẠY ML NGAY LÚC NÀY
         ml_check = verify_transaction_ml(final_amount, current_balance)
 
-        # 4. Tạo Transaction kèm theo Fraud Score
+        # 5. Tạo Transaction kèm theo Fraud Score
         new_trans = Transaction(
             order_id=order.order_id,
             user_id=buyer_id,
             payment_method_id=payment_method_id,
             amount=final_amount,
             balance_before=current_balance,
-            balance_after=current_balance, # Chưa trừ vì đơn đang Pending
+            balance_after=current_balance,  # Chưa trừ vì đơn đang Pending
             reference_number=f"REF-{uuid.uuid4().hex[:8].upper()}-{order.order_id}",
             transaction_status=0,
             address=f"{order.shipping_address}",
-            fraud_score=ml_check["score"] # Ghi điểm số vào đây
+            fraud_score=ml_check["score"]  # Ghi điểm số vào đây
         )
         db.add(new_trans)
 
-        # 5. Thêm chi tiết đơn hàng
+        # 6. Thêm chi tiết đơn hàng
         for item in order_items:
             product = db.query(Product).filter(Product.product_id == item['product_id']).first()
             if product:
                 db.add(OrderDetail(
-                    order_id=order.order_id, product_id=item['product_id'],
-                    quantity=item['quantity'], price_at_purchase=product.price,
+                    order_id=order.order_id,
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    price_at_purchase=product.price,
                     subtotal=product.price * Decimal(str(item['quantity']))
                 ))
 
@@ -183,30 +197,31 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         return order
 
     def update_order_status(
-        self,
-        db: Session,
-        order_id: int,
-        new_status: int,
-        tracking_number: Optional[str] = None
+        self, db: Session, order_id: int, new_status: int, tracking_number: Optional[str] = None
     ) -> Optional[Order]:
-        """Update order status"""
+        """Update order status and handle voucher refund if cancelled"""
         order = db.query(Order).filter(Order.order_id == order_id).first()
         if order:
+            # KIỂM TRA: Nếu hủy đơn (status 4) và đơn trước đó chưa hủy -> Hoàn lại lượt dùng Voucher
+            if new_status == 4 and order.order_status != 4:
+                if order.voucher_id:
+                    voucher = db.query(Voucher).filter(Voucher.voucher_id == order.voucher_id).first()
+                    if voucher and voucher.usage_count > 0:
+                        voucher.usage_count -= 1  # Trả lại 1 lượt dùng
+
+            # Cập nhật trạng thái
             order.order_status = new_status
             if tracking_number:
                 order.tracking_number = tracking_number
+                
             db.add(order)
             db.commit()
             db.refresh(order)
+            
         return order
 
     def get_orders_by_date_range(
-        self,
-        db: Session,
-        start_date: datetime,
-        end_date: datetime,
-        skip: int = 0,
-        limit: int = 100
+        self, db: Session, start_date: datetime, end_date: datetime, skip: int = 0, limit: int = 100
     ) -> List[Order]:
         """Get orders within a date range"""
         return (
@@ -220,7 +235,6 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
             .limit(limit)
             .all()
         )
-
 
 # Create CRUD instance
 crud_order = CRUDOrder(Order)

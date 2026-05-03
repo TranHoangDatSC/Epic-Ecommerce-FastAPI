@@ -67,14 +67,32 @@ export interface Product {
   reviews: Review[];
 }
 
+export interface Voucher {
+  voucher_id: number;
+  code: string;
+  description?: string;
+  discount_type: number; // 0: Fixed, 1: Percent
+  discount_value: number;
+  usage_count: number;
+  max_usage?: number;
+  min_order_amount?: number;
+  valid_from: string;
+  valid_to: string;
+  is_active: boolean;
+}
+
 export interface Order {
-  id: number;
-  userId: number;
-  totalAmount: number;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-  orderDetails: OrderDetail[];
+  order_id: number;
+  buyer_id: number;
+  total_amount: number;
+  discount_amount: number;
+  shipping_fee: number;
+  final_amount: number;
+  order_status: number;
+  order_date: string;
+  voucher_id?: number;
+  voucher?: Voucher;
+  order_details: OrderDetail[];
 }
 
 export interface OrderDetail {

@@ -353,7 +353,6 @@ class Voucher(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_deleted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
     # Relationships
     orders = relationship("Order", back_populates="voucher")
 

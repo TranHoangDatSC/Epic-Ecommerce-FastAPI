@@ -12,7 +12,7 @@ export interface OrderCreate {
   contact_id: number;
   payment_method_id: number;
   order_items: OrderItem[];
-  voucher_id?: number;
+  voucher_code?: string | null; // Thay đổi từ voucher_id sang voucher_code
   shipping_fee: number;
   shipping_address?: string;
   phone_number?: string;
@@ -54,5 +54,12 @@ export class OrderService {
     return this.http.post<any>(`${this.apiUrl}/${orderId}/capture-paypal`, {}, {
       params: { paypal_order_id: paypalOrderId }
     });
+  }
+
+  /**
+   * Gọi API kiểm tra mã giảm giá (Voucher)
+   */
+  checkVoucher(code: string, orderAmount: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/check-voucher/${code}?order_amount=${orderAmount}`);
   }
 }

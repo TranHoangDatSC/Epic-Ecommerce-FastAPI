@@ -53,14 +53,6 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-
-class UserUpdate(BaseModel):
-    """User update schema"""
-    full_name: Optional[str] = None
-    phone_number: Optional[str] = None
-    address: Optional[str] = None
-
-
 class UserResponse(UserBase):
     """User response schema"""
     user_id: int
@@ -84,12 +76,13 @@ class UserDetailResponse(UserResponse):
     """User detail response with roles"""
     roles: List['RoleResponse'] = []
 
-
 class UserUpdate(BaseModel):
+    """User update schema"""
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class ChangePasswordRequest(BaseModel):
     """Schema for changing password from profile"""
@@ -378,12 +371,11 @@ class OrderBase(BaseModel):
     """Base order schema"""
     contact_id: int
     payment_method_id: int
-    voucher_id: Optional[int] = None
+    voucher_code: Optional[str] = None  # Đã sửa từ voucher_id (int) thành voucher_code (str)
     shipping_fee: Decimal = Field(default=0, ge=0)
     shipping_address: Optional[str] = None
     phone_number: Optional[str] = None
     notes: Optional[str] = None
-
 
 class OrderCreate(OrderBase):
     """Order creation schema"""
@@ -439,11 +431,9 @@ class VoucherBase(BaseModel):
     valid_from: datetime
     valid_to: datetime
 
-
 class VoucherCreate(VoucherBase):
     """Voucher creation schema"""
     pass
-
 
 class VoucherUpdate(BaseModel):
     """Voucher update schema"""
@@ -453,7 +443,6 @@ class VoucherUpdate(BaseModel):
     min_order_amount: Optional[Decimal] = None
     valid_to: Optional[datetime] = None
     is_active: Optional[bool] = None
-
 
 class VoucherResponse(VoucherBase):
     """Voucher response"""

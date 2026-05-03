@@ -2,11 +2,13 @@ from decimal import Decimal
 from typing import List, Optional
 from datetime import datetime
 import httpx
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+
 from app import models, schemas
 from app.database import get_db
-from app.models import User, Order, Product, ContactInfo, PaymentMethod, Transaction
+from app.models import User, Order, Product, ContactInfo, PaymentMethod, Transaction, Voucher
 from app.schemas import OrderResponse, OrderDetailResponse_Extended, OrderCreate, OrderUpdate
 from app.core.dependencies import check_admin, check_user_role
 from app.config import settings
@@ -17,9 +19,66 @@ from app.crud.shopping_cart import crud_cart
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
+
 @router.get("/payment-methods", response_model=list[schemas.PaymentMethodResponse])
 async def get_payment_methods(db: Session = Depends(get_db)):
     return db.query(PaymentMethod).filter(PaymentMethod.is_deleted == False).all()
+
+
+# ==========================================
+# API CHECK VOUCHER TỪ FRONTEND
+# ==========================================
+@router.get("/check-voucher/{code}")
+def check_voucher(
+    code: str, 
+    order_amount: float = Query(..., description="Tổng tiền đơn hàng hiện tại (chưa gồm phí ship)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_user_role([3]))
+):
+    """
+    Kiểm tra mã giảm giá xem có hợp lệ với tổng tiền đơn hàng hiện tại không.
+    """
+    now = datetime.utcnow()
+    voucher = db.query(Voucher).filter(
+        Voucher.code == code.strip().upper(),
+        Voucher.is_active == True,
+        Voucher.is_deleted == False
+    ).first()
+
+    if not voucher:
+        raise HTTPException(status_code=404, detail="Mã giảm giá không tồn tại hoặc đã bị khóa.")
+    
+    if voucher.valid_from > now:
+        raise HTTPException(status_code=400, detail="Mã giảm giá chưa đến thời gian sử dụng.")
+        
+    if voucher.valid_to < now:
+        raise HTTPException(status_code=400, detail="Mã giảm giá đã hết hạn.")
+        
+    if voucher.max_usage is not None and voucher.usage_count >= voucher.max_usage:
+        raise HTTPException(status_code=400, detail="Mã giảm giá đã hết lượt sử dụng.")
+        
+    if voucher.min_order_amount and Decimal(str(order_amount)) < voucher.min_order_amount:
+        raise HTTPException(status_code=400, detail=f"Đơn hàng tối thiểu {voucher.min_order_amount:,.0f}đ để dùng mã này.")
+
+    # Tính toán số tiền sẽ được giảm
+    discount_amount = Decimal("0")
+    if voucher.discount_type == 0:  # Fixed amount
+        discount_amount = voucher.discount_value
+    else:  # Percentage
+        discount_amount = Decimal(str(order_amount)) * (voucher.discount_value / Decimal("100"))
+
+    # Đảm bảo tiền giảm không vượt quá tổng tiền hàng
+    discount_amount = min(discount_amount, Decimal(str(order_amount)))
+
+    return {
+        "voucher_id": voucher.voucher_id,
+        "code": voucher.code,
+        "discount_type": voucher.discount_type,
+        "discount_value": float(voucher.discount_value),
+        "calculated_discount": float(discount_amount),
+        "description": voucher.description
+    }
+
 
 @router.get("/seller", response_model=list[OrderResponse])
 async def get_seller_orders(
@@ -29,6 +88,7 @@ async def get_seller_orders(
     db: Session = Depends(get_db)
 ):
     return crud_order.get_by_seller(db, seller_id=current_user.user_id, skip=skip, limit=limit)
+
 
 @router.get("", response_model=list[OrderResponse])
 async def list_orders(
@@ -54,6 +114,7 @@ async def list_orders(
         )
     return orders
 
+
 @router.get("/{order_id}", response_model=OrderDetailResponse_Extended)
 async def get_order(
     order_id: int,
@@ -63,15 +124,17 @@ async def get_order(
     order = crud_order.get_by_id(db, order_id=order_id)
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-    
+
     user_roles = [role.role_id for role in current_user.user_roles]
     is_admin = 1 in user_roles
     seller_ids_in_order = crud_order.get_sellers_by_order(db, order_id)
     is_seller = current_user.user_id in seller_ids_in_order
-    
+
     if not (is_admin or order.buyer_id == current_user.user_id or is_seller):
         raise HTTPException(status_code=403, detail="Permission denied")
+
     return order
+
 
 @router.post("", response_model=OrderDetailResponse_Extended, status_code=status.HTTP_201_CREATED)
 async def create_order(
@@ -84,6 +147,7 @@ async def create_order(
         ContactInfo.user_id == current_user.user_id,
         ContactInfo.is_deleted == False
     ).first()
+
     if not contact:
         raise HTTPException(status_code=400, detail="Invalid contact information")
 
@@ -94,20 +158,22 @@ async def create_order(
         models.PaymentMethod.payment_method_id == order_in.payment_method_id,
         models.PaymentMethod.is_deleted == False
     ).first()
-    
+
     if not payment_method:
         raise HTTPException(status_code=400, detail="Invalid payment method")
 
     for item in order_in.order_items:
         product = db.query(Product).filter(
-            Product.product_id == item.product_id,
-            Product.is_deleted == False
+            Product.product_id == item.product_id, Product.is_deleted == False
         ).first()
         if not product:
             raise HTTPException(status_code=400, detail=f"Product {item.product_id} not found")
         if product.seller_id == current_user.user_id:
             raise HTTPException(status_code=400, detail=f"You cannot order your own product '{product.title}'")
 
+    # Gọi hàm tạo đơn hàng (Có chứa Voucher code)
+    voucher_code = getattr(order_in, 'voucher_code', None)
+    
     order = crud_order.create_order(
         db=db,
         buyer_id=current_user.user_id,
@@ -115,8 +181,7 @@ async def create_order(
         payment_method_id=order_in.payment_method_id,
         order_items=[item.dict() for item in order_in.order_items],
         shipping_fee=order_in.shipping_fee,
-        discount_amount=Decimal("0"),
-        voucher_id=order_in.voucher_id,
+        voucher_code=voucher_code,
         notes=order_in.notes,
         shipping_address=final_address,
         phone_number=final_phone
@@ -136,6 +201,7 @@ async def create_order(
 
     db.refresh(order)
     return order
+
 
 @router.put("/{order_id}", response_model=OrderResponse)
 async def update_order(
@@ -160,6 +226,7 @@ async def update_order(
     if order_update.order_status == 4:
         if order.order_status == 4:
             raise HTTPException(status_code=400, detail="Order is already cancelled")
+        # Hoàn kho
         for detail in order.order_details:
             product = detail.product
             product.quantity += detail.quantity
@@ -170,15 +237,17 @@ async def update_order(
     if order_update.order_status in [1, 2, 3]:
         if not (is_admin or is_seller):
             raise HTTPException(status_code=403, detail="Only seller/admin can confirm/ship orders")
-        
+
     updated_order = crud_order.update_order_status(
         db=db,
         order_id=order_id,
         new_status=order_update.order_status or order.order_status,
         tracking_number=order_update.tracking_number
     )
-    db.commit()
+    
+    # DB commit and refresh happens inside the CRUD function
     return updated_order
+
 
 @router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_order(
@@ -193,6 +262,7 @@ async def delete_order(
     db.add(order)
     db.commit()
 
+
 @router.post("/create-paypal-order")
 async def create_paypal_order(
     order_in: schemas.OrderCreate,
@@ -200,14 +270,15 @@ async def create_paypal_order(
     current_user: User = Depends(check_user_role([3])),
     db: Session = Depends(get_db)
 ):
-    # 1. Tính toán tổng tiền thực tế
+    # 1. Ước tính tổng tiền để chạy ML
     total_amount = sum(
-        item.quantity * db.query(Product).filter(Product.product_id == item.product_id).first().price 
+        item.quantity * db.query(Product).filter(Product.product_id == item.product_id).first().price
         for item in order_in.order_items
     ) + order_in.shipping_fee
 
-    # 2. Kiểm tra Fraud (giữ nguyên logic của bạn)
+    # 2. Kiểm tra Fraud
     ml_res = verify_transaction_ml(total_amount, current_user.balance)
+
     if ml_res["is_fraud"]:
         raise HTTPException(status_code=403, detail="Giao dịch bị từ chối do rủi ro quá cao.")
 
@@ -224,24 +295,29 @@ async def create_paypal_order(
         ContactInfo.contact_id == order_in.contact_id,
         ContactInfo.user_id == current_user.user_id
     ).first()
+
     if not contact:
         raise HTTPException(status_code=400, detail="Không tìm thấy địa chỉ")
 
     try:
-        # --- BƯỚC QUAN TRỌNG: CHỐNG TRÙNG HÓA ĐƠN ---
-        # Tìm đơn hàng Pending có cùng số tiền của user này tạo trong vòng 10 phút qua
-        existing_order = db.query(Order).filter(
-            Order.buyer_id == current_user.user_id,
-            Order.order_status == 0, # Trạng thái Pending
-            Order.final_amount == total_amount,
-            Order.is_deleted == False
-        ).order_by(Order.order_date.desc()).first()
+        # Lấy voucher code
+        voucher_code = getattr(order_in, 'voucher_code', None)
 
-        if existing_order:
-            # Nếu đã có đơn hàng chờ, dùng lại đơn này thay vì tạo mới
+        # CẬP NHẬT LOGIC: Nếu có mã giảm giá thì KHÔNG xài lại đơn cũ (bắt buộc tạo mới để tính lại tiền)
+        if voucher_code:
+            existing_order = None
+        else:
+            existing_order = db.query(Order).filter(
+                Order.buyer_id == current_user.user_id,
+                Order.order_status == 0,
+                Order.payment_method_id == 2,  # Đang chọn PayPal
+                Order.is_deleted == False
+            ).order_by(Order.order_date.desc()).first()
+
+        if existing_order and (datetime.utcnow() - existing_order.order_date).total_seconds() < 300:
+            # Nếu vừa tạo đơn PayPal trong 5 phút trước chưa thanh toán, lấy lại dùng
             new_order = existing_order
         else:
-            # Nếu chưa có thì mới tạo mới vào DB
             new_order = crud_order.create_order(
                 db=db,
                 buyer_id=current_user.user_id,
@@ -249,16 +325,18 @@ async def create_paypal_order(
                 payment_method_id=order_in.payment_method_id,
                 order_items=[item.dict() for item in order_in.order_items],
                 shipping_fee=order_in.shipping_fee,
+                voucher_code=voucher_code,
                 shipping_address=order_in.shipping_address or contact.address,
                 phone_number=order_in.phone_number or contact.phone_number
             )
-        # -------------------------------------------
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
     token = await get_paypal_access_token()
+    
+    # Tính số tiền USD dựa trên số tiền chính thức sau Voucher
     total_usd = "{:.2f}".format(new_order.final_amount / 25400)
 
     async with httpx.AsyncClient() as client:
@@ -267,7 +345,7 @@ async def create_paypal_order(
             json={
                 "intent": "CAPTURE",
                 "purchase_units": [{
-                    "reference_id": str(new_order.order_id), # ID này giờ đã được đảm bảo duy nhất
+                    "reference_id": str(new_order.order_id),
                     "amount": {"currency_code": "USD", "value": total_usd}
                 }]
             },
@@ -278,12 +356,12 @@ async def create_paypal_order(
         raise HTTPException(status_code=400, detail="PayPal API Error")
 
     return {"paypal": res.json(), "internal_order_id": new_order.order_id}
-    
+
 @router.post("/{order_id}/capture-paypal")
 async def capture_paypal_payment(
-    order_id: int, 
-    paypal_order_id: str = Query(...), 
-    db: Session = Depends(get_db), 
+    order_id: int,
+    paypal_order_id: str = Query(...),
+    db: Session = Depends(get_db),
     current_user: User = Depends(check_user_role([3]))
 ):
     paypal_res = await capture_paypal_order(paypal_order_id)
@@ -296,7 +374,7 @@ async def capture_paypal_payment(
         db.refresh(current_user)
         ml_res = verify_transaction_ml(order_obj.final_amount, current_user.balance)
 
-        # --- FIX LỖI: Xóa giỏ hàng thủ công thay vì gọi hàm CRUD lỗi ---
+        # Xóa giỏ hàng thủ công 
         try:
             cart = db.query(models.ShoppingCart).filter(models.ShoppingCart.user_id == current_user.user_id).first()
             if cart:
@@ -307,23 +385,23 @@ async def capture_paypal_payment(
                 ).delete(synchronize_session=False)
         except Exception as e:
             print(f"Lỗi xóa giỏ hàng: {e}")
-        # -------------------------------------------------------------
 
+        # Update Transaction
         transaction = db.query(Transaction).filter(Transaction.order_id == order_id).first()
         if transaction:
             transaction.fraud_score = ml_res["score"]
             transaction.address = f"PayPal Ref: {paypal_order_id} | AI: {ml_res['score']}"
             
             if ml_res["is_fraud"]:
-                transaction.transaction_status = 2 
-                order_obj.order_status = 0 
+                transaction.transaction_status = 2
+                order_obj.order_status = 0
                 message = "Giao dịch bị tạm giữ do rủi ro cao."
             else:
                 transaction.transaction_status = 1
-                order_obj.order_status = 1 
+                order_obj.order_status = 1
                 message = "Thanh toán thành công."
-
+                
         db.commit()
         return {"status": "success", "fraud_detected": ml_res["is_fraud"], "detail": message}
-    
+
     raise HTTPException(status_code=400, detail="PayPal Capture failed")

@@ -32,6 +32,7 @@ export class ModeratorProductManageComponent implements OnInit {
   
   currentPage: number = 1;
   pageSize: number = 5;
+Math: any;
 
   constructor(
     private moderatorService: ModeratorService,

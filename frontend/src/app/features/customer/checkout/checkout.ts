@@ -38,6 +38,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   customAddress: string = '';
   customPhone: string = '';
   orderNotes: string = '';
+
   
   // UI State
   isWaitingFraud = false;
@@ -47,6 +48,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   isSubmitting = false;
   isEditingContact = false;
   shippingFee = 30000;
+
+  // --- THÊM STATE CHO VOUCHER ---
+  voucherInput: string = '';
+  appliedVoucher: any = null;
+  discountAmount: number = 0;
+  isCheckingVoucher: boolean = false;
+  voucherError: string = '';
 
   private isPaypalInitialized = false;
   private subscriptions: Subscription = new Subscription();
@@ -125,7 +133,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     // Clear container PayPal cũ để tránh lỗi render đè của SDK
     const container = document.getElementById('paypal-button-container');
     if (container) container.innerHTML = '';
-
+    
     this.cdr.detectChanges();
 
     if (id === 2) {
@@ -135,131 +143,127 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   isBanned = false;
+
   initPayPalButton(): void {
     if (this.isPaypalInitialized || typeof paypal === 'undefined' || this.selectedPaymentMethodId !== 2) return;
-    
+
     const container = document.getElementById('paypal-button-container');
     if (!container) return;
 
     paypal.Buttons({
-        style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' },
-        createOrder: () => {
-          // Chặn click nếu đang trong quá trình xử lý hoặc đang chờ fraud timer
-          if (this.isSubmitting || this.isWaitingFraud) {
-              return Promise.reject('Processing...');
-          }
-
-          this.isSubmitting = true;
-          this.cdr.detectChanges();
-
-          return fetch(`${environment.apiUrl}/orders/create-paypal-order?bypass_fraud=${this.canBypassFraud}`, {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(this.prepareOrderData())
-          })
-          .then(async res => {
-              const data = await res.json();
-
-              // Mở lại trạng thái sau khi có phản hồi
-              this.isSubmitting = false;
-
-              // TRƯỜNG HỢP 1: BỊ CHẶN HOÀN TOÀN (403)
-              if (res.status === 403) {
-                  this.isBanned = true;
-                  this.cdr.detectChanges();
-                  throw new Error('BANNED');
-              }
-
-              // TRƯỜNG HỢP 2: BẮT ĐỢI (429)
-              if (res.status === 429) {
-                  this.startFraudTimer(data.detail.retry_after);
-                  throw new Error('FRAUD_WAIT');
-              }
-
-              if (!res.ok) throw new Error(data.detail || 'Network error');
-
-              // Lưu ID đơn hàng nội bộ để tí nữa dùng hàm Capture
-              this.lastCreatedOrderId = data.internal_order_id; 
-              this.cdr.detectChanges();
-
-              return data.paypal.id; 
-          })
-          .catch(err => {
-              this.isSubmitting = false;
-              this.cdr.detectChanges();
-              throw err;
-          });
-      },
-
-        onApprove: (data: any) => {
-          this.isLoading = true;
-          this.cdr.detectChanges();
-       
-          this.orderService.capturePaypalOrder(this.lastCreatedOrderId, data.orderID).subscribe({
-            next: (res) => {
-              this.isLoading = false;
-              this.uiService.showSuccess("Thanh toán thành công!", "Hoàn tất");
-              this.cartService.clearCart(); // Xóa sạch local cart
-              this.router.navigate(['/customer/profile/orders']);
-            },
-            error: (err) => {
-              this.isLoading = false;
-              this.uiService.showError("Thanh toán thành công bên PayPal nhưng lỗi cập nhật hệ thống. Đừng lo!");
-              this.cdr.detectChanges();
-            }
-          });
-        },
-
-        onError: (err: any) => {
-          if (err.message === 'BANNED' || err.message === 'FRAUD_WAIT') {
-              return; 
-          }
-          this.uiService.showError("Giao dịch không thành công hoặc đã bị hủy.");
-          console.error('PayPal Error:', err);
+      style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' },
+      createOrder: () => {
+        // Chặn click nếu đang trong quá trình xử lý hoặc đang chờ fraud timer
+        if (this.isSubmitting || this.isWaitingFraud) {
+          return Promise.reject('Processing...');
         }
-    }).render('#paypal-button-container').then(() => {
-        this.isPaypalInitialized = true;
-    });
-}
+        
+        this.isSubmitting = true;
+        this.cdr.detectChanges();
 
-  startFraudTimer(seconds: number) {
-      this.isWaitingFraud = true;
-      this.fraudCountdown = seconds;
-      this.cdr.detectChanges();
+        return fetch(`${environment.apiUrl}/orders/create-paypal-order?bypass_fraud=${this.canBypassFraud}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.prepareOrderData())
+        })
+        .then(async res => {
+          const data = await res.json();
+          this.isSubmitting = false;
 
-      // Hiện thông báo Info cho user biết là đang kiểm tra
-      this.uiService.showInfo(
-        `Hệ thống cần ${seconds} giây để xác thực giao dịch an toàn. Vui lòng không đóng trang.`,
-        "Đang kiểm tra bảo mật"
-      );
-
-      const interval = setInterval(() => {
-          this.fraudCountdown--;
-          this.cdr.detectChanges();
-          if (this.fraudCountdown <= 0) {
-              clearInterval(interval);
-              this.isWaitingFraud = false;
-              this.canBypassFraud = true;
-              
-              // Dùng showSuccess khi xác thực xong
-              this.uiService.showSuccess(
-                  "Xác thực hoàn tất! Bây giờ bạn có thể nhấn Thanh toán lại.",
-                  "Sẵn sàng"
-              );
-              this.cdr.detectChanges();
+          // TRƯỜNG HỢP 1: BỊ CHẶN HOÀN TOÀN (403)
+          if (res.status === 403) {
+            this.isBanned = true;
+            this.cdr.detectChanges();
+            throw new Error('BANNED');
           }
-      }, 1000);
+
+          // TRƯỜNG HỢP 2: BẮT ĐỢI (429)
+          if (res.status === 429) {
+            this.startFraudTimer(data.detail.retry_after);
+            throw new Error('FRAUD_WAIT');
+          }
+
+          if (!res.ok) throw new Error(data.detail || 'Network error');
+
+          // Lưu ID đơn hàng nội bộ để tí nữa dùng hàm Capture
+          this.lastCreatedOrderId = data.internal_order_id;
+          this.cdr.detectChanges();
+
+          return data.paypal.id;
+        })
+        .catch(err => {
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+          throw err;
+        });
+      },
+      onApprove: (data: any) => {
+        this.isLoading = true;
+        this.cdr.detectChanges();
+
+        this.orderService.capturePaypalOrder(this.lastCreatedOrderId, data.orderID).subscribe({
+          next: (res) => {
+            this.isLoading = false;
+            this.uiService.showSuccess("Thanh toán thành công!", "Hoàn tất");
+            this.cartService.clearCart(); // Xóa sạch local cart
+            this.router.navigate(['/customer/profile/orders']);
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.uiService.showError("Thanh toán thành công bên PayPal nhưng lỗi cập nhật hệ thống. Đừng lo!");
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      onError: (err: any) => {
+        if (err.message === 'BANNED' || err.message === 'FRAUD_WAIT') {
+          return;
+        }
+        this.uiService.showError("Giao dịch không thành công hoặc đã bị hủy.");
+        console.error('PayPal Error:', err);
+      }
+    }).render('#paypal-button-container').then(() => {
+      this.isPaypalInitialized = true;
+    });
   }
 
+  startFraudTimer(seconds: number) {
+    this.isWaitingFraud = true;
+    this.fraudCountdown = seconds;
+    this.cdr.detectChanges();
+
+    // Hiện thông báo Info cho user biết là đang kiểm tra
+    this.uiService.showInfo(
+      `Hệ thống cần ${seconds} giây để xác thực giao dịch an toàn. Vui lòng không đóng trang.`,
+      "Đang kiểm tra bảo mật"
+    );
+
+    const interval = setInterval(() => {
+      this.fraudCountdown--;
+      this.cdr.detectChanges();
+
+      if (this.fraudCountdown <= 0) {
+        clearInterval(interval);
+        this.isWaitingFraud = false;
+        this.canBypassFraud = true;
+        
+        // Dùng showSuccess khi xác thực xong
+        this.uiService.showSuccess(
+          "Xác thực hoàn tất! Bây giờ bạn có thể nhấn Thanh toán lại.",
+          "Sẵn sàng"
+        );
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
 
   placeOrder(): void {
     if (!this.selectedAddressId || this.isSubmitting) return;
-
+    
     this.isSubmitting = true;
-
     this.orderService.createOrder(this.prepareOrderData()).subscribe({
       next: () => {
         this.uiService.showSuccess('Thành công!');
@@ -269,13 +273,50 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.isSubmitting = false;
         this.uiService.showError('Lỗi đặt hàng');
-        // Chỉ dùng detectChanges ở đây nếu cần thiết do logic error phức tạp
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       }
     });
   }
-  
-  private prepareOrderData(): OrderCreate {
+
+  // --- API GỌI VOUCHER VÀ CẬP NHẬT ---
+  applyVoucher() {
+    if (!this.voucherInput.trim()) {
+      this.voucherError = 'Vui lòng nhập mã giảm giá.';
+      return;
+    }
+
+    this.isCheckingVoucher = true;
+    this.voucherError = '';
+    
+    // Gọi API Check Voucher
+    this.orderService.checkVoucher(this.voucherInput, this.getSubtotal()).subscribe({
+      next: (res: any) => {
+        this.appliedVoucher = res;
+        this.discountAmount = res.calculated_discount;
+        this.isCheckingVoucher = false;
+        this.uiService.showSuccess(`Áp dụng mã thành công! Bạn được giảm ${this.discountAmount.toLocaleString('vi-VN')}đ`, 'Thành công');
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isCheckingVoucher = false;
+        this.appliedVoucher = null;
+        this.discountAmount = 0;
+        this.voucherError = err.error?.detail || 'Mã giảm giá không hợp lệ.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  removeVoucher() {
+    this.appliedVoucher = null;
+    this.voucherInput = '';
+    this.discountAmount = 0;
+    this.voucherError = '';
+    this.cdr.detectChanges();
+  }
+
+  // Cập nhật lại hàm lấy data gửi lên API
+  private prepareOrderData(): any { // Dùng any để bypass lỗi thiếu field voucher_code nếu interface chưa update
     return {
       contact_id: this.selectedAddressId!,
       payment_method_id: this.selectedPaymentMethodId!,
@@ -286,7 +327,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       shipping_fee: this.shippingFee,
       shipping_address: this.customAddress,
       phone_number: this.customPhone,
-      notes: this.orderNotes
+      notes: this.orderNotes,
+      voucher_code: this.appliedVoucher ? this.appliedVoucher.code : null // Bổ sung mã Voucher
     };
   }
 
@@ -301,10 +343,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   getTotal(): number {
-    return this.getSubtotal() + this.shippingFee;
+    // Trừ đi discountAmount (số tiền giảm)
+    return Math.max(0, this.getSubtotal() + this.shippingFee - this.discountAmount);
   }
-
-  // Sửa lỗi TS2345: Nhận string | undefined | null
   getFullImageUrl(imageUrl: string | undefined | null): string {
     if (!imageUrl || imageUrl === '') {
       return 'assets/images/placeholder.png';
