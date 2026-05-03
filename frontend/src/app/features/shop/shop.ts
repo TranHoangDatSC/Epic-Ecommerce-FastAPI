@@ -29,7 +29,6 @@ export class ShopComponent implements OnInit {
   currentPage = 1;
   totalPages = 1;
   itemsPerPage = 9;
-
   loading = false;
   searchQuery = '';
   selectedCategoryId: number | null = null;
@@ -44,7 +43,6 @@ export class ShopComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private uiService: UIService
-
   ) {
     // Reload data if navigating back to /shop (handles clicking header link again)
     this.router.events.pipe(
@@ -61,19 +59,16 @@ export class ShopComponent implements OnInit {
 
   private initialLoad() {
     this.loading = true;
-    
     forkJoin({
       categories: this.categoryService.getCategories(),
       products: this.productService.getProducts({ skip: 0, limit: 1000, sort_by: 'created_at' })
     }).subscribe({
       next: (result) => {
         this.categories = result.categories;
-        
         this.allProducts = result.products.filter(p => {
           const cat = this.categories.find(c => c.category_id === p.category_id);
           return cat && !cat.is_deleted;
         });
-
         this.computeCategoryCounts();
         this.applyFilters();
         this.loading = false;
@@ -97,19 +92,13 @@ export class ShopComponent implements OnInit {
         console.error('Error loading categories:', error);
         this.uiService.showError('Không thể tải danh sách danh mục.');
       }
-
     });
   }
 
   loadProducts() {
     this.loading = true;
-
     // Load all approved products to support filtering and counts
-    this.productService.getProducts({
-      skip: 0,
-      limit: 1000,
-      sort_by: 'created_at'
-    }).subscribe({
+    this.productService.getProducts({ skip: 0, limit: 1000, sort_by: 'created_at' }).subscribe({
       next: (products) => {
         this.allProducts = products;
         this.computeCategoryCounts();
@@ -197,7 +186,6 @@ export class ShopComponent implements OnInit {
     const pages: number[] = [];
     const start = Math.max(1, this.currentPage - 2);
     const end = Math.min(this.totalPages, this.currentPage + 2);
-
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
@@ -207,18 +195,15 @@ export class ShopComponent implements OnInit {
   getPrimaryImage(product: Product): string {
     const primaryImage = product.product_images?.find(img => img.is_primary);
     const raw = primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '');
-
     if (!raw) {
       return 'https://via.placeholder.com/350x250?text=No+Image';
     }
-
     // If URL is relative (served by backend), prefix with base URL
     if (raw.startsWith('/')) {
       const base = environment.imageBaseUrl.replace(/\/+$/, '');
       const trimmed = raw.startsWith('/') ? raw : `/${raw}`;
       return `${base}${trimmed}`;
     }
-
     return raw;
   }
 
@@ -232,11 +217,15 @@ export class ShopComponent implements OnInit {
 
   addToCart(product: Product) {
     if (!this.authService.isLoggedIn()) {
-        const modalElement = document.getElementById('loginModal');
-        if (modalElement) {
-            const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement);
-            modal.show();
-        } return;
-    } this.cartService.addToCart(product);
+      const modalElement = document.getElementById('loginModal');
+      if (modalElement) {
+        const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+      }
+      return;
+    }
+    setTimeout(() => {
+      this.cartService.addToCart(product);
+    });
   }
 }
