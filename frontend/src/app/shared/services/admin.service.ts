@@ -73,6 +73,10 @@ export class AdminService {
     return this.http.delete<any>(`${this.apiUrl}/admin/vouchers/${id}`);
   }
 
+  hardDeleteVoucher(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/vouchers/${id}/hard-delete`);
+  }
+
   // Feedback Management
   getFeedbacks(skip: number = 0, limit: number = 100): Observable<any[]> {
     let params = new HttpParams()

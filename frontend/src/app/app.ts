@@ -39,7 +39,9 @@ export class App {
     });
 
     this.uiService.modal$.subscribe(config => {
-      this.modalConfig = config;
+      setTimeout(() => {
+        this.modalConfig = config;
+      });
     });
 
   }

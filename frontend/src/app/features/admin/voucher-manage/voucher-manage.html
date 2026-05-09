@@ -74,9 +74,10 @@
             </td>
             <td class="text-end">
               <div class="action-buttons">
-                <button *ngIf="activeTab === 'active'" class="btn-action btn-edit" (click)="openModal(v)"><i class="bi bi-pencil-fill"></i></button>
-                <button *ngIf="activeTab === 'active'" class="btn-action btn-del" (click)="softDelete(v.voucher_id)"><i class="bi bi-trash3-fill"></i></button>
-                <button *ngIf="activeTab === 'trash'" class="btn-action btn-warn" (click)="restoreVoucher(v.voucher_id)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                <button *ngIf="activeTab === 'active'" class="btn-action btn-edit" (click)="openModal(v)" title="Chỉnh sửa"><i class="bi bi-pencil-fill"></i></button>
+                <button *ngIf="activeTab === 'active'" class="btn-action btn-del" (click)="softDelete(v.voucher_id)" title="Xóa tạm thời"><i class="bi bi-trash3-fill"></i></button>
+                <button *ngIf="activeTab === 'trash'" class="btn-action btn-warn" (click)="confirmRestore(v.voucher_id)" title="Khôi phục"><i class="bi bi-arrow-counterclockwise"></i></button>
+                <button *ngIf="activeTab === 'trash'" class="btn-action btn-del" (click)="confirmHardDelete(v.voucher_id)" title="Xóa vĩnh viễn"><i class="bi bi-x-circle-fill"></i></button>
               </div>
             </td>
           </tr>
@@ -86,65 +87,96 @@
   </div>
 
   <!-- MODERN MODAL -->
-  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);">
+  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-        <div class="modal-header bg-dark p-4">
-          <h5 class="modal-title fw-bold text-white">{{ editingVoucher ? 'CHỈNH SỬA CHIẾN DỊCH' : 'TẠO MÃ MỚI' }}</h5>
-          <button type="button" class="btn-close btn-close-white" (click)="showModal = false"></button>
+      <div class="modal-content border-0 shadow-lg modal-light-override">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-dark">{{ editingVoucher ? 'Chỉnh sửa Chiến dịch' : 'Tạo Mã Mới' }}</h5>
+          <button type="button" class="btn-close" (click)="showModal = false"></button>
         </div>
         <div class="modal-body p-4">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Mã Voucher (Không thể sửa sau khi tạo)</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mã Voucher (Không thể sửa sau khi tạo)</label>
               <input type="text" class="form-control py-3" [(ngModel)]="voucherForm.code" 
                      [readonly]="!!editingVoucher" [class.bg-light]="editingVoucher"
                      placeholder="Ví dụ: QUYETCHAM" style="text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Loại ưu đãi</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Loại ưu đãi</label>
               <select class="form-select py-3" [(ngModel)]="voucherForm.discount_type">
                 <option [ngValue]="0">Giảm tiền mặt (VND)</option>
                 <option [ngValue]="1">Giảm phần trăm (%)</option>
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Giá trị giảm</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Giá trị giảm</label>
               <div class="input-group">
                 <input type="text" class="form-control py-3 fw-bold" [value]="displayDiscountValue" 
                        (input)="formatCurrencyInput($event, 'discount')" placeholder="0">
-                <span class="input-group-text">{{ voucherForm.discount_type === 0 ? 'đ' : '%' }}</span>
+                <span class="input-group-text bg-light">{{ voucherForm.discount_type === 0 ? 'đ' : '%' }}</span>
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Đơn hàng tối thiểu</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Đơn hàng tối thiểu</label>
               <div class="input-group">
                 <input type="text" class="form-control py-3 fw-bold" [value]="displayMinOrder" 
                        (input)="formatCurrencyInput($event, 'minOrder')" placeholder="0">
-                <span class="input-group-text">đ</span>
+                <span class="input-group-text bg-light">đ</span>
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Thời gian bắt đầu</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian bắt đầu</label>
               <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_from">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold text-uppercase small">Thời gian kết thúc</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian kết thúc</label>
               <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_to">
             </div>
             <div class="col-12">
-              <label class="form-label fw-bold text-uppercase small">Số lượt phát hành: <span class="text-primary">{{ voucherForm.max_usage | number }} lượt</span></label>
-              <input type="range" class="form-range" min="1" max="5000" step="10" [(ngModel)]="voucherForm.max_usage">
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Số lượt phát hành</label>
+              <div class="d-flex align-items-center gap-3">
+                <input type="number" class="form-control py-2 fw-bold text-primary" style="width: 120px;" min="1" [(ngModel)]="voucherForm.max_usage">
+                <input type="range" class="form-range flex-grow-1" min="1" max="5000" step="1" [(ngModel)]="voucherForm.max_usage">
+              </div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-bold text-uppercase small">Mô tả chương trình</label>
+              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mô tả chương trình</label>
               <textarea class="form-control" [(ngModel)]="voucherForm.description" rows="3"></textarea>
             </div>
           </div>
         </div>
-        <div class="modal-footer bg-light p-4">
-          <button class="btn btn-outline-secondary px-4 fw-bold" (click)="showModal = false">Đóng</button>
-          <button class="btn btn-primary px-5 fw-bold" (click)="saveVoucher()">Xác nhận lưu</button>
+        <div class="modal-footer border-top pt-3 pb-3 px-4">
+          <button type="button" class="btn btn-outline-secondary px-4 fw-bold" (click)="showModal = false">Đóng</button>
+          <button type="button" class="btn btn-primary px-5 fw-bold custom-btn-primary" (click)="saveVoucher()">Xác nhận lưu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" [class.show]="showConfirmModal" [style.display]="showConfirmModal ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg modal-light-override">
+        <div class="modal-header border-0 pb-0 pt-4 px-4">
+          <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+            <i class="bi" [class]="confirmActionType === 'hardDelete' ? 'bi-exclamation-triangle-fill text-danger' : (confirmActionType === 'warning' ? 'bi-info-circle-fill text-primary' : 'bi-question-circle-fill text-warning')" style="font-size: 1.8rem; margin-right: 12px;"></i>
+            {{ confirmTitle }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeConfirmModal()"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <p class="mb-0 text-dark fw-medium" style="font-size: 1.1rem;">{{ confirmMessage }}</p>
+          
+          <div *ngIf="confirmActionType === 'hardDelete'" class="alert alert-danger mt-3 mb-0 border-0 fw-bold" style="background: rgba(220, 53, 69, 0.1); color: #dc3545;">
+            <i class="bi bi-shield-exclamation me-2"></i> Thao tác này sẽ xóa mọi dữ liệu liên quan vĩnh viễn!
+          </div>
+        </div>
+        <div class="modal-footer border-0 p-4 pt-2">
+          <button *ngIf="confirmActionType !== 'warning'" type="button" class="btn btn-outline-secondary px-4 fw-bold" (click)="closeConfirmModal()">Hủy bỏ</button>
+          <button *ngIf="confirmActionType !== 'warning'" type="button" class="btn px-4 text-white shadow-sm fw-bold" [style.background]="confirmActionType === 'hardDelete' ? '#dc3545' : (confirmActionType === 'restore' ? '#ffc107' : '#0d6efd')" (click)="onConfirm()">
+            {{ confirmActionType === 'hardDelete' ? 'Xóa Vĩnh Viễn' : 'Xác nhận' }}
+          </button>
+          <button *ngIf="confirmActionType === 'warning'" type="button" class="btn btn-primary px-5 fw-bold" (click)="closeConfirmModal()">Đã hiểu</button>
         </div>
       </div>
     </div>

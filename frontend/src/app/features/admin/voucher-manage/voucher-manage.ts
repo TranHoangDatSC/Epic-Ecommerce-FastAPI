@@ -25,6 +25,13 @@ export class VoucherManageComponent implements OnInit {
   displayDiscountValue: string = '';
   displayMinOrder: string = '';
 
+  // Confirm Modal Variables
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  confirmActionType: 'restore' | 'hardDelete' | 'warning' = 'warning';
+  targetVoucherId: number | null = null;
+
   skip = 0;
   limit = 5;
 
@@ -162,6 +169,50 @@ export class VoucherManageComponent implements OnInit {
     this.adminService.deleteVoucher(id).subscribe(() => {
       this.uiService.showSuccess('Đã đưa voucher vào thùng rác');
       this.loadVouchers();
+    });
+  }
+
+  confirmRestore(id: number) {
+    this.confirmTitle = 'Khôi phục voucher';
+    this.confirmMessage = 'Bạn có muốn khôi phục và kích hoạt lại voucher này?';
+    this.confirmActionType = 'restore';
+    this.targetVoucherId = id;
+    this.showConfirmModal = true;
+  }
+
+  confirmHardDelete(id: number) {
+    this.confirmTitle = 'Xóa vĩnh viễn voucher';
+    this.confirmMessage = 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?';
+    this.confirmActionType = 'hardDelete';
+    this.targetVoucherId = id;
+    this.showConfirmModal = true;
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.targetVoucherId = null;
+  }
+
+  onConfirm() {
+    if (!this.targetVoucherId) return;
+
+    if (this.confirmActionType === 'restore') {
+      this.restoreVoucher(this.targetVoucherId);
+    } else if (this.confirmActionType === 'hardDelete') {
+      this.hardDelete(this.targetVoucherId);
+    }
+    this.closeConfirmModal();
+  }
+
+  hardDelete(id: number) {
+    this.adminService.hardDeleteVoucher(id).subscribe({
+      next: () => {
+        this.uiService.showSuccess('Đã xóa vĩnh viễn voucher');
+        this.loadVouchers();
+      },
+      error: (err) => {
+        this.uiService.showError('Lỗi xóa vĩnh viễn: ' + (err.error?.detail || 'Không xác định'));
+      }
     });
   }
 

@@ -220,3 +220,18 @@ def delete_voucher(
     db_voucher.is_active = False
     db.commit()
     return None
+
+@router.delete("/vouchers/{voucher_id}/hard-delete", status_code=status.HTTP_204_NO_CONTENT)
+def hard_delete_voucher(
+    voucher_id: int,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Xóa vĩnh viễn voucher (Admin only)"""
+    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
+    if not db_voucher:
+        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
+    
+    db.delete(db_voucher)
+    db.commit()
+    return None
