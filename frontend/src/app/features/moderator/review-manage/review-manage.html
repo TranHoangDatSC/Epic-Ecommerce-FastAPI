@@ -1,0 +1,65 @@
+<div class="admin-content-wrapper delay-animation">
+  <header class="bg-white rounded-3 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center border">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Quản lý Báo cáo vi phạm (Reviews)</h2>
+      <p class="text-muted mb-0">Theo dõi và xử lý các đánh giá rác, báo cáo xấu từ người dùng.</p>
+    </div>
+  </header>
+
+  <div class="bg-white rounded-3 shadow-sm border p-4 position-relative">
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-light-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th width="10%">ID Sản phẩm</th>
+            <th width="20%">Người báo cáo</th>
+            <th width="40%">Nội dung vi phạm / Lý do</th>
+            <th width="15%">Ngày tạo</th>
+            <th width="15%" class="text-end">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let review of reportedReviews">
+            <td>
+              <span class="fw-bold">#{{ review.product_id }}</span>
+            </td>
+            <td>
+              <span class="fw-bold">{{ review.reviewer?.full_name || 'Người dùng #' + review.buyer_id }}</span>
+            </td>
+            <td>
+              <p class="mb-0 text-muted">{{ review.content }}</p>
+            </td>
+            <td>
+              <span class="small text-muted">{{ review.created_at | date:'short' }}</span>
+            </td>
+            <td>
+              <div class="action-buttons d-flex justify-content-end gap-2">
+                <a [routerLink]="['/shop/product', review.product_id]" target="_blank" class="btn btn-sm btn-outline-primary" title="Xem sản phẩm">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <button class="btn btn-sm btn-warning" (click)="rejectProduct(review.product_id)" title="Từ chối sản phẩm">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="lockUser(review)" title="Khóa User bán hàng">
+                  <i class="bi bi-person-x"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!reportedReviews.length && !isLoading">
+            <td colspan="5" class="text-center py-5 text-muted">
+              <i class="bi bi-shield-check fs-1 mb-3 d-block"></i>
+              <h5>Không có báo cáo vi phạm nào</h5>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

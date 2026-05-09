@@ -1,3 +1,5 @@
+from app import models
+from app import schemas
 from sqlalchemy.orm import joinedload
 from app.schemas import StatusUpdate
 from app.core.dependencies import get_current_user
@@ -386,3 +388,15 @@ async def update_product_status(
     db.commit()
     db.refresh(product)
     return product 
+
+    # backend/app/api/v1/products.py
+@router.post("/{product_id}/reviews", response_model=schemas.ReviewResponse)
+async def create_product_review(
+    product_id: int,
+    review_in: schemas.ReviewCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Gán product_id vào schema trước khi lưu
+    review_in.product_id = product_id
+    return crud_product.create_review(db, review_in=review_in, buyer_id=current_user.user_id)

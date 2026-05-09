@@ -27,6 +27,10 @@ export const moderatorRoutes: Routes = [
         loadComponent: () => import('./profile/profile').then(m => m.ModeratorProfileComponent)
       },
       {
+        path: 'reviews',
+        loadComponent: () => import('./review-manage/review-manage').then(m => m.ReviewManageComponent)
+      },
+      {
         path: '**',
         redirectTo: 'dashboard'
       }

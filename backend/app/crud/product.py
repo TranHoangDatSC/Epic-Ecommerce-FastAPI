@@ -1,3 +1,5 @@
+from app import schemas
+from app import models
 from app.models import Category
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
@@ -115,6 +117,23 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
             db.commit()
             db.refresh(product)
         return product
+
+    def create_review(self, db: Session, review_in: schemas.ReviewCreate, buyer_id: int) -> models.Review:
+        db_obj = models.Review(
+            product_id=review_in.product_id,
+            buyer_id=buyer_id,
+            rating=review_in.rating, # Nếu là 0 thì coi như report
+            title=review_in.title,
+            content=review_in.content
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+
+    def get_reported_reviews(self, db: Session):
+        # Chỉ lấy những review có rating = 0
+        return db.query(models.Review).filter(models.Review.rating == 0).all()
 
 
 # Create CRUD instance

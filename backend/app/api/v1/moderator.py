@@ -156,3 +156,12 @@ def get_violation_logs(
 ):
     """Get violation logs"""
     return crud_moderator.get_violation_logs(db, user_id=user_id)
+
+# backend/app/api/v1/moderator.py
+@router.get("/reviews/violations", response_model=List[schemas.ReviewResponse])
+def get_violation_reviews(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_moderator)
+):
+    """Lấy các review có rating = 0 phục vụ mục đích xử lý vi phạm"""
+    return db.query(models.Review).filter(models.Review.rating == 0).all()

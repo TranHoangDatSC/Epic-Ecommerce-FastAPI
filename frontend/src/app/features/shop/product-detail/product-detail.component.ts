@@ -134,23 +134,49 @@ getVideoType(url: string | undefined): 'youtube' | 'drive' | 'direct' | 'none' {
   }
 
   submitReview() {
+    if (!this.authService.isLoggedIn()) {
+        const modalElement = document.getElementById('loginModal');
+        if (modalElement) {
+            const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        }
+        return;
+    }
     if (!this.commentText.trim()) {
       this.uiService.showError('Vui lòng nhập nội dung đánh giá!');
       return;
     }
-    // Logic gửi review lên Backend ở đây
-    console.log('Gửi review:', { rating: this.userRating, content: this.commentText });
-    this.uiService.showSuccess('Cảm ơn bạn đã đánh giá!');
-    this.commentText = '';
+
+    if (!this.product) return;
+
+    this.productService.submitReview(this.product.product_id, {
+        rating: this.userRating,
+        content: this.commentText
+    }).subscribe({
+        next: () => {
+            this.uiService.showSuccess('Cảm ơn bạn đã đánh giá!');
+            this.commentText = '';
+            this.loadProduct(this.product.product_id);
+        },
+        error: (err) => {
+            this.uiService.showError('Lỗi khi gửi đánh giá: ' + (err.error?.detail || ''));
+        }
+    });
   }
 
   confirmReport() {
-    // Logic gửi báo cáo ở đây
-    this.uiService.showSuccess('Báo cáo của bạn đã được gửi tới đội ngũ quản trị.');
-    // Tự động đóng modal nếu cần (dùng bootstrap modal instance)
+    this.submitReport();
   }
 
   reportProduct(): void {
+    if (!this.authService.isLoggedIn()) {
+        const modalElement = document.getElementById('loginModal');
+        if (modalElement) {
+            const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        }
+        return;
+    }
     this.reportingType = 'product';
     this.reportingId = this.product?.product_id || null;
     this.reportCategory = '';
@@ -163,6 +189,14 @@ getVideoType(url: string | undefined): 'youtube' | 'drive' | 'direct' | 'none' {
   }
 
   reportReview(reviewId: number): void {
+    if (!this.authService.isLoggedIn()) {
+        const modalElement = document.getElementById('loginModal');
+        if (modalElement) {
+            const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        }
+        return;
+    }
     this.reportingType = 'review';
     this.reportingId = reviewId;
     this.reportCategory = '';
@@ -180,17 +214,33 @@ getVideoType(url: string | undefined): 'youtube' | 'drive' | 'direct' | 'none' {
       return;
     }
 
-    const typeLabel = this.reportingType === 'product' ? 'Sản phẩm' : 'Đánh giá';
-    console.log(`Báo cáo ${this.reportingType} #${this.reportingId} | Loại: ${this.reportCategory} | Chi tiết: ${this.reportReason}`);
-    setTimeout(() => {
-      this.reportCategory = '';
-      this.reportReason = '';
-      const successModalElement = document.getElementById('reportSuccessModal');
-      if (successModalElement) {
-        const successModal = bootstrap.Modal.getOrCreateInstance(successModalElement);
-        successModal.show();
-      }
-    }, 300);
+    if (!this.product) return;
+
+    let reportContent = `[Báo cáo ${this.reportingType === 'product' ? 'Sản phẩm' : 'Đánh giá #' + this.reportingId}] Lý do: ${this.reportCategory} - ${this.reportReason}`;
+
+    this.productService.submitReview(this.product.product_id, {
+        rating: 0,
+        content: reportContent
+    }).subscribe({
+        next: () => {
+            this.uiService.showSuccess('Báo cáo của bạn đã được gửi tới đội ngũ quản trị.');
+            this.reportCategory = '';
+            this.reportReason = '';
+            const reportModalEl = document.getElementById('reportModal');
+            if (reportModalEl) {
+                const m = bootstrap.Modal.getOrCreateInstance(reportModalEl);
+                m.hide();
+            }
+        },
+        error: (err) => {
+            this.uiService.showError('Lỗi khi gửi báo cáo: ' + (err.error?.detail || ''));
+        }
+    });
+  }
+
+  getValidReviews(): any[] {
+    if (!this.product || !this.product.reviews) return [];
+    return this.product.reviews.filter((r: any) => r.rating > 0);
   }
 
   addToCart(): void {

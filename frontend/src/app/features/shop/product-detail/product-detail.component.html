@@ -68,7 +68,7 @@
             </div>
             <div class="text-muted small border-start ps-3">
               <span class="me-3">{{ product.view_count }} lượt xem</span>
-              <span>{{ product.reviews?.length || 0 }} đánh giá</span>
+              <span>{{ getValidReviews().length || 0 }} đánh giá</span>
             </div>
           </div>
 
@@ -131,7 +131,7 @@
             <button class="nav-link active fw-bold px-4 rounded-pill" data-bs-toggle="pill" data-bs-target="#desc">Mô tả</button>
           </li>
           <li class="nav-item ms-2">
-            <button class="nav-link fw-bold px-4 rounded-pill" data-bs-toggle="pill" data-bs-target="#rev">Đánh giá ({{ product.reviews?.length || 0 }})</button>
+            <button class="nav-link fw-bold px-4 rounded-pill" data-bs-toggle="pill" data-bs-target="#rev">Đánh giá ({{ getValidReviews().length || 0 }})</button>
           </li>
         </ul>
         <div class="tab-content p-4">
@@ -156,16 +156,19 @@
 
               <div class="col-md-7">
                 <div class="review-list custom-scrollbar px-2" style="max-height: 450px; overflow-y: auto;">
-                  <div *ngFor="let r of product.reviews" class="review-card p-3 mb-3 border rounded-4">
+                  <div *ngFor="let r of getValidReviews()" class="review-card p-3 mb-3 border rounded-4 position-relative">
                     <div class="d-flex justify-content-between mb-2">
                       <span class="fw-bold small">{{ r.reviewer?.full_name || 'Người dùng' }}</span>
-                      <div class="text-warning small">
-                        <i *ngFor="let s of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="s <= r.rating" [class.bi-star]="s > r.rating"></i>
+                      <div class="d-flex gap-2 align-items-center">
+                        <div class="text-warning small">
+                          <i *ngFor="let s of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="s <= r.rating" [class.bi-star]="s > r.rating"></i>
+                        </div>
+                        <button class="btn btn-sm btn-link text-muted p-0 border-0" (click)="reportReview(r.review_id)" title="Báo cáo đánh giá rác"><i class="bi bi-flag-fill"></i></button>
                       </div>
                     </div>
                     <p class="small text-muted mb-0">{{ r.content }}</p>
                   </div>
-                  <div *ngIf="!product.reviews?.length" class="text-center py-5 opacity-50">
+                  <div *ngIf="!getValidReviews().length" class="text-center py-5 opacity-50">
                     <i class="bi bi-chat-dots display-4"></i><p>Chưa có đánh giá nào.</p>
                   </div>
                 </div>

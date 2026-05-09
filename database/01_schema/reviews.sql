@@ -3,7 +3,7 @@ CREATE TABLE review (
     review_id SERIAL PRIMARY KEY,
     product_id INT NOT NULL,
     buyer_id INT NOT NULL,
-    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    rating SMALLINT NOT NULL CHECK (rating BETWEEN 0 AND 5),
     title VARCHAR(255),
     content TEXT,
     is_verified_purchase BOOLEAN NOT NULL DEFAULT FALSE,

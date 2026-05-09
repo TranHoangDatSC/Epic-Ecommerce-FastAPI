@@ -94,4 +94,16 @@ export class ProductService {
 
     return this.http.get<Product[]>(`${this.apiUrl}/seller/my-products`, { params: httpParams, headers });
   }
+
+  submitReview(productId: number, data: { rating: number, content: string, title?: string }): Observable<any> {
+    const token = sessionStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    return this.http.post<any>(`${this.apiUrl}/${productId}/reviews`, data, { headers });
+  }
+
+  getReportedReviews(): Observable<any[]> {
+    const token = sessionStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    return this.http.get<any[]>(`${environment.apiUrl}/moderator/reviews/violations`, { headers });
+  }
 }
