@@ -29,7 +29,7 @@ export class VoucherManageComponent implements OnInit {
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
-  confirmActionType: 'restore' | 'hardDelete' | 'warning' = 'warning';
+  confirmActionType: 'softDelete' | 'restore' | 'hardDelete' | 'warning' = 'warning';
   targetVoucherId: number | null = null;
 
   skip = 0;
@@ -152,23 +152,41 @@ export class VoucherManageComponent implements OnInit {
 
     request.subscribe({
         next: () => {
-        this.uiService.showSuccess('Lưu thành công');
         this.showModal = false;
         this.loadVouchers();
         },
         error: (err) => {
         console.error("Chi tiết lỗi API:", err);
-        // Hiển thị lỗi cụ thể từ Backend để debug
         const msg = err.error?.detail;
-        this.uiService.showError(typeof msg === 'string' ? msg : 'Dữ liệu nhập vào không hợp lệ (Lỗi 422/400)');
+        this.showErrorModal('Lỗi lưu chiến dịch', typeof msg === 'string' ? msg : 'Dữ liệu nhập vào không hợp lệ (Lỗi 422/400)');
         }
     });
   }
 
+  showErrorModal(title: string, message: string) {
+    this.confirmTitle = title;
+    this.confirmMessage = message;
+    this.confirmActionType = 'warning';
+    this.showConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  confirmSoftDelete(id: number) {
+    this.confirmTitle = 'Xóa tạm thời';
+    this.confirmMessage = 'Bạn có chắc chắn muốn đưa voucher này vào thùng rác?';
+    this.confirmActionType = 'softDelete';
+    this.targetVoucherId = id;
+    this.showConfirmModal = true;
+  }
+
   softDelete(id: number) {
-    this.adminService.deleteVoucher(id).subscribe(() => {
-      this.uiService.showSuccess('Đã đưa voucher vào thùng rác');
-      this.loadVouchers();
+    this.adminService.deleteVoucher(id).subscribe({
+      next: () => {
+        this.loadVouchers();
+      },
+      error: (err) => {
+        this.showErrorModal('Lỗi thao tác', err.error?.detail || 'Không thể xóa tạm thời');
+      }
     });
   }
 
@@ -200,6 +218,8 @@ export class VoucherManageComponent implements OnInit {
       this.restoreVoucher(this.targetVoucherId);
     } else if (this.confirmActionType === 'hardDelete') {
       this.hardDelete(this.targetVoucherId);
+    } else if (this.confirmActionType === 'softDelete') {
+      this.softDelete(this.targetVoucherId);
     }
     this.closeConfirmModal();
   }
@@ -207,11 +227,10 @@ export class VoucherManageComponent implements OnInit {
   hardDelete(id: number) {
     this.adminService.hardDeleteVoucher(id).subscribe({
       next: () => {
-        this.uiService.showSuccess('Đã xóa vĩnh viễn voucher');
         this.loadVouchers();
       },
       error: (err) => {
-        this.uiService.showError('Lỗi xóa vĩnh viễn: ' + (err.error?.detail || 'Không xác định'));
+        this.showErrorModal('Lỗi xóa vĩnh viễn', err.error?.detail || 'Không xác định');
       }
     });
   }
@@ -224,11 +243,10 @@ export class VoucherManageComponent implements OnInit {
 
     this.adminService.updateVoucher(id, restoreData).subscribe({
         next: () => {
-        this.uiService.showSuccess('Đã khôi phục và kích hoạt voucher');
         this.loadVouchers();
         },
         error: (err) => {
-        this.uiService.showError('Lỗi khôi phục: ' + (err.error?.detail || 'Không xác định'));
+        this.showErrorModal('Lỗi khôi phục', err.error?.detail || 'Không xác định');
         }
     });
  }

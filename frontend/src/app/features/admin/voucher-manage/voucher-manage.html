@@ -75,7 +75,7 @@
             <td class="text-end">
               <div class="action-buttons">
                 <button *ngIf="activeTab === 'active'" class="btn-action btn-edit" (click)="openModal(v)" title="Chỉnh sửa"><i class="bi bi-pencil-fill"></i></button>
-                <button *ngIf="activeTab === 'active'" class="btn-action btn-del" (click)="softDelete(v.voucher_id)" title="Xóa tạm thời"><i class="bi bi-trash3-fill"></i></button>
+                <button *ngIf="activeTab === 'active'" class="btn-action btn-del" (click)="confirmSoftDelete(v.voucher_id)" title="Xóa tạm thời"><i class="bi bi-trash3-fill"></i></button>
                 <button *ngIf="activeTab === 'trash'" class="btn-action btn-warn" (click)="confirmRestore(v.voucher_id)" title="Khôi phục"><i class="bi bi-arrow-counterclockwise"></i></button>
                 <button *ngIf="activeTab === 'trash'" class="btn-action btn-del" (click)="confirmHardDelete(v.voucher_id)" title="Xóa vĩnh viễn"><i class="bi bi-x-circle-fill"></i></button>
               </div>
@@ -173,8 +173,8 @@
         </div>
         <div class="modal-footer border-0 p-4 pt-2">
           <button *ngIf="confirmActionType !== 'warning'" type="button" class="btn btn-outline-secondary px-4 fw-bold" (click)="closeConfirmModal()">Hủy bỏ</button>
-          <button *ngIf="confirmActionType !== 'warning'" type="button" class="btn px-4 text-white shadow-sm fw-bold" [style.background]="confirmActionType === 'hardDelete' ? '#dc3545' : (confirmActionType === 'restore' ? '#ffc107' : '#0d6efd')" (click)="onConfirm()">
-            {{ confirmActionType === 'hardDelete' ? 'Xóa Vĩnh Viễn' : 'Xác nhận' }}
+          <button *ngIf="confirmActionType !== 'warning'" type="button" class="btn px-4 text-white shadow-sm fw-bold" [style.background]="(confirmActionType === 'hardDelete' || confirmActionType === 'softDelete') ? '#dc3545' : (confirmActionType === 'restore' ? '#ffc107' : '#0d6efd')" (click)="onConfirm()">
+            {{ confirmActionType === 'hardDelete' ? 'Xóa Vĩnh Viễn' : (confirmActionType === 'softDelete' ? 'Xóa Tạm Thời' : 'Xác nhận') }}
           </button>
           <button *ngIf="confirmActionType === 'warning'" type="button" class="btn btn-primary px-5 fw-bold" (click)="closeConfirmModal()">Đã hiểu</button>
         </div>
