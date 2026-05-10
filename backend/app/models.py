@@ -332,7 +332,7 @@ class Review(Base):
     reviewer = relationship("User", back_populates="reviews")
 
     __table_args__ = (
-        CheckConstraint('rating BETWEEN 1 AND 5', name='check_review_rating'),
+        CheckConstraint('rating BETWEEN 0 AND 5', name='check_review_rating'),
     )
 
 

@@ -461,8 +461,8 @@ class VoucherResponse(VoucherBase):
 
 class ReviewBase(BaseModel):
     """Base review schema"""
-    product_id: int
-    rating: int = Field(..., ge=1, le=5)
+    product_id: Optional[int] = None
+    rating: int = Field(..., ge=0, le=5)
     title: Optional[str] = Field(None, max_length=255)
     content: Optional[str] = None
 
