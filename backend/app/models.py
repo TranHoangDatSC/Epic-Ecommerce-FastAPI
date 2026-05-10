@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DECIMAL, DateTime, 
-    ForeignKey, TIMESTAMP, CheckConstraint, Index, SmallInteger, func
+    ForeignKey, CheckConstraint, Index, SmallInteger
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -22,7 +22,7 @@ class Role(Base):
     users = relationship("User", secondary="user_role", back_populates="roles")
 
     __table_args__ = (
-        Index('idx_role_name', 'role_name', postgresql_where=(is_deleted == False)),
+        Index('idx_role_name', 'role_name', postgresql_where=(is_deleted.is_(False))),
         Index('idx_role_created_at', 'created_at'),
     )
 
@@ -76,11 +76,11 @@ class User(Base):
     feedbacks = relationship("SystemFeedback", back_populates="user")
 
     __table_args__ = (
-        Index('idx_user_username_active', 'username', postgresql_where=(is_deleted == False)),
-        Index('idx_user_email_active', 'email', postgresql_where=(is_deleted == False)),
+        Index('idx_user_username_active', 'username', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_user_email_active', 'email', postgresql_where=(is_deleted.is_(False))),
         Index('idx_user_created_at', 'created_at'),
-        Index('idx_user_is_active', 'is_active', postgresql_where=(is_deleted == False)),
-        Index('idx_user_email_verified', 'email_verified', postgresql_where=(is_deleted == False)),
+        Index('idx_user_is_active', 'is_active', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_user_email_verified', 'email_verified', postgresql_where=(is_deleted.is_(False))),
     )
 
 
@@ -115,9 +115,9 @@ class Category(Base):
     parent = relationship("Category", remote_side=[category_id], backref="children")
 
     __table_args__ = (
-        Index('idx_category_name_active', 'name', postgresql_where=(is_deleted == False)),
-        Index('idx_category_parent', 'parent_id', postgresql_where=(is_deleted == False)),
-        Index('idx_category_is_active', 'is_active', postgresql_where=(is_deleted == False)),
+        Index('idx_category_name_active', 'name', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_category_parent', 'parent_id', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_category_is_active', 'is_active', postgresql_where=(is_deleted.is_(False))),
         Index('idx_category_created_at', 'created_at'),
     )
 
@@ -163,11 +163,11 @@ class Product(Base):
         CheckConstraint('status IN (0, 1, 2, 3)', name='check_product_status'),
         CheckConstraint('condition_rating BETWEEN 1 AND 10', name='check_condition_rating'),
         CheckConstraint('transfer_method IN (1, 2)', name='check_transfer_method'),
-        Index('idx_product_seller', 'seller_id', postgresql_where=(is_deleted == False)),
-        Index('idx_product_category', 'category_id', postgresql_where=(is_deleted == False)),
-        Index('idx_product_status', 'status', postgresql_where=(is_deleted == False)),
-        Index('idx_product_price', 'price', postgresql_where=(is_deleted == False)),
-        Index('idx_product_created_at', 'created_at', postgresql_where=(is_deleted == False)),
+        Index('idx_product_seller', 'seller_id', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_product_category', 'category_id', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_product_status', 'status', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_product_price', 'price', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_product_created_at', 'created_at', postgresql_where=(is_deleted.is_(False))),
     )
 
 
@@ -253,9 +253,9 @@ class Order(Base):
 
     __table_args__ = (
         CheckConstraint('order_status IN (0, 1, 2, 3, 4)', name='check_order_status'),
-        Index('idx_order_buyer', 'buyer_id', postgresql_where=(is_deleted == False)),
-        Index('idx_order_status', 'order_status', postgresql_where=(is_deleted == False)),
-        Index('idx_order_date', 'order_date', postgresql_where=(is_deleted == False)),
+        Index('idx_order_buyer', 'buyer_id', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_order_status', 'order_status', postgresql_where=(is_deleted.is_(False))),
+        Index('idx_order_date', 'order_date', postgresql_where=(is_deleted.is_(False))),
     )
 
 

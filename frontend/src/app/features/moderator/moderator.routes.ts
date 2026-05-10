@@ -27,7 +27,7 @@ export const moderatorRoutes: Routes = [
         loadComponent: () => import('./profile/profile').then(m => m.ModeratorProfileComponent)
       },
       {
-        path: 'reviews',
+        path: 'review-manage',
         loadComponent: () => import('./review-manage/review-manage').then(m => m.ReviewManageComponent)
       },
       {

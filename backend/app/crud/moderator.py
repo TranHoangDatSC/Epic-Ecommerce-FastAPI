@@ -153,4 +153,8 @@ class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, sch
         db.refresh(user)
         return user
 
+    def get_violation_reviews(self, db: Session):
+        """Lấy các review có rating = 0"""
+        return db.query(models.Review).filter(models.Review.rating == 0).all()
+
 moderator = CRUDModerator(models.Product)

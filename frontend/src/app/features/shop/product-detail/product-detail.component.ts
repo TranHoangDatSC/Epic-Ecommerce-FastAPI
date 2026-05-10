@@ -128,9 +128,14 @@ getVideoType(url: string | undefined): 'youtube' | 'drive' | 'direct' | 'none' {
   selectedVoucher: string = '';
   userRating: number = 5;
   commentText: string = '';
+  visibleReviewCount: number = 5;
   
   onVoucherSelect() {
     this.couponCode = this.selectedVoucher;
+  }
+
+  loadMoreReviews() {
+    this.visibleReviewCount += 5;
   }
 
   submitReview() {

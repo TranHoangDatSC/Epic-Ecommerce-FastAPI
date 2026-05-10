@@ -17,17 +17,26 @@
       <table class="table custom-light-table align-middle mb-0">
         <thead>
           <tr>
-            <th width="10%">ID Sản phẩm</th>
-            <th width="20%">Người báo cáo</th>
-            <th width="40%">Nội dung vi phạm / Lý do</th>
-            <th width="15%">Ngày tạo</th>
-            <th width="15%" class="text-end">Hành động</th>
+            <th width="20%">Sản phẩm</th>
+            <th width="15%">Người bán</th>
+            <th width="15%">Người báo cáo</th>
+            <th width="30%">Nội dung vi phạm / Lý do</th>
+            <th width="10%">Ngày tạo</th>
+            <th width="10%" class="text-end">Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let review of reportedReviews">
             <td>
-              <span class="fw-bold">#{{ review.product_id }}</span>
+              <div class="fw-bold text-primary text-truncate" style="max-width: 150px;" [title]="review.product?.title || 'Sản phẩm #' + review.product_id">
+                {{ review.product?.title || 'Sản phẩm #' + review.product_id }}
+              </div>
+              <span class="badge bg-secondary mt-1">#{{ review.product_id }}</span>
+            </td>
+            <td>
+              <span class="fw-bold text-danger" [title]="'ID Người bán: ' + review.product?.seller_id">
+                <i class="bi bi-person-badge me-1"></i>{{ review.product?.seller_id ? 'Người bán #' + review.product?.seller_id : 'Không rõ' }}
+              </span>
             </td>
             <td>
               <span class="fw-bold">{{ review.reviewer?.full_name || 'Người dùng #' + review.buyer_id }}</span>
@@ -43,10 +52,10 @@
                 <a [routerLink]="['/shop/product', review.product_id]" target="_blank" class="btn btn-sm btn-outline-primary" title="Xem sản phẩm">
                   <i class="bi bi-eye"></i>
                 </a>
-                <button class="btn btn-sm btn-warning" (click)="rejectProduct(review.product_id)" title="Từ chối sản phẩm">
+                <button class="btn btn-sm btn-warning" (click)="openActionModal(review, 'reject_product')" title="Từ chối sản phẩm">
                   <i class="bi bi-x-circle"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" (click)="lockUser(review)" title="Khóa User bán hàng">
+                <button class="btn btn-sm btn-danger" (click)="openActionModal(review, 'ban_user')" title="Khóa User bán hàng">
                   <i class="bi bi-person-x"></i>
                 </button>
               </div>
@@ -60,6 +69,37 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Action Modal -->
+  <div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header border-0 py-3" [ngClass]="{'bg-warning': actionType === 'reject_product', 'bg-danger text-white': actionType === 'ban_user'}">
+          <h5 class="modal-title fw-bold">
+            <i class="bi" [ngClass]="{'bi-exclamation-triangle': actionType === 'reject_product', 'bi-person-x-fill': actionType === 'ban_user'}"></i>
+            {{ actionType === 'reject_product' ? 'Từ chối Sản phẩm' : 'Khóa Người bán' }}
+          </h5>
+          <button type="button" class="btn-close" [ngClass]="{'btn-close-white': actionType === 'ban_user'}" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="mb-3">
+            Hành động này sẽ {{ actionType === 'reject_product' ? 'gỡ sản phẩm #' + selectedReview?.product_id + ' khỏi hệ thống' : 'cấm người bán (seller_id: ' + selectedReview?.product?.seller_id + ') đăng nhập và kinh doanh' }}. Vui lòng nhập lý do (bắt buộc):
+          </p>
+          <textarea class="form-control rounded-3" rows="3" placeholder="Nhập lý do chi tiết..." [(ngModel)]="actionReason"></textarea>
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+          <button class="btn rounded-pill px-4"
+                  [ngClass]="{'btn-warning': actionType === 'reject_product', 'btn-danger': actionType === 'ban_user'}"
+                  [disabled]="isActionLoading || !actionReason.trim()"
+                  (click)="confirmAction()">
+            <span *ngIf="isActionLoading" class="spinner-border spinner-border-sm me-2"></span>
+            Xác nhận
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

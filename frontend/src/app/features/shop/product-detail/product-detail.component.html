@@ -141,35 +141,66 @@
           
           <div class="tab-pane fade" id="rev">
             <div class="row g-4">
-              <div class="col-md-5 border-end">
-                <h6 class="fw-bold mb-3">Đánh giá sản phẩm</h6>
-                <div class="rating-picker mb-3">
-                  <div class="stars fs-4 text-warning cursor-pointer">
-                    <i *ngFor="let s of [1,2,3,4,5]" class="bi me-1" 
-                       [class.bi-star-fill]="s <= userRating" 
-                       [class.bi-star]="s > userRating" (click)="userRating = s"></i>
+              <div class="col-md-5 border-end border-light pe-md-4">
+                <div class="p-4 bg-light rounded-4 shadow-sm border-0 h-100">
+                  <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-pencil-square me-2 text-primary"></i>Viết đánh giá</h5>
+                  <div class="rating-picker mb-4 text-center p-3 bg-white rounded-3 shadow-sm border">
+                    <div class="small text-muted mb-2 fw-bold text-uppercase">Bạn chấm mấy sao?</div>
+                    <div class="stars fs-2 text-warning cursor-pointer d-flex justify-content-center gap-2">
+                      <i *ngFor="let s of [1,2,3,4,5]" class="bi" 
+                         [class.bi-star-fill]="s <= userRating" 
+                         [class.bi-star]="s > userRating" 
+                         (click)="userRating = s" style="transition: transform 0.2s;"></i>
+                    </div>
                   </div>
+                  <div class="form-floating mb-4">
+                    <textarea class="form-control border-0 shadow-sm" id="reviewContent" style="height: 120px; resize: none;" placeholder="Chia sẻ trải nghiệm của bạn..." [(ngModel)]="commentText"></textarea>
+                    <label for="reviewContent" class="text-muted"><i class="bi bi-chat-text me-2"></i>Chia sẻ trải nghiệm...</label>
+                  </div>
+                  <button class="btn btn-primary w-100 rounded-pill fw-bold py-3 shadow-sm" (click)="submitReview()">GỬI ĐÁNH GIÁ</button>
                 </div>
-                <textarea class="form-control rounded-3 mb-3" rows="4" placeholder="Cảm nhận của bạn về món đồ này..." [(ngModel)]="commentText"></textarea>
-                <button class="btn btn-dark w-100 rounded-pill fw-bold py-2" (click)="submitReview()">GỬI ĐÁNH GIÁ</button>
               </div>
 
-              <div class="col-md-7">
-                <div class="review-list custom-scrollbar px-2" style="max-height: 450px; overflow-y: auto;">
-                  <div *ngFor="let r of getValidReviews()" class="review-card p-3 mb-3 border rounded-4 position-relative">
-                    <div class="d-flex justify-content-between mb-2">
-                      <span class="fw-bold small">{{ r.reviewer?.full_name || 'Người dùng' }}</span>
-                      <div class="d-flex gap-2 align-items-center">
-                        <div class="text-warning small">
+              <div class="col-md-7 ps-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold text-dark mb-0">Đánh giá từ cộng đồng</h5>
+                  <span class="badge bg-primary rounded-pill px-3 py-2">{{ getValidReviews().length }} đánh giá</span>
+                </div>
+                <div class="review-list custom-scrollbar pe-2" style="max-height: 550px; overflow-y: auto;">
+                  <div *ngFor="let r of getValidReviews() | slice:0:visibleReviewCount" class="review-card p-4 mb-3 border-0 bg-light rounded-4 position-relative shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="avatar-circle bg-primary bg-gradient text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 42px; height: 42px; font-weight: bold; font-size: 1.2rem;">
+                          {{ (r.reviewer?.full_name || 'N').charAt(0).toUpperCase() }}
+                        </div>
+                        <div>
+                          <div class="fw-bold text-dark mb-0">{{ r.reviewer?.full_name || 'Người dùng ẩn danh' }}</div>
+                          <div class="text-muted" style="font-size: 0.75rem;">{{ r.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+                        </div>
+                      </div>
+                      <div class="d-flex flex-column align-items-end gap-1">
+                        <div class="text-warning small d-flex gap-1">
                           <i *ngFor="let s of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="s <= r.rating" [class.bi-star]="s > r.rating"></i>
                         </div>
-                        <button class="btn btn-sm btn-link text-muted p-0 border-0" (click)="reportReview(r.review_id)" title="Báo cáo đánh giá rác"><i class="bi bi-flag-fill"></i></button>
+                        <button class="btn btn-sm btn-link text-muted p-0 border-0" style="font-size: 0.8rem;" (click)="reportReview(r.review_id)" title="Báo cáo vi phạm">
+                          <i class="bi bi-flag"></i> Báo cáo
+                        </button>
                       </div>
                     </div>
-                    <p class="small text-muted mb-0">{{ r.content }}</p>
+                    <p class="text-dark mb-0 lh-base" style="font-size: 0.95rem;">{{ r.content }}</p>
                   </div>
+
+                  <!-- Pagination Button -->
+                  <div *ngIf="getValidReviews().length > visibleReviewCount" class="text-center py-4">
+                    <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" (click)="loadMoreReviews()">
+                      Xem thêm {{ getValidReviews().length - visibleReviewCount }} đánh giá <i class="bi bi-chevron-down ms-1"></i>
+                    </button>
+                  </div>
+
                   <div *ngIf="!getValidReviews().length" class="text-center py-5 opacity-50">
-                    <i class="bi bi-chat-dots display-4"></i><p>Chưa có đánh giá nào.</p>
+                    <i class="bi bi-chat-quote display-1 text-primary mb-3 d-block"></i>
+                    <h6 class="fw-bold">Chưa có đánh giá nào</h6>
+                    <p class="small text-muted">Hãy là người đầu tiên đánh giá sản phẩm này!</p>
                   </div>
                 </div>
               </div>

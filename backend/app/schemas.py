@@ -489,6 +489,7 @@ class ReviewResponse(ReviewBase):
     updated_at: Optional[datetime]
     is_deleted: bool
     reviewer: Optional[UserResponse] = None
+    product: Optional['ProductResponse'] = None
 
     class Config:
         from_attributes = True
