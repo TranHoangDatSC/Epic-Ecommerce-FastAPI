@@ -27,7 +27,7 @@ export class ModeratorLayoutComponent {
       items: [
         { path: 'user-manage', label: 'Quản lý người dùng', icon: 'bi bi-people' },
         { path: 'product-manage', label: 'Kiểm duyệt sản phẩm', icon: 'bi bi-box-seam' },
-        { path: 'review-manage', label: 'Quản lý báo cáo vi phạm', icon: 'bi bi-box-report' },
+        { path: 'review-manage', label: 'Quản lý báo cáo vi phạm', icon: 'bi-box-arrow-in-down' },
         { path: 'profile', label: 'Thông tin cá nhân', icon: 'bi bi-person' }
       ]
     }

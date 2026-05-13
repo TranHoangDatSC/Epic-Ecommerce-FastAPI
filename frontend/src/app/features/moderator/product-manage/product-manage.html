@@ -14,24 +14,34 @@
   </div>
 
   <div class="table-container bg-white rounded-3 shadow-sm border p-4 position-relative">
-    <!-- Tabs -->
-    <ul class="nav nav-tabs custom-tabs border-bottom-0 mb-4">
-      <li class="nav-item">
-        <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'pending'" (click)="selectTab('pending')">
-          <i class="bi bi-clock-history me-2"></i> Chờ phê duyệt
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'approved'" (click)="selectTab('approved')">
-          <i class="bi bi-check-circle me-2"></i> Đã phê duyệt
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'rejected'" (click)="selectTab('rejected')">
-          <i class="bi bi-x-circle me-2"></i> Đã từ chối
-        </button>
-      </li>
-    </ul>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+      <!-- Tabs -->
+      <ul class="nav nav-tabs custom-tabs border-bottom-0 mb-0">
+        <li class="nav-item">
+          <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'pending'" (click)="selectTab('pending')">
+            <i class="bi bi-clock-history me-2"></i> Chờ phê duyệt
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'approved'" (click)="selectTab('approved')">
+            <i class="bi bi-check-circle me-2"></i> Đã phê duyệt
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link fw-bold text-uppercase" [class.active]="activeTab === 'rejected'" (click)="selectTab('rejected')">
+            <i class="bi bi-x-circle me-2"></i> Đã từ chối
+          </button>
+        </li>
+      </ul>
+
+      <!-- Search bar -->
+      <div class="search-bar" style="width: 350px;">
+        <div class="input-group shadow-sm">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm sản phẩm, người bán..." [(ngModel)]="searchTerm" (input)="filterProducts()">
+        </div>
+      </div>
+    </div>
 
     <div class="custom-table-wrapper" *ngIf="!isLoading; else loadingState">
       <table class="table custom-light-table align-middle mb-0" *ngIf="products.length > 0; else emptyState">
@@ -137,21 +147,33 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content bg-white text-dark border-0 shadow-lg modal-light-override">
         <div class="modal-header border-bottom">
-          <h5 class="modal-title fw-bold">{{ isViewMode ? 'Lý do từ chối' : 'Xác nhận thao tác' }}</h5>
+          <h5 class="modal-title fw-bold">
+            <ng-container *ngIf="isViewMode">Lý do từ chối</ng-container>
+            <ng-container *ngIf="!isViewMode">
+              {{ targetStatus === 1 ? 'Xác nhận Phê Duyệt' : 'Xác nhận Từ Chối' }}
+            </ng-container>
+          </h5>
           <button type="button" class="btn-close" (click)="closeModal()"></button>
         </div>
         <div class="modal-body p-4">
           <div *ngIf="isViewMode" class="p-3 bg-light rounded border text-dark fw-medium">
             {{ rejectionReason }}
           </div>
-          <div *ngIf="!isViewMode">
+          <div *ngIf="!isViewMode && targetStatus === 2">
             <label class="mb-2 text-danger fw-bold text-uppercase small">Lý do từ chối (Bắt buộc):</label>
             <textarea class="form-control" [(ngModel)]="rejectionReason" rows="3" placeholder="Nhập lý do tại sao sản phẩm không được duyệt..."></textarea>
+          </div>
+          <div *ngIf="!isViewMode && targetStatus === 1">
+            <div class="text-center">
+              <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+              <p class="mt-3 mb-0 text-dark fw-medium fs-5">Bạn có chắc chắn muốn phê duyệt sản phẩm này không?</p>
+            </div>
           </div>
         </div>
         <div class="modal-footer border-top pt-3 pb-3 px-4">
           <button class="btn btn-outline-secondary px-4 fw-bold" (click)="closeModal()">{{ isViewMode ? 'Đóng' : 'Hủy' }}</button>
-          <button *ngIf="!isViewMode" class="btn btn-danger px-4 shadow-sm fw-bold" (click)="confirmAction()">Xác nhận Từ Chối</button>
+          <button *ngIf="!isViewMode && targetStatus === 2" class="btn btn-danger px-4 shadow-sm fw-bold" (click)="confirmAction()">Xác nhận Từ Chối</button>
+          <button *ngIf="!isViewMode && targetStatus === 1" class="btn btn-success px-4 shadow-sm fw-bold" (click)="confirmAction()">Xác nhận Phê Duyệt</button>
         </div>
       </div>
     </div>

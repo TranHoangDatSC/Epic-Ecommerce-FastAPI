@@ -18,6 +18,8 @@ declare var bootstrap: any
 })
 export class ModeratorProductManageComponent implements OnInit {
   products: any[] = [];
+  allProducts: any[] = [];
+  searchTerm: string = '';
   isLoading = false;
   actionLoading = false;
   message: string | null = null;
@@ -101,12 +103,13 @@ Math: any;
     this.productService.getProductsByStatus(status).subscribe({
       next: (data) => {
         this.category.forEach(c => this.categoryMap.set(c.category_id, c.name));
-        this.products = (data || []).map(p => ({
+        this.allProducts = (data || []).map(p => ({
           ...p,
           category_name: this.categoryMap.get(p.category_id) || 'Chưa phân loại',
           seller_name: this.userMap.get(p.seller_id) || 'User #' + p.seller_id,
           product_name: p.title || 'Sản phẩm không tên'
         }));
+        this.filterProducts();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -116,9 +119,24 @@ Math: any;
     });
   }
 
+  filterProducts() {
+    if (!this.searchTerm.trim()) {
+      this.products = [...this.allProducts];
+    } else {
+      const term = this.searchTerm.toLowerCase().trim();
+      this.products = this.allProducts.filter(p => 
+        p.product_name.toLowerCase().includes(term) || 
+        p.seller_name.toLowerCase().includes(term) ||
+        p.category_name.toLowerCase().includes(term)
+      );
+    }
+    this.currentPage = 1;
+  }
+
   selectTab(tab: 'pending' | 'approved' | 'rejected'): void {
     this.activeTab = tab;
     this.currentPage = 1;
+    this.searchTerm = '';
     this.loadProducts();
   }
 
