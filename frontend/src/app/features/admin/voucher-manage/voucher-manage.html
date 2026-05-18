@@ -36,10 +36,10 @@
       <table class="table custom-light-table align-middle">
         <thead>
           <tr>
-            <th width="30%">Mã & Mô tả</th>
+            <th width="35%">Mã & Mô tả</th>
             <th width="15%">Loại giảm</th>
-            <th width="20%">Sử dụng</th>
-            <th width="20%">Hiệu lực</th>
+            <th width="18%">Sử dụng</th>
+            <th width="17%">Hiệu lực</th>
             <th width="15%" class="text-end">Hành động</th>
           </tr>
         </thead>
@@ -47,11 +47,11 @@
           <tr *ngFor="let v of pagedVouchers" class="voucher-row">
             <td>
               <div class="d-flex align-items-center gap-3">
-                <div class="voucher-code-badge">{{ v.code }}</div>
-                <div class="text-truncate" style="max-width: 200px;">
+                <div class="text-dark" style="width: 110px; font-size: 1rem;">{{ v.code }}</div>
+                <div class="text-truncate flex-grow-1" style="max-width: 220px;">
                   <!-- TOOLTIP HOẶC TITLE ĐỂ XEM ĐẦY ĐỦ KHI HOVER -->
-                  <span class="d-block fw-bold text-dark text-truncate" [title]="v.description">{{ v.description || 'N/A' }}</span>
-                  <small class="text-muted">Min: {{ v.min_order_amount | number }}đ</small>
+                  <span class="d-block fw-bold text-dark text-truncate" [title]="v.description" style="font-size: 1.05rem;">{{ v.description || 'N/A' }}</span>
+                  <small class="text-muted" style="font-size: 0.9rem;">Min: {{ v.min_order_amount | number }}đ</small>
                 </div>
               </div>
             </td>

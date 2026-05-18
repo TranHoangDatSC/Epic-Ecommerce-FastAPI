@@ -55,7 +55,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let mod of pagedModerators">
+          <tr *ngFor="let mod of pagedModerators; trackBy: trackByUserId">
             <td>
               <div class="d-flex align-items-center gap-3">
                 <div class="cat-icon" [class.trash-icon]="activeTab === 'locked'">

@@ -49,9 +49,6 @@
             </td>
             <td>
               <div class="action-buttons d-flex justify-content-end gap-2">
-                <a [routerLink]="['/shop/product', review.product_id]" target="_blank" class="btn btn-sm btn-outline-primary" title="Xem sản phẩm">
-                  <i class="bi bi-eye"></i>
-                </a>
                 <button class="btn btn-sm btn-warning" (click)="openActionModal(review, 'reject_product')" title="Từ chối sản phẩm">
                   <i class="bi bi-x-circle"></i>
                 </button>

@@ -11,9 +11,10 @@ import { AdminService } from '../../../shared/services/admin.service';
   styleUrl: './moderator-manage.scss'
 })
 export class ModeratorManageComponent implements OnInit {
-  moderators: any[] = [];
+  moderators: any[] = [];       // danh sách hiển thị (sau lọc)
+  allModerators: any[] = [];    // raw data từ API
   skip = 0;
-  limit = 5; // Tăng lên 5 cho đẹp đội hình
+  limit = 5;
   isLoading = false;
   
   showModal = false;
@@ -27,8 +28,6 @@ export class ModeratorManageComponent implements OnInit {
   statusReason = '';
   statusAction: 'lock' | 'unlock' = 'lock';
   activeTab: 'active' | 'locked' = 'active';
-
-  // THÊM: Biến Search
   searchTerm: string = '';
 
   moderatorForm = {
@@ -44,54 +43,44 @@ export class ModeratorManageComponent implements OnInit {
     this.loadModerators();
   }
 
-  // Lấy danh sách đã lọc theo Tab và Từ khóa
-  get filteredModerators(): any[] {
-    let list = this.moderators;
-    
-    // Lọc theo Search (nếu có)
+  // Apply lọc tab + search vào danh sách hiển thị (giống voucher-manage)
+  applyFilterAndTab(): void {
+    let filtered = this.allModerators;
+    filtered = (this.activeTab === 'locked')
+      ? filtered.filter(mod => mod.is_active === false)
+      : filtered.filter(mod => mod.is_active === true);
+
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(mod => 
+      filtered = filtered.filter(mod =>
         mod.username?.toLowerCase().includes(term) ||
         mod.email?.toLowerCase().includes(term) ||
         mod.full_name?.toLowerCase().includes(term)
       );
     }
-    return list;
+    this.moderators = filtered;
   }
 
-  // Danh sách hiển thị trên bảng hiện tại
-  get pagedModerators(): any[] {
-    return this.filteredModerators.slice(this.skip, this.skip + this.limit);
-  }
-
-  // TÍNH TOÁN PHÂN TRANG THÔNG MINH
-  get totalPages(): number {
-    return Math.ceil(this.filteredModerators.length / this.limit);
-  }
-
-  get currentPage(): number {
-    return Math.floor(this.skip / this.limit) + 1;
-  }
-
+  // Getters phân trang
+  get filteredModerators(): any[] { return this.moderators; }
+  get pagedModerators(): any[] { return this.moderators.slice(this.skip, this.skip + this.limit); }
+  get totalPages(): number { return Math.ceil(this.moderators.length / this.limit); }
+  get currentPage(): number { return Math.floor(this.skip / this.limit) + 1; }
   get visiblePages(): number[] {
     const pages: number[] = [];
     const total = this.totalPages;
     const current = this.currentPage;
     let start = Math.max(1, current - 1);
     let end = Math.min(total, current + 1);
-
     if (current === 1) end = Math.min(total, 3);
     if (current === total) start = Math.max(1, total - 2);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
+    for (let i = start; i <= end; i++) { pages.push(i); }
     return pages;
   }
 
   onSearchChange() {
-    this.skip = 0; // Về trang 1 khi gõ tìm kiếm
+    this.skip = 0;
+    this.applyFilterAndTab();
   }
 
   goToPage(page: number) {
@@ -101,27 +90,19 @@ export class ModeratorManageComponent implements OnInit {
   }
 
   nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.skip += this.limit;
-    }
+    if (this.currentPage < this.totalPages) { this.skip += this.limit; }
   }
 
   prevPage(): void {
-    if (this.skip >= this.limit) {
-      this.skip -= this.limit;
-    }
+    if (this.skip >= this.limit) { this.skip -= this.limit; }
   }
 
   loadModerators(): void {
     this.isLoading = true;
-    this.moderators = [];
     this.adminService.getModerators(true).subscribe({
       next: (data: any) => {
-        if (this.activeTab === 'locked') {
-          this.moderators = data.filter((mod: any) => mod.is_active === false);
-        } else {
-          this.moderators = data.filter((mod: any) => mod.is_active === true);
-        }
+        this.allModerators = data;
+        this.applyFilterAndTab();
         if (this.skip >= this.moderators.length) this.skip = 0;
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -137,8 +118,8 @@ export class ModeratorManageComponent implements OnInit {
   switchTab(tab: 'active' | 'locked'): void {
     this.activeTab = tab;
     this.skip = 0;
-    this.searchTerm = ''; // Xóa text tìm kiếm khi chuyển tab
-    this.loadModerators();
+    this.searchTerm = '';
+    this.applyFilterAndTab();
   }
 
   openModal(moderator: any = null): void {
@@ -230,7 +211,12 @@ export class ModeratorManageComponent implements OnInit {
       error: (err: any) => {
         console.error('Error toggling moderator status:', err);
         alert(err?.error?.detail || 'Không thể cập nhật trạng thái moderator.');
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  trackByUserId(index: number, item: any): any {
+    return item.user_id || index;
   }
 }
