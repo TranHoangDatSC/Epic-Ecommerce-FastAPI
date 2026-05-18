@@ -18,6 +18,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: oldshop_backend
+    restart: always
     depends_on:
       - db
     env_file:
