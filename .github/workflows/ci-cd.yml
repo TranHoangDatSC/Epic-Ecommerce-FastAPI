@@ -39,10 +39,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate Dummy Fraud Model
+      - name: Generate Dummy ML Models
         working-directory: ./backend
         run: |
+          # 1. Tạo Model giả
           python -c "import joblib; from sklearn.ensemble import IsolationForest; m = IsolationForest(); m.fit([[0],[0]]); joblib.dump(m, 'app/core/fraud_model.joblib')"
+
+          # 2. Tạo Scaler giả
+          python -c "import joblib; from sklearn.preprocessing import StandardScaler; s = StandardScaler(); s.fit([[0],[0]]); joblib.dump(s, 'app/core/scaler.joblib')"
 
       - name: Run Backend Tests (Sinh coverage.xml)
         working-directory: ./backend
