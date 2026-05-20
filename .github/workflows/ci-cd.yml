@@ -39,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Backend Tests
+      - name: Run Backend Tests (Sinh coverage.xml)
         working-directory: ./backend
         env:
           DB_HOST: localhost
@@ -47,7 +47,16 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: 123
           DB_NAME: oldshop_test
-        run: pytest # Lệnh này giờ sẽ tự sinh ra backend/coverage.xml nhờ cấu hình trong pytest.ini
+          # Bơm thêm các biến môi trường bị thiếu (dùng giá trị giả cho test)
+          DATABASE_URL: postgresql://postgres:123@localhost:5432/oldshop_test
+          SMTP_USER: dummy_user
+          SMTP_PASSWORD: dummy_password
+          MAIL_USERNAME: dummy_user
+          MAIL_PASSWORD: dummy_password
+          SECRET_KEY: super_secret_key_for_testing_123
+          PAYPAL_CLIENT_ID: dummy_client_id
+          PAYPAL_SECRET: dummy_paypal_secret
+        run: pytest
 
       # --- 2. CHẠY TEST FRONTEND ---
       - name: Setup Node.js 20
