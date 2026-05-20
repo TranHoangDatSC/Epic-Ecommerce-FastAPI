@@ -1,6 +1,7 @@
 import os
-import psycopg2
 import time
+import psycopg2
+import subprocess
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 DB_HOST = os.getenv("DB_HOST", "db")
@@ -9,80 +10,61 @@ DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "123")
 DB_NAME = os.getenv("DB_NAME", "oldshop")
 
-def setup_db():
-    print("\n" + "="*60)
-    print("   FINAL DATABASE ENGINE - HANDLING TRIGGERS & SEEDS")
-    print("="*60)
-
-    # 1. Chờ Server và tạo DB
-    while True:
+def wait_for_db():
+    print(f"[INFO] Đang kiểm tra kết nối tới {DB_HOST}:{DB_PORT}...")
+    retries = 15
+    while retries > 0:
         try:
-            conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname="postgres", connect_timeout=2)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            cur = conn.cursor()
-            cur.execute(f"SELECT 1 FROM pg_database WHERE datname = '{DB_NAME}'")
-            if not cur.fetchone():
-                print(f"[INFO] Creating database: {DB_NAME}")
-                cur.execute(f"CREATE DATABASE {DB_NAME}")
-            cur.close()
+            conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname="postgres")
             conn.close()
-            break
-        except Exception as e:
-            print(f"[WAIT] Waiting for Postgres Server...")
-            time.sleep(2)
+            print("[OK] PostgreSQL Server đã sẵn sàng.")
+            return True
+        except:
+            print(f"[WAIT] Đợi DB khởi động... ({retries} lần thử)")
+            retries -= 1
+            time.sleep(3)
+    return False
 
-    # 2. Kết nối vào DB chính
+def init_db():
+    # Tạo Database nếu chưa có
+    conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname="postgres")
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+    cur.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{DB_NAME}'")
+    if not cur.fetchone():
+        print(f"[INFO] Đang tạo database '{DB_NAME}'...")
+        cur.execute(f"CREATE DATABASE {DB_NAME}")
+    cur.close()
+    conn.close()
+
+def run_init_script_with_psql():
+    """Dùng lệnh psql gốc để chạy file init.sql giống hệt như setup.cmd"""
+    base_dir = "/database_src" if os.path.exists("/database_src") else os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database"))
+    init_script = os.path.join(base_dir, "init.sql")
+    
+    if not os.path.exists(init_script):
+        print(f"[ERROR] Không tìm thấy file mục lục tại: {init_script}")
+        return
+
+    print(f"[INFO] Đang nhờ 'psql' chạy file: {init_script}")
+    
+    env = os.environ.copy()
+    env["PGPASSWORD"] = DB_PASSWORD
+
     try:
-        # Quan trọng: Mở kết nối với Autocommit = False để kiểm soát Transaction cho Trigger
-        conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname=DB_NAME)
-        cur = conn.cursor()
-        
-        # FIX LỖI gen_salt: Cài extension pgcrypto ngay lập tức
-        print("[INIT] Installing extensions...")
-        cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto;")
-        conn.commit()
-
-        base_path = "/database_src"
-        steps = ["01_schema", "02_functions", "03_seeds", "04_modules"]
-
-        for step in steps:
-            target_dir = os.path.join(base_path, step)
-            if not os.path.exists(target_dir):
-                continue
-
-            print(f"\n>>> NẠP BƯỚC: {step}")
-            
-            # Duyệt sâu mọi folder con
-            for root, dirs, files in os.walk(target_dir):
-                for file in sorted(files):
-                    if file.endswith(".sql"):
-                        # Né các file gây nhiễu
-                        if "init.sql" in file or "all_functions.sql" in file or "_old" in file:
-                            continue
-                        
-                        sql_path = os.path.join(root, file)
-                        print(f" [EXEC] -> {file} (Path: {os.path.relpath(sql_path, base_path)})")
-                        
-                        try:
-                            with open(sql_path, 'r', encoding='utf-8') as f:
-                                sql_content = f.read()
-                                if sql_content.strip():
-                                    # Thực thi nội dung file SQL
-                                    cur.execute(sql_content)
-                            conn.commit() # Lưu lại sau mỗi file thành công
-                        except Exception as sql_err:
-                            conn.rollback() # Nếu file lỗi, rollback lại trạng thái trước file đó
-                            # In lỗi chi tiết để Hoang soi
-                            print(f" [LỖI SQL] Tại {file}: {str(sql_err).strip()}")
-
-        cur.close()
-        conn.close()
-        print("\n" + "="*60)
-        print("   CHỐT SỔ: TRÁI TIM ĐÃ ĐẬP, DATA ĐÃ ĐỦ!")
-        print("="*60 + "\n")
-
-    except Exception as e:
-        print(f"[FATAL] System failed: {e}")
+        subprocess.run(
+            ["psql", "-h", DB_HOST, "-p", DB_PORT, "-U", DB_USER, "-d", DB_NAME, "-f", init_script],
+            env=env,
+            check=True,
+            cwd=base_dir  # <--- BÍ KÍP CHÍNH LÀ DÒNG NÀY: Ép nó đứng ở /database_src để chạy
+        )
+        print("\n[SUCCESS] ==============================================")
+        print("[SUCCESS] PSQL ĐÃ NẠP DỮ LIỆU THÀNH CÔNG 100%!")
+        print("[SUCCESS] ==============================================")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Quá trình chạy psql thất bại: {e}")
 
 if __name__ == "__main__":
-    setup_db()
+    if wait_for_db():
+        init_db()
+        run_init_script_with_psql()

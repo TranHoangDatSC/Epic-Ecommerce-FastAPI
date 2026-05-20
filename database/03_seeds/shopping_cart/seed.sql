@@ -5,9 +5,9 @@
 INSERT INTO shopping_cart (user_id, last_updated) VALUES
 (3, CURRENT_TIMESTAMP),  -- user1
 (4, CURRENT_TIMESTAMP);  -- user2
-(8, CURRENT_TIMESTAMP),  -- user3
+(8, CURRENT_TIMESTAMP);  -- user3
 (9, CURRENT_TIMESTAMP);  -- user4
-(10, CURRENT_TIMESTAMP),  -- user5
+(10, CURRENT_TIMESTAMP);  -- user5
 (11, CURRENT_TIMESTAMP);  -- user6
 (12, CURRENT_TIMESTAMP),  -- user7
 (13, CURRENT_TIMESTAMP);  -- user8

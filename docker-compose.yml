@@ -32,7 +32,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app/backend # Cập nhật lại đường dẫn để dev trực tiếp
+      - ./backend:/app # Cập nhật lại đường dẫn để dev trực tiếp
       - ./database:/database_src 
     networks:
       - oldshop_network
