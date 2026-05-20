@@ -50,10 +50,6 @@ logs/
 Thumbs.db
 .DS_Store
 
-# Ignore Python debug and sandbox files
-check_*.py
-test_*.py
-
 # Ignore model files
 app/core/fraud_model.joblib
 app/core/scaler.joblib
