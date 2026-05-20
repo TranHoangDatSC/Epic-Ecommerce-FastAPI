@@ -44,6 +44,7 @@ yagmail
 pytest
 pytest-asyncio
 httpx
+pytest-cov
 
 # 7. ML TOOLS (Tùy chọn - chỉ cài nếu cần)
 # Joblib: Cần cho mô hình scikit-learn cũ
