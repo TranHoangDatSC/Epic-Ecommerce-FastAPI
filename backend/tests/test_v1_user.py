@@ -84,3 +84,5 @@ class TestUsersModule:
         assert "totalProducts" in data
         assert "revenue" in data
         logger.info(">>> [SUCCESS] Truy xuất thống kê kinh doanh (Seller Dashboard): OK")
+
+# -> python -m pytest tests/test_v1_user.py -s -v -p no:warnings

@@ -32,8 +32,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app # Cập nhật lại đường dẫn để dev trực tiếp
-      - ./database:/database_src 
+      - ./backend:/app                      # Hot-reload code khi dev
+      - ./backend/media:/app/media          # Ảnh upload lưu trực tiếp ra host, persistent
     networks:
       - oldshop_network
 

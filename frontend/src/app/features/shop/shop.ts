@@ -138,7 +138,7 @@ export class ShopComponent implements OnInit {
     this.filteredProducts = this.allProducts.filter((product) => {
       const matchesSearch = this.searchQuery
         ? product.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          (product.description || '').toLowerCase().includes(this.searchQuery.toLowerCase())
+        (product.description || '').toLowerCase().includes(this.searchQuery.toLowerCase())
         : true;
 
       const matchesCategory = this.selectedCategoryId
@@ -192,20 +192,26 @@ export class ShopComponent implements OnInit {
     return pages;
   }
 
-  getPrimaryImage(product: Product): string {
-    const primaryImage = product.product_images?.find(img => img.is_primary);
-    const raw = primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '');
-    if (!raw) {
-      return 'https://via.placeholder.com/350x250?text=No+Image';
+  getPrimaryImage(product: any): string {
+    let path = '';
+    // API trả về field "product_images" (không phải "images")
+    const images = product.product_images || product.images || [];
+    if (images.length > 0) {
+      // Ưu tiên ảnh is_primary=true, fallback về ảnh đầu tiên
+      const primary = images.find((img: any) => img.is_primary) || images[0];
+      path = primary.image_url || '';
+    } else {
+      path = product.image || '';
     }
-    // If URL is relative (served by backend), prefix with base URL
-    if (raw.startsWith('/')) {
-      const base = environment.imageBaseUrl.replace(/\/+$/, '');
-      const trimmed = raw.startsWith('/') ? raw : `/${raw}`;
-      return `${base}${trimmed}`;
+
+    // Nếu path không phải URL đầy đủ thì nối với imageBaseUrl từ environment
+    if (path && !path.startsWith('http')) {
+      const base = environment.imageBaseUrl.replace(/\/$/, '');
+      return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
     }
-    return raw;
+    return path;
   }
+
 
   formatPrice(value: number | string): string {
     const price = typeof value === 'string' ? Number(value) : value;

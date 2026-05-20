@@ -33,6 +33,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
         """Get all products by seller"""
         return (
             db.query(Product)
+            .options(joinedload(Product.product_images))
             .filter(Product.seller_id == seller_id)
             .filter(Product.is_deleted == False)
             .offset(skip)
@@ -56,7 +57,8 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
     def get_approved_products(self, db: Session, skip: int = 0, limit: int = 100, order_by: str = "created_at") -> List[Product]:
         query = (
             db.query(Product)
-            .join(Category, Product.category_id == Category.category_id) # Join để lấy trạng thái danh mục
+            .join(Category, Product.category_id == Category.category_id)
+            .options(joinedload(Product.product_images))   # ← BUG FIX: load ảnh kèm theo
             .filter(Product.status == 1)            # Chỉ lấy sản phẩm đã duyệt
             .filter(Product.is_deleted == False)    # Sản phẩm chưa bị xóa
             .filter(Category.is_active == True)     # CHỈ LẤY SẢN PHẨM THUỘC DANH MỤC ĐANG HOẠT ĐỘNG
@@ -71,6 +73,7 @@ class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
             query = query.order_by(Product.view_count.desc())
         
         return query.offset(skip).limit(limit).all()
+
 
     def search_products(self, db: Session, query_str: str, skip: int = 0, limit: int = 100) -> List[Product]:
         return (

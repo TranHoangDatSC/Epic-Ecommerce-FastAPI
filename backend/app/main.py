@@ -68,8 +68,11 @@ app = FastAPI(
 )
 
 # ==================== Static Files ====================
-# Move and setup media directory
-media_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "media")
+# Đường dẫn tương đối từ vị trí file main.py → thư mục media
+media_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "media")
+media_dir = os.path.normpath(media_dir)
+
+# Đảm bảo các thư mục con tồn tại
 os.makedirs(media_dir, exist_ok=True)
 os.makedirs(os.path.join(media_dir, "products"), exist_ok=True)
 os.makedirs(os.path.join(media_dir, "users"), exist_ok=True)

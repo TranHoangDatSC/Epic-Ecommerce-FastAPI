@@ -1,5 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.oldshop.com/api/v1',
-  imageBaseUrl: 'https://api.oldshop.com'
+  apiUrl: '/api/v1',              // Nginx proxy /api/ → backend:8000
+  imageBaseUrl: '',               // Chuỗi rỗng = dùng origin hiện tại, nginx proxy /media/ → backend
+  imageUrl: '',
+  googleScriptContact: ''
 };

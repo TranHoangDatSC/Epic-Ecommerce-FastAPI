@@ -88,3 +88,5 @@ class TestAdminModule:
         response = client.get("/api/v1/admin/stats")
         assert response.status_code == 401
         logger.info(">>> [SUCCESS] Chốt chặn truy cập trái phép (401 Unauthorized): OK")
+
+# -> python -m pytest tests/test_v1_admin.py -s -v -p no:warnings

@@ -87,3 +87,5 @@ class TestOrderModule:
         # Nếu đơn đã hủy từ trước hoặc không thuộc quyền, chấp nhận status lỗi có kiểm soát
         assert response.status_code in [200, 400]
         logger.info(f">>> [SUCCESS] Hủy đơn hàng và thực hiện logic hoàn kho (ID: {o_id}): OK")
+
+# -> python -m pytest tests/test_v1_order.py -s -v -p no:warnings

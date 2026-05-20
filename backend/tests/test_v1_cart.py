@@ -77,3 +77,5 @@ class TestCartModule:
         response = client.delete("/api/v1/cart", headers=user_auth)
         assert response.status_code == 204
         logger.info(">>> [SUCCESS] Làm trống giỏ hàng (Clear Cart): OK")
+
+# -> python -m pytest tests/test_v1_cart.py -s -v -p no:warnings

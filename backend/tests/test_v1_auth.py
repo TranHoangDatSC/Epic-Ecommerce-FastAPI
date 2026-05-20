@@ -89,3 +89,5 @@ class TestAuthModule:
         # Kiểm tra logic gán role_id mặc định hoặc lấy từ DB
         assert "user_roles" in data or "role_id" in data
         logger.info(">>> [SUCCESS] Truy xuất Profile người dùng (/me): OK")
+
+# -> python -m pytest tests/test_v1_auth.py -s -v -p no:warnings

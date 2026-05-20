@@ -81,3 +81,5 @@ class TestCategoryModule:
                              headers={"Authorization": f"Bearer {token}"})
         assert bad_res.status_code == 403
         logger.info(">>> [SUCCESS] Chốt chặn phân quyền (RBAC): OK")
+
+# -> python -m pytest tests/test_v1_category.py -s -v -p no:warnings

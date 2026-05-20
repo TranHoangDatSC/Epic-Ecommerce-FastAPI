@@ -62,3 +62,5 @@ class TestModeratorModule:
         response = client.get("/api/v1/moderator/products/pending")
         assert response.status_code == 401
         logger.info(">>> [SUCCESS] Chốt chặn truy cập trái phép: OK")
+
+# -> python -m pytest tests/test_v1_moderator.py -s -v -p no:warnings

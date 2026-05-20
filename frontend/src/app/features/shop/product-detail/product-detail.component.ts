@@ -77,7 +77,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   getFullImageUrl(imageUrl: string): string {
-    if (!imageUrl) return 'https://via.placeholder.com/600x600?text=No+Image';
+    if (!imageUrl) return 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22600%22 height%3D%22600%22 viewBox%3D%220 0 600 600%22%3E%3Crect width%3D%22600%22 height%3D%22600%22 fill%3D%22%23e9ecef%22%2F%3E%3Ctext x%3D%22300%22 y%3D%22285%22 font-family%3D%22Arial%2Csans-serif%22 font-size%3D%2248%22 fill%3D%22%236c757d%22 text-anchor%3D%22middle%22%3E%F0%9F%96%BC%3C%2Ftext%3E%3Ctext x%3D%22300%22 y%3D%22335%22 font-family%3D%22Arial%2Csans-serif%22 font-size%3D%2220%22 fill%3D%22%236c757d%22 text-anchor%3D%22middle%22%3EKh%C3%B4ng c%C3%B3 h%C3%ACnh%3C%2Ftext%3E%3C%2Fsvg%3E';
     const baseUrl = this.imageBaseUrl.replace(/\/$/, '');
     const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
     return `${baseUrl}${path}`;

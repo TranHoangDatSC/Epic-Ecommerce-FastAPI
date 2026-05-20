@@ -66,3 +66,5 @@ class TestProductModule:
         
         assert p2.get("view_count", 0) == initial_views + 2
         logger.info(">>> [SUCCESS] Tự động tăng View Count khi truy cập: OK")
+
+# -> # -> python -m pytest tests/test_v1_order.py -s -v -p no:warnings
