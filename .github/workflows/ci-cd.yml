@@ -48,6 +48,13 @@ jobs:
           # 2. Tạo Scaler giả
           python -c "import joblib; from sklearn.preprocessing import StandardScaler; s = StandardScaler(); s.fit([[0],[0]]); joblib.dump(s, 'app/core/scaler.joblib')"
 
+      - name: Init Database Schema & Seed Data
+        env:
+          PGPASSWORD: 123
+        run: |
+          # Dùng psql để chạy file all.sql đổ vào database oldshop_test
+          psql -h localhost -U postgres -d oldshop_test -f database/all.sql
+
       - name: Run Backend Tests (Sinh coverage.xml)
         working-directory: ./backend
         env:
