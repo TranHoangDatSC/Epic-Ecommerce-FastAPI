@@ -1,237 +1,161 @@
-from app.core.dependencies import check_admin
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from app import schemas, models
-from app.database import get_db
-from app.core.dependencies import get_current_admin
-from app.crud import admin as crud_admin
-from app.crud.moderator import moderator as crud_moderator
+
+from app.api.deps import get_current_admin, get_db
+from app.core.constants import RoleId
+from app.crud.admin import crud_admin
+from app.crud.moderator import crud_moderator
+from app.models import User, Voucher
+from app.schemas import (
+    AdminDashboardStats,
+    SystemFeedbackResponse,
+    UserCreate,
+    UserLockRequest,
+    UserResponse,
+    ViolationLogResponse,
+    VoucherCreate,
+    VoucherResponse,
+    VoucherUpdate,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-@router.get("/stats", response_model=schemas.AdminDashboardStats)
-def get_dashboard_stats(
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """Get dashboard stats (Admin only)"""
-    return crud_admin.get_admin_stats(db)
 
-@router.get("/feedbacks", response_model=List[schemas.SystemFeedbackResponse])
-def list_feedbacks(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """List system feedbacks (Admin only)"""
-    return crud_admin.get_feedbacks(db, skip=skip, limit=limit)
+@router.get("/stats", response_model=AdminDashboardStats)
+def get_dashboard_stats(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    return crud_admin.get_stats(db)
 
-@router.patch("/feedbacks/{feedback_id}", response_model=schemas.SystemFeedbackResponse)
-def update_feedback(
-    feedback_id: int,
-    status_update: int = Query(..., ge=0, le=2),
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """Update feedback status (Admin only)"""
-    db_feedback = crud_admin.update_feedback_status(db, feedback_id, status_update)
-    if not db_feedback:
-        raise HTTPException(status_code=404, detail="Feedback not found")
-    return db_feedback
 
-@router.get("/users", response_model=List[schemas.UserResponse])
+@router.get("/users", response_model=list[UserResponse])
 def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
+    admin: User = Depends(get_current_admin),
 ):
-    """List users (Admin only)"""
-    # Assuming crud_user logic or simple query
-    return crud_admin.get_users_list(db, skip=skip, limit=limit)
+    return crud_admin.list_users(db, skip=skip, limit=limit)
 
 
-# ==================== Moderator Management ====================
+# ---------- feedback ----------
 
-@router.get("/moderators", response_model=List[schemas.UserResponse])
-def list_moderators(
-    include_deleted: bool = Query(False),
+
+@router.get("/feedbacks", response_model=list[SystemFeedbackResponse])
+def list_feedbacks(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
+    admin: User = Depends(get_current_admin),
 ):
-    """List all moderators (Admin only)"""
-    return crud_moderator.get_moderators(db, include_deleted=include_deleted)
+    return crud_admin.list_feedbacks(db, skip=skip, limit=limit)
 
-@router.post("/moderators", response_model=schemas.UserResponse)
-def create_moderator(
-    moderator_data: schemas.UserCreate, 
-    db: Session = Depends(get_db), 
-    admin: models.User = Depends(get_current_admin)
+
+@router.patch("/feedbacks/{feedback_id}", response_model=SystemFeedbackResponse)
+def update_feedback(
+    feedback_id: int,
+    status_update: int = Query(..., ge=0, le=2),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
-    # Log cho biết ai đang làm gì
-    # Sửa thành:
-    print(f"DEBUG: Admin ID {admin.user_id} creating moderator: {moderator_data.username}")
-    print(f"Admin {admin.email} creating moderator: {moderator_data.username}")
-    
-    # Kiểm tra quyền Admin (nên nằm ở Middleware nhưng check đây cho an toàn)
-    if not admin.is_active:
-        raise HTTPException(status_code=403, detail="Tài khoản admin không hoạt động")
-        
-    try:
-        # Chuyển Pydantic sang dict
-        mod_dict = moderator_data.model_dump()
-        # Đảm bảo role_id = 2
-        mod_dict['role_id'] = 2 
-        
-        # Gọi CRUD
-        new_mod = crud_admin.create_moderator(db, mod_dict, admin.user_id)
-        
-        return new_mod
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+    feedback = crud_admin.update_feedback_status(db, feedback_id, status_update)
+    if not feedback:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+    return feedback
 
 
-@router.patch("/moderators/{user_id}/status", response_model=schemas.UserResponse)
+# ---------- moderators ----------
+
+
+@router.get("/moderators", response_model=list[UserResponse])
+def list_moderators(
+    include_deleted: bool = Query(False), db: Session = Depends(get_db), admin: User = Depends(get_current_admin)
+):
+    return crud_moderator.get_users_by_role(db, RoleId.MODERATOR, include_deleted=include_deleted)
+
+
+@router.post("/moderators", response_model=UserResponse)
+def create_moderator(moderator_in: UserCreate, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    return crud_admin.create_moderator(db, moderator_in)
+
+
+@router.patch("/moderators/{user_id}/status", response_model=UserResponse)
 def toggle_moderator_status(
-    user_id: int, 
-    status_update: schemas.UserLockRequest, 
-    db: Session = Depends(get_db), 
-    admin: models.User = Depends(get_current_admin)
+    user_id: int,
+    status_update: UserLockRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
-    """Lock or unlock a moderator account (Admin only)"""
-    try:
-        # XÓA HOÀN TOÀN đoạn models.ViolationLog(...) và db.add(new_log) ở đây
-        # Vì nó đang gây ra loop nếu bên trong crud_moderator cũng ghi log
-        
-        is_active = (status_update.action == "unlock")
-        
-        # Gọi hàm CRUD - Đảm bảo bên trong hàm này chỉ ghi log 1 lần
-        updated_moderator = crud_moderator.toggle_moderator_status(
-            db, 
-            user_id=user_id, 
-            is_active=is_active, 
-            reason=status_update.reason, 
-            admin_id=admin.user_id
-        )
-        
-        db.commit()
-        return updated_moderator
-    except Exception as e:
-        db.rollback()
-        print(f"Error toggling status: {str(e)}")
-        raise HTTPException(status_code=400, detail="Không thể cập nhật trạng thái.")
-        
-@router.get("/violation-logs", response_model=list[schemas.ViolationLogResponse])
-async def get_violation_logs(
+    return crud_moderator.toggle_moderator_status(
+        db, user_id, is_active=status_update.action == "unlock", reason=status_update.reason
+    )
+
+
+@router.get("/violation-logs", response_model=list[ViolationLogResponse])
+def get_violation_logs(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_admin: models.User = Depends(check_admin)
+    admin: User = Depends(get_current_admin),
 ):
-    # Thực hiện JOIN để lấy username của người bị xử lý
-    logs = db.query(
-        models.ViolationLog.log_id,
-        models.ViolationLog.user_id,
-        models.ViolationLog.reason,
-        models.ViolationLog.action_taken,
-        models.ViolationLog.created_at,
-        models.User.username.label("username") # Lấy username gán vào label
-    ).join(
-        models.User, models.ViolationLog.user_id == models.User.user_id
-    ).order_by(
-        models.ViolationLog.created_at.desc()
-    ).offset(skip).limit(limit).all()
-    
-    return logs
+    return crud_moderator.get_violation_logs(db, skip=skip, limit=limit)
 
-# ==================== Voucher Management (Admin Only) ====================
 
-@router.get("/vouchers", response_model=List[schemas.VoucherResponse])
+# ---------- vouchers ----------
+
+
+def _get_voucher(db: Session, voucher_id: int) -> Voucher:
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Voucher không tồn tại.")
+    return voucher
+
+
+@router.get("/vouchers", response_model=list[VoucherResponse])
 def list_all_vouchers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
+    admin: User = Depends(get_current_admin),
 ):
-    """Liệt kê tất cả voucher bao gồm cả mã đã xóa/hết hạn (Admin only)"""
-    return db.query(models.Voucher).offset(skip).limit(limit).all()
+    """All vouchers, including expired and soft-deleted ones."""
+    return db.query(Voucher).order_by(Voucher.voucher_id).offset(skip).limit(limit).all()
 
-@router.post("/vouchers", response_model=schemas.VoucherResponse)
-def create_new_voucher(
-    voucher_in: schemas.VoucherCreate,
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """Tạo voucher mới với thiết lập số lượng và thời gian (Admin only)"""
-    # Kiểm tra mã code đã tồn tại chưa
-    existing = db.query(models.Voucher).filter(models.Voucher.code == voucher_in.code.upper()).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Mã voucher này đã tồn tại.")
-    
-    # Chuyển code thành in hoa để đồng bộ
-    voucher_dict = voucher_in.model_dump()
-    voucher_dict['code'] = voucher_dict['code'].upper()
-    
-    new_voucher = models.Voucher(**voucher_dict)
-    db.add(new_voucher)
+
+@router.post("/vouchers", response_model=VoucherResponse)
+def create_voucher(voucher_in: VoucherCreate, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    code = voucher_in.code.strip().upper()
+    if db.query(Voucher).filter(Voucher.code == code).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mã voucher này đã tồn tại.")
+    voucher = Voucher(**voucher_in.model_dump(exclude={"code"}), code=code)
+    db.add(voucher)
     db.commit()
-    db.refresh(new_voucher)
-    return new_voucher
+    db.refresh(voucher)
+    return voucher
 
-@router.patch("/vouchers/{voucher_id}", response_model=schemas.VoucherResponse)
+
+@router.patch("/vouchers/{voucher_id}", response_model=VoucherResponse)
 def update_voucher(
     voucher_id: int,
-    voucher_update: schemas.VoucherUpdate, # Kiểm tra schema này có is_active chưa
+    voucher_update: VoucherUpdate,
     db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
+    admin: User = Depends(get_current_admin),
 ):
-    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
-    if not db_voucher:
-        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
+    voucher = _get_voucher(db, voucher_id)
+    for key, value in voucher_update.model_dump(exclude_unset=True).items():
+        setattr(voucher, key, value)
+    db.commit()
+    db.refresh(voucher)
+    return voucher
 
-    update_data = voucher_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_voucher, key, value)
-    
-    try:
-        db.commit() 
-        db.refresh(db_voucher)
-        return db_voucher
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Lỗi cập nhật Database")
 
 @router.delete("/vouchers/{voucher_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_voucher(
-    voucher_id: int,
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """Xóa voucher (Soft delete) (Admin only)"""
-    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
-    if not db_voucher:
-        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
-    
-    db_voucher.is_deleted = True
-    db_voucher.is_active = False
+def delete_voucher(voucher_id: int, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    voucher = _get_voucher(db, voucher_id)
+    voucher.is_deleted = True
+    voucher.is_active = False
     db.commit()
-    return None
+
 
 @router.delete("/vouchers/{voucher_id}/hard-delete", status_code=status.HTTP_204_NO_CONTENT)
-def hard_delete_voucher(
-    voucher_id: int,
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(get_current_admin)
-):
-    """Xóa vĩnh viễn voucher (Admin only)"""
-    db_voucher = db.query(models.Voucher).filter(models.Voucher.voucher_id == voucher_id).first()
-    if not db_voucher:
-        raise HTTPException(status_code=404, detail="Voucher không tồn tại.")
-    
-    db.delete(db_voucher)
+def hard_delete_voucher(voucher_id: int, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    db.delete(_get_voucher(db, voucher_id))
     db.commit()
-    return None

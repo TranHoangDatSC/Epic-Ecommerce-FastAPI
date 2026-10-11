@@ -1,143 +1,147 @@
-from app import schemas
-from app import models
-from app.models import Category
-from sqlalchemy.orm import Session, joinedload
-from typing import Optional, List
+from sqlalchemy.orm import Query, Session, joinedload
+
+from app.core.constants import ProductStatus
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.crud.base import CRUDBase
-from app.models import Product, Review
-from app.schemas import ProductCreate, ProductUpdate
+from app.models import Category, Product, ProductImage, Review
+from app.schemas import ReviewCreate
+
+SORT_COLUMNS = {
+    "created_at": Product.created_at.desc(),
+    "price": Product.price.asc(),
+    "rating": Product.view_count.desc(),  # no rating aggregate yet; popularity is the proxy
+}
 
 
-class CRUDProduct(CRUDBase[Product, ProductCreate, ProductUpdate]):
-    """Product CRUD operations"""
-
-    def get_by_id(self, db: Session, product_id: int) -> Optional[Product]:
-        """Get product by ID"""
+class CRUDProduct(CRUDBase[Product]):
+    def _visible(self, db: Session) -> Query:
+        """Approved, not deleted, and in a live category."""
         return (
             db.query(Product)
+            .join(Category, Product.category_id == Category.category_id)
             .options(joinedload(Product.product_images))
-            .options(joinedload(Product.reviews).joinedload(Review.reviewer))
-            .options(joinedload(Product.seller))
-            .filter(Product.product_id == product_id)
-            .filter(Product.is_deleted == False)
+            .filter(
+                Product.status == ProductStatus.APPROVED,
+                Product.is_deleted == False,
+                Category.is_deleted == False,
+            )
+        )
+
+    def get_by_id(self, db: Session, product_id: int) -> Product | None:
+        return (
+            db.query(Product)
+            .options(
+                joinedload(Product.product_images),
+                joinedload(Product.reviews).joinedload(Review.reviewer),
+                joinedload(Product.seller),
+            )
+            .filter(Product.product_id == product_id, Product.is_deleted == False)
             .first()
         )
 
-    def get_by_seller(
-        self,
-        db: Session,
-        seller_id: int,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Product]:
-        """Get all products by seller"""
+    def get_approved(self, db: Session, skip: int = 0, limit: int = 100, order_by: str = "created_at") -> list[Product]:
         return (
-            db.query(Product)
-            .options(joinedload(Product.product_images))
-            .filter(Product.seller_id == seller_id)
-            .filter(Product.is_deleted == False)
+            self._visible(db)
+            .filter(Category.is_active == True)
+            .order_by(SORT_COLUMNS.get(order_by, SORT_COLUMNS["created_at"]))
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_by_category(self, db: Session, category_id: int, skip: int = 0, limit: int = 100, approved_only: bool = True) -> List[Product]:
-        query = (
-            db.query(Product)
-            .join(Category, Product.category_id == Category.category_id)
-            .options(joinedload(Product.product_images))
-            .filter(Product.category_id == category_id)
-            .filter(Product.is_deleted == False)
-            .filter(Category.is_deleted == False) 
-        )
-        if approved_only:
-            query = query.filter(Product.status == 1)
-        return query.offset(skip).limit(limit).all()
+    def get_by_category(self, db: Session, category_id: int, skip: int = 0, limit: int = 100) -> list[Product]:
+        return self._visible(db).filter(Product.category_id == category_id).offset(skip).limit(limit).all()
 
-    def get_approved_products(self, db: Session, skip: int = 0, limit: int = 100, order_by: str = "created_at") -> List[Product]:
-        query = (
-            db.query(Product)
-            .join(Category, Product.category_id == Category.category_id)
-            .options(joinedload(Product.product_images))   # ← BUG FIX: load ảnh kèm theo
-            .filter(Product.status == 1)            # Chỉ lấy sản phẩm đã duyệt
-            .filter(Product.is_deleted == False)    # Sản phẩm chưa bị xóa
-            .filter(Category.is_active == True)     # CHỈ LẤY SẢN PHẨM THUỘC DANH MỤC ĐANG HOẠT ĐỘNG
-            .filter(Category.is_deleted == False)   # Danh mục chưa bị xóa mềm
-        )
-            
-        if order_by == "created_at":
-            query = query.order_by(Product.created_at.desc())
-        elif order_by == "price":
-            query = query.order_by(Product.price)
-        elif order_by == "rating":
-            query = query.order_by(Product.view_count.desc())
-        
-        return query.offset(skip).limit(limit).all()
-
-
-    def search_products(self, db: Session, query_str: str, skip: int = 0, limit: int = 100) -> List[Product]:
+    def search(self, db: Session, query_str: str, skip: int = 0, limit: int = 100) -> list[Product]:
+        pattern = f"%{query_str}%"
         return (
-            db.query(Product)
-            .join(Category, Product.category_id == Category.category_id)
-            .options(joinedload(Product.product_images))
+            self._visible(db)
             .options(joinedload(Product.seller))
-            .filter(Product.is_deleted == False)
-            .filter(Category.is_deleted == False) 
-            .filter(Product.status == 1)
-            .filter((Product.title.ilike(f"%{query_str}%")) | (Product.description.ilike(f"%{query_str}%")))
+            .filter(Product.title.ilike(pattern) | Product.description.ilike(pattern))
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def increment_view_count(self, db: Session, product_id: int) -> Optional[Product]:
-        """Increment product view count"""
-        product = db.query(Product).filter(Product.product_id == product_id).first()
-        if product:
-            product.view_count += 1
-            db.add(product)
-            db.commit()
-            db.refresh(product)
-        return product
-
-    def update_product_status(
-        self,
-        db: Session,
-        product_id: int,
-        status: int,
-        reject_reason: Optional[str] = None,
-        approved_by: Optional[int] = None
-    ) -> Optional[Product]:
-        """Update product status (for admin/moderator approval)"""
-        product = db.query(Product).filter(Product.product_id == product_id).first()
-        if product:
-            product.status = status
-            if reject_reason:
-                product.reject_reason = reject_reason
-            if approved_by:
-                product.approved_by = approved_by
-            db.add(product)
-            db.commit()
-            db.refresh(product)
-        return product
-
-    def create_review(self, db: Session, review_in: schemas.ReviewCreate, buyer_id: int) -> models.Review:
-        db_obj = models.Review(
-            product_id=review_in.product_id,
-            buyer_id=buyer_id,
-            rating=review_in.rating, # Nếu là 0 thì coi như report
-            title=review_in.title,
-            content=review_in.content
+    def get_by_seller(self, db: Session, seller_id: int, skip: int = 0, limit: int = 100) -> list[Product]:
+        return (
+            db.query(Product)
+            .options(joinedload(Product.product_images))
+            .filter(Product.seller_id == seller_id, Product.is_deleted == False)
+            .offset(skip)
+            .limit(limit)
+            .all()
         )
-        db.add(db_obj)
+
+    def get_by_status(self, db: Session, status: int, skip: int = 0, limit: int = 100) -> list[Product]:
+        return (
+            db.query(Product)
+            .options(joinedload(Product.product_images))
+            .filter(Product.status == status, Product.is_deleted == False)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def add_pending(self, db: Session, data: dict) -> Product:
+        """Insert a product awaiting moderation. Flushes only; the caller commits."""
+        product = Product(**data, status=ProductStatus.PENDING)
+        db.add(product)
+        db.flush()
+        return product
+
+    def add_images(self, db: Session, product: Product, image_urls: list[str]) -> None:
+        for order, url in enumerate(image_urls, start=1):
+            db.add(
+                ProductImage(
+                    product_id=product.product_id,
+                    image_url=url,
+                    alt_text=f"{product.title} - Image {order}",
+                    is_primary=order == 1,
+                    display_order=order,
+                )
+            )
+
+    def increment_view_count(self, db: Session, product: Product) -> None:
+        product.view_count = (product.view_count or 0) + 1
         db.commit()
-        db.refresh(db_obj)
-        return db_obj
 
-    def get_reported_reviews(self, db: Session):
-        # Chỉ lấy những review có rating = 0
-        return db.query(models.Review).filter(models.Review.rating == 0).all()
+    def moderate(
+        self, db: Session, product: Product, status: int, moderator_id: int, reject_reason: str | None = None
+    ) -> Product:
+        if status not in (ProductStatus.PENDING, ProductStatus.APPROVED, ProductStatus.REJECTED):
+            raise BadRequestError("Invalid status value")
+        if status == ProductStatus.REJECTED and not reject_reason:
+            raise BadRequestError("Cần lý do khi từ chối sản phẩm")
+
+        product.status = status
+        product.reject_reason = reject_reason if status == ProductStatus.REJECTED else None
+        if status != ProductStatus.PENDING:
+            product.approved_by = moderator_id
+        db.commit()
+        db.refresh(product)
+        return product
+
+    def get_for_moderation(self, db: Session, product_id: int) -> Product:
+        product = self.get_by_id(db, product_id)
+        if not product:
+            raise NotFoundError("Product not found")
+        return product
+
+    def create_review(self, db: Session, product_id: int, review_in: ReviewCreate, buyer_id: int) -> Review:
+        if not db.query(Product.product_id).filter(Product.product_id == product_id).first():
+            raise NotFoundError("Product not found")
+        review = Review(
+            product_id=product_id,
+            buyer_id=buyer_id,
+            rating=review_in.rating,  # 0 means "report"
+            title=review_in.title,
+            content=review_in.content,
+        )
+        db.add(review)
+        db.commit()
+        db.refresh(review)
+        return review
 
 
-# Create CRUD instance
 crud_product = CRUDProduct(Product)

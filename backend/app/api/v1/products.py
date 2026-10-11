@@ -1,402 +1,249 @@
-from app import models
-from app import schemas
-from sqlalchemy.orm import joinedload
-from app.schemas import StatusUpdate
-from app.core.dependencies import get_current_user
-from fastapi import Body
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from typing import List
-from app.database import get_db
-from app.models import User, Product, ProductImage
-from app.schemas import ProductResponse, ProductDetailResponse, ProductCreate, ProductUpdate
-from app.core.dependencies import check_admin, check_moderator, check_user_role, get_current_user_optional
-from app.crud.product import crud_product
-from app.crud.category import crud_category
-import os
-from pathlib import Path
+import logging
 
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy.orm import Session
+
+from app.api.deps import any_user, customer, get_current_moderator, get_current_user, get_current_user_optional, get_db
+from app.core.constants import ProductStatus, RoleId
+from app.crud.category import crud_category
+from app.crud.product import crud_product
+from app.models import Product, User
+from app.schemas import (
+    Message,
+    ProductDetailResponse,
+    ProductResponse,
+    ProductUpdate,
+    ReviewCreate,
+    ReviewResponse,
+    StatusUpdate,
+)
+from app.services.storage import delete_media, save_image
+
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/products", tags=["products"])
 
 
+def _get_or_404(db: Session, product_id: int) -> Product:
+    product = crud_product.get_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
+
+def _ensure_owner_or_admin(product: Product, user: User) -> None:
+    if product.seller_id != user.user_id and not user.has_role(RoleId.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only seller or admin can modify this product"
+        )
+
+
+# ---------- catalogue ----------
+
+
 @router.get("", response_model=list[ProductResponse])
-async def list_products(
+def list_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    category_id: int = Query(None),
-    search: str = Query(None),
+    category_id: int | None = Query(None),
+    search: str | None = Query(None),
     sort_by: str = Query("created_at", pattern="^(created_at|price|rating)$"),
-    current_user: User = Depends(get_current_user_optional),
-    db: Session = Depends(get_db)
-) -> list[ProductResponse]:
-    """
-    List approved products.
-    
-    - **skip**: Number of records to skip
-    - **limit**: Maximum number of records to return
-    - **category_id**: Filter by category
-    - **search**: Search in title and description
-    - **sort_by**: Sort by created_at, price, or rating
-    """
+    current_user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    """Approved products. Logged-in sellers don't see their own listings."""
     if search:
-        products = crud_product.search_products(
-            db,
-            query_str=search,
-            skip=skip,
-            limit=limit
-        )
+        products = crud_product.search(db, search, skip=skip, limit=limit)
     elif category_id:
-        products = crud_product.get_by_category(
-            db,
-            category_id=category_id,
-            skip=skip,
-            limit=limit,
-            approved_only=True
-        )
+        products = crud_product.get_by_category(db, category_id, skip=skip, limit=limit)
     else:
-        products = crud_product.get_approved_products(
-            db,
-            skip=skip,
-            limit=limit,
-            order_by=sort_by
-        )
+        products = crud_product.get_approved(db, skip=skip, limit=limit, order_by=sort_by)
 
-    # Nếu user đã đăng nhập, không hiển thị sản phẩm do chính họ bán
     if current_user:
         products = [p for p in products if p.seller_id != current_user.user_id]
-
     return products
 
 
+@router.get("/seller/my-products", response_model=list[ProductResponse])
+def get_my_products(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: User = Depends(any_user),
+    db: Session = Depends(get_db),
+):
+    return crud_product.get_by_seller(db, current_user.user_id, skip=skip, limit=limit)
+
+
+@router.get("/moderation/list", response_model=list[ProductResponse])
+def list_products_by_status(
+    status: int = Query(..., description="0: Pending, 1: Approved, 2: Rejected"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    moderator: User = Depends(get_current_moderator),
+    db: Session = Depends(get_db),
+):
+    return crud_product.get_by_status(db, status, skip=skip, limit=limit)
+
+
+@router.get("/pending/all", response_model=list[ProductResponse])
+def get_pending_products(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    moderator: User = Depends(get_current_moderator),
+    db: Session = Depends(get_db),
+):
+    return crud_product.get_by_status(db, ProductStatus.PENDING, skip=skip, limit=limit)
+
+
 @router.get("/{product_id}", response_model=ProductDetailResponse)
-async def get_product(
-    product_id: int,
-    db: Session = Depends(get_db)
-) -> ProductDetailResponse:
-    """Get product details by ID"""
-    product = crud_product.get_by_id(db, product_id=product_id)
-    
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-    
-    # Increment view count
-    crud_product.increment_view_count(db, product_id=product_id)
-    
+def get_product(product_id: int, db: Session = Depends(get_db)):
+    product = _get_or_404(db, product_id)
+    crud_product.increment_view_count(db, product)
     return product
+
+
+# ---------- seller actions ----------
 
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    files: List[UploadFile] = File(...),
+    files: list[UploadFile] = File(...),
     category_id: int = Form(...),
     title: str = Form(...),
-    description: str = Form(None),
+    description: str | None = Form(None),
     price: float = Form(...),
     quantity: int = Form(...),
-    video_url: str = Form(None),
-    weight_grams: int = Form(None),
-    dimensions: str = Form(None),
-    condition_rating: int = Form(None),
+    video_url: str | None = Form(None),
+    weight_grams: int | None = Form(None),
+    dimensions: str | None = Form(None),
+    condition_rating: int | None = Form(None),
     warranty_months: int = Form(0),
     transfer_method: int = Form(1),
-    current_user: User = Depends(check_user_role([3])),
-    db: Session = Depends(get_db)
-) -> ProductResponse:
-    """
-    Create a new product with images.
-    
-    Requires authentication. Status will be 0 (pending for review).
-    At least one image file is required.
-    """
-    # Validate at least one image
-    if not files or len(files) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one image file is required"
-        )
+    current_user: User = Depends(customer),
+    db: Session = Depends(get_db),
+):
+    """Create a listing (multipart). It stays pending until a moderator approves it."""
+    if not files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="At least one image file is required")
+    if not crud_category.get_by_id(db, category_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found")
 
-    # Verify category exists
-    category = crud_category.get_by_id(db, category_id=category_id)
-    if not category:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Category not found"
-        )
-
-    # Create product data
-    product_data = {
-        'seller_id': current_user.user_id,
-        'category_id': category_id,
-        'title': title,
-        'description': description,
-        'price': price,
-        'quantity': quantity,
-        'video_url': video_url,
-        'weight_grams': weight_grams,
-        'dimensions': dimensions,
-        'condition_rating': condition_rating,
-        'warranty_months': warranty_months,
-        'transfer_method': transfer_method,
-        'status': 0  # Pending
-    }
-
-    # Start transaction
-    try:
-        # Create product
-        product = Product(**product_data)
-        db.add(product)
-        db.flush()  # Get product_id without committing
-
-        # Get media directory
-        media_dir = Path(__file__).parent.parent.parent.parent / "media" / "products"
-        media_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get current image count for this product
-        existing_images_count = db.query(ProductImage).filter(ProductImage.product_id == product.product_id).count()
-
-        # Process and save images
-        for i, file in enumerate(files, start=existing_images_count + 1):
-            # Validate file type
-            if not file.content_type.startswith('image/'):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"File {file.filename} is not an image"
-                )
-
-            # Generate new filename
-            original_name = Path(file.filename).stem
-            extension = Path(file.filename).suffix.lower()
-            new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
-            file_path = media_dir / new_filename
-
-            # Read file content
-            MAX_FILE_SIZE = 2 * 1024 * 1024 # 2MB
-            content = await file.read()
-            if len(content) > MAX_FILE_SIZE:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File quá lớn (Tối đa 2MB)")
-
-            # Save file
-            with open(file_path, "wb") as f:
-                f.write(content)
-
-            # Create database record
-            image_url = f"/media/products/{new_filename}"
-            is_primary = (i == 1)  # First image is primary
-
-            product_image = ProductImage(
-                product_id=product.product_id,
-                image_url=image_url,
-                alt_text=f"{title} - Image {i}",
-                is_primary=is_primary,
-                display_order=i
-            )
-            db.add(product_image)
-
-        # Commit transaction
-        db.commit()
-        db.refresh(product)
-
-        return product
-
-    except Exception as e:
-        db.rollback()
-        # Clean up uploaded files if any
-        media_dir = Path(__file__).parent.parent.parent.parent / "media" / "products"
-        for file in files:
-            if hasattr(file, 'filename'):
-                original_name = Path(file.filename).stem
-                extension = Path(file.filename).suffix.lower()
-                for i in range(1, len(files) + 1):
-                    new_filename = f"prod_{product.product_id}_{i}_{original_name}{extension}"
-                    file_path = media_dir / new_filename
-                    if file_path.exists():
-                        file_path.unlink()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create product: {str(e)}"
-        )
-
-
-@router.get("/seller/my-products", response_model=list[ProductResponse])
-async def get_my_products(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    current_user: User = Depends(check_user_role([1, 2, 3])),
-    db: Session = Depends(get_db)
-) -> list[ProductResponse]:
-    """Get current user's products"""
-    products = crud_product.get_by_seller(
+    product = crud_product.add_pending(
         db,
-        seller_id=current_user.user_id,
-        skip=skip,
-        limit=limit
+        {
+            "seller_id": current_user.user_id,
+            "category_id": category_id,
+            "title": title,
+            "description": description,
+            "price": price,
+            "quantity": quantity,
+            "video_url": video_url,
+            "weight_grams": weight_grams,
+            "dimensions": dimensions,
+            "condition_rating": condition_rating,
+            "warranty_months": warranty_months,
+            "transfer_method": transfer_method,
+        },
     )
-    return products
+
+    saved: list[str] = []
+    try:
+        for index, file in enumerate(files, start=1):
+            saved.append(await save_image(file, "products", f"prod_{product.product_id}_{index}"))
+        crud_product.add_images(db, product, saved)
+        db.commit()
+    except Exception:
+        db.rollback()
+        for url in saved:
+            delete_media(url)
+        raise
+
+    db.refresh(product)
+    logger.info("Product submitted", extra={"product_id": product.product_id, "seller_id": current_user.user_id})
+    return product
+
 
 @router.put("/{product_id}", response_model=ProductResponse)
-async def update_product(
+def update_product(
     product_id: int,
     product_update: ProductUpdate,
-    current_user: User = Depends(check_user_role([1, 2, 3])),
-    db: Session = Depends(get_db)
-) -> ProductResponse:
-    product = crud_product.get_by_id(db, product_id=product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    current_user: User = Depends(any_user),
+    db: Session = Depends(get_db),
+):
+    product = _get_or_404(db, product_id)
+    _ensure_owner_or_admin(product, current_user)
 
-    user_roles = [role.role_id for role in current_user.user_roles]
-    is_admin = 1 in user_roles
-    is_seller = product.seller_id == current_user.user_id
-    
-    if not (is_admin or is_seller):
-        raise HTTPException(status_code=403, detail="Only seller or admin can update this product")
+    new_category = product_update.category_id
+    if new_category and new_category != product.category_id and not crud_category.get_by_id(db, new_category):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found")
 
-    new_cat_id = getattr(product_update, 'category_id', None)
-    if new_cat_id and new_cat_id != product.category_id:
-        category = crud_category.get_by_id(db, category_id=new_cat_id)
-        if not category:
-            raise HTTPException(status_code=400, detail="Category not found")
+    return crud_product.update(db, product, product_update)
 
-    update_data = product_update.model_dump(exclude_unset=True)
-    updated_product = crud_product.update(db=db, db_obj=product, obj_in=update_data)
-    
-    return updated_product
 
-@router.patch("/{product_id}/status")
-async def change_product_status(
+@router.patch("/{product_id}/status", response_model=Message)
+def change_product_status(
     product_id: int,
     status_data: StatusUpdate,
-    current_user: User = Depends(check_user_role([1, 2, 3])),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(any_user),
+    db: Session = Depends(get_db),
 ):
-    product = crud_product.get_by_id(db, product_id=product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm")
+    """Seller hides/re-lists their own product."""
+    product = _get_or_404(db, product_id)
     if product.seller_id != current_user.user_id:
-        raise HTTPException(status_code=403, detail="Không có quyền")
-
-    # Cập nhật status đơn giản
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Không có quyền")
     product.status = status_data.new_status
     db.commit()
-    return {"message": "Cập nhật trạng thái thành công"}
+    return Message(message="Cập nhật trạng thái thành công")
+
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_product(
+def delete_product(product_id: int, current_user: User = Depends(any_user), db: Session = Depends(get_db)):
+    product = _get_or_404(db, product_id)
+    _ensure_owner_or_admin(product, current_user)
+    crud_product.soft_delete(db, product)
+
+
+@router.post("/{product_id}/reviews", response_model=ReviewResponse)
+def create_product_review(
     product_id: int,
-    current_user: User = Depends(check_user_role([1, 2, 3])),
-    db: Session = Depends(get_db)
-) -> None:
-    """
-    Delete a product.
-    
-    Only the seller or admin can delete the product.
-    """
-    product = crud_product.get_by_id(db, product_id=product_id)
-    
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-    
-    # Check permission
-    user_roles = [role.role_id for role in current_user.user_roles]
-    is_admin = 1 in user_roles
-    is_seller = product.seller_id == current_user.user_id
-    
-    if not (is_admin or is_seller):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only seller or admin can delete this product"
-        )
-    
-    product.is_deleted = True
-    db.add(product)
-    db.commit()
-
-
-# ==================== Moderation endpoints ====================
-@router.get("/moderation/list", response_model=list[ProductResponse])
-async def list_products_by_status(
-    status: int = Query(..., description="0: Pending, 1: Approved, 2: Rejected"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    moderator: User = Depends(check_moderator),
-    db: Session = Depends(get_db)
+    review_in: ReviewCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return db.query(Product).options(joinedload(Product.product_images))\
-             .filter(Product.status == status, Product.is_deleted == False)\
-             .offset(skip).limit(limit).all()
+    """Rating 0 is a violation report and lands in the moderator queue."""
+    return crud_product.create_review(db, product_id, review_in, buyer_id=current_user.user_id)
 
-@router.get("/pending/all", response_model=list[ProductResponse])
-async def get_pending_products(
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),
-    moderator: User = Depends(check_moderator), db: Session = Depends(get_db)
-):
-    return db.query(Product).filter(Product.status == 0, Product.is_deleted == False).offset(skip).limit(limit).all()
+
+# ---------- moderation ----------
+
 
 @router.post("/{product_id}/approve", response_model=ProductResponse)
-async def approve_product(product_id: int, moderator: User = Depends(check_moderator), db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.product_id == product_id).first()
-    if not product or product.status != 0:
-        raise HTTPException(status_code=400, detail="Sản phẩm không hợp lệ hoặc không ở trạng thái chờ duyệt")
-    product.status = 1
-    product.approved_by = moderator.user_id
-    db.commit()
-    return product
+def approve_product(product_id: int, moderator: User = Depends(get_current_moderator), db: Session = Depends(get_db)):
+    product = _get_or_404(db, product_id)
+    if product.status != ProductStatus.PENDING:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sản phẩm không ở trạng thái chờ duyệt")
+    return crud_product.moderate(db, product, ProductStatus.APPROVED, moderator.user_id)
+
 
 @router.post("/{product_id}/reject", response_model=ProductResponse)
-async def reject_product(
-    product_id: int, 
-    reject_reason: str = Query(..., min_length=10), 
-    moderator: User = Depends(check_moderator), 
-    db: Session = Depends(get_db)
+def reject_product(
+    product_id: int,
+    reject_reason: str = Query(..., min_length=10),
+    moderator: User = Depends(get_current_moderator),
+    db: Session = Depends(get_db),
 ):
-    product = db.query(Product).filter(Product.product_id == product_id).first()
-    if not product or product.status != 0:
-        raise HTTPException(status_code=400, detail="Sản phẩm không hợp lệ hoặc không ở trạng thái chờ duyệt")
-    product.status = 2
-    product.reject_reason = reject_reason
-    product.approved_by = moderator.user_id
-    db.commit()
-    return product
+    product = _get_or_404(db, product_id)
+    if product.status != ProductStatus.PENDING:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sản phẩm không ở trạng thái chờ duyệt")
+    return crud_product.moderate(db, product, ProductStatus.REJECTED, moderator.user_id, reject_reason)
 
-@router.post("/{product_id}/status", response_model=ProductResponse) # Thêm response_model
-async def update_product_status(
+
+@router.post("/{product_id}/status", response_model=ProductResponse)
+def update_product_status(
     product_id: int,
     new_status: int = Body(..., ge=1, le=2),
-    reject_reason: Optional[str] = Body(None),
-    moderator: User = Depends(check_moderator),
-    db: Session = Depends(get_db)
+    reject_reason: str | None = Body(None),
+    moderator: User = Depends(get_current_moderator),
+    db: Session = Depends(get_db),
 ):
-    # Sử dụng crud_product để tận dụng các joinedload đã viết sẵn
-    product = crud_product.get_by_id(db, product_id=product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm")
-        
-    if new_status == 2 and not reject_reason:
-        raise HTTPException(status_code=400, detail="Cần lý do khi từ chối sản phẩm")
-    
-    product.status = new_status
-    product.reject_reason = reject_reason
-    product.approved_by = moderator.user_id
-    
-    db.commit()
-    db.refresh(product)
-    return product 
-
-    # backend/app/api/v1/products.py
-@router.post("/{product_id}/reviews", response_model=schemas.ReviewResponse)
-async def create_product_review(
-    product_id: int,
-    review_in: schemas.ReviewCreate,
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    # Gán product_id vào schema trước khi lưu
-    review_in.product_id = product_id
-    return crud_product.create_review(db, review_in=review_in, buyer_id=current_user.user_id)
+    product = _get_or_404(db, product_id)
+    return crud_product.moderate(db, product, new_status, moderator.user_id, reject_reason)

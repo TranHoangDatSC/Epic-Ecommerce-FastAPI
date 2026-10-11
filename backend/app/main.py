@@ -1,151 +1,119 @@
-import socket
-import uvicorn
-from fastapi import FastAPI
+import logging
+import time
+import uuid
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
+from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.config import get_settings
-from app.database import engine, Base
-from app.api.v1 import auth, users, categories, products, orders, moderator, cart, admin, system
-import os
-import logging
-import warnings
-from sqlalchemy.exc import SAWarning
+from app.api.router import api_router
+from app.core.config import settings
+from app.core.database import ping_database
+from app.core.exceptions import AppError
+from app.core.logging import request_id_ctx, setup_logging
+from app.services.storage import ensure_media_dirs, media_root
 
-warnings.filterwarnings("ignore", category=SAWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
+setup_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
+logger = logging.getLogger("app")
 
-logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+# Probes and scrapes would drown the access log.
+QUIET_PATHS = {"/health", "/health/ready", "/metrics"}
 
-# --- Helper để lấy IP Network ---
-def get_ip_address():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except Exception:
-        return "127.0.0.1"
 
-# ==================== Lifespan (Startup/Shutdown) ====================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
-    Base.metadata.create_all(bind=engine)
-    
-    local_ip = "127.0.0.1"
-    network_ip = get_ip_address()
-    port = 8000
-    
-    # Giao diện khởi động Clean & ASCII (Đã sửa lỗi Unicode)
-    print("\n" + "="*70)
-    print(f"[*] {settings.PROJECT_NAME.upper()} - BACKEND SERVICES READY")
-    print("-" * 70)
-    print(f"  > Local:    http://{local_ip}:{port}")
-    print(f"  > Network:  http://{network_ip}:{port}")
-    print(f"  > API Docs: http://{local_ip}:{port}/api/docs")
-    print(f"  > Status:   HEALTHY - DEBUG: {settings.DEBUG}")
-    print("="*70 + "\n")
-    
+    logger.info(
+        "%s %s started",
+        settings.PROJECT_NAME,
+        settings.PROJECT_VERSION,
+        extra={"environment": settings.ENVIRONMENT, "docs": "/api/docs"},
+    )
     yield
+    logger.info("Shutting down")
 
-# ==================== Initialize App ====================
-settings = get_settings()
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.PROJECT_VERSION,
-    description="FastAPI Backend for OldShop E-commerce Platform",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
-    lifespan=lifespan
-)
-
-# ==================== Static Files ====================
-# Đường dẫn tương đối từ vị trí file main.py → thư mục media
-media_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "media")
-media_dir = os.path.normpath(media_dir)
-
-# Đảm bảo các thư mục con tồn tại
-os.makedirs(media_dir, exist_ok=True)
-os.makedirs(os.path.join(media_dir, "products"), exist_ok=True)
-os.makedirs(os.path.join(media_dir, "users"), exist_ok=True)
-
-# Mount static files to /media
-app.mount("/media", StaticFiles(directory=media_dir), name="media")
-
-# ==================== Middleware ====================
-origins = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ==================== Base Routes ====================
-@app.get("/", include_in_schema=False)
-async def root():
-    return RedirectResponse(url="/api/docs")
-
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {
-        "status": "healthy",
-        "service": settings.PROJECT_NAME,
-        "version": settings.PROJECT_VERSION
-    }
-
-# ==================== API Routes ====================
-# Primary versioned API (used by docs)
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(users.router, prefix=settings.API_V1_STR)
-app.include_router(categories.router, prefix=settings.API_V1_STR)
-app.include_router(products.router, prefix=settings.API_V1_STR)
-app.include_router(orders.router, prefix=settings.API_V1_STR)
-app.include_router(moderator.router, prefix=settings.API_V1_STR)
-app.include_router(admin.router, prefix=settings.API_V1_STR)
-app.include_router(system.router, prefix=settings.API_V1_STR)
-app.include_router(cart.router, prefix=settings.API_V1_STR)
-
-# Compatibility routes for clients calling /api/* (no /v1). These are not shown in the OpenAPI schema.
-app.include_router(auth.router, prefix="/api", include_in_schema=False)
-app.include_router(users.router, prefix="/api", include_in_schema=False)
-app.include_router(categories.router, prefix="/api", include_in_schema=False)
-app.include_router(products.router, prefix="/api", include_in_schema=False)
-app.include_router(orders.router, prefix="/api", include_in_schema=False)
-app.include_router(moderator.router, prefix="/api", include_in_schema=False)
-app.include_router(admin.router, prefix="/api", include_in_schema=False)
-app.include_router(system.router, prefix="/api", include_in_schema=False)
-app.include_router(cart.router, prefix="/api", include_in_schema=False)
-
-# ==================== Error Handlers ====================
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "Internal server error",
-            "error": str(exc) if settings.DEBUG else "Internal server error"
-        }
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        version=settings.PROJECT_VERSION,
+        description="Second-hand marketplace API: catalogue, cart, orders, PayPal checkout, moderation.",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
+        lifespan=lifespan,
     )
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG,
-        log_level=settings.LOG_LEVEL.lower()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def access_log(request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
+        token = request_id_ctx.set(request_id)
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = request_id
+            if request.url.path not in QUIET_PATHS:
+                logger.info(
+                    "%s %s %s",
+                    request.method,
+                    request.url.path,
+                    response.status_code,
+                    extra={
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status": response.status_code,
+                        "duration_ms": round((time.perf_counter() - started) * 1000, 1),
+                        "client_ip": request.headers.get("X-Real-IP")
+                        or (request.client.host if request.client else None),
+                    },
+                )
+            return response
+        finally:
+            request_id_ctx.reset(token)
+
+    @app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    @app.exception_handler(Exception)
+    async def unhandled_error_handler(request: Request, exc: Exception):
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        detail = str(exc) if settings.DEBUG else "Internal server error"
+        return JSONResponse(status_code=500, content={"detail": "Internal server error", "error": detail})
+
+    @app.get("/", include_in_schema=False)
+    async def root():
+        return RedirectResponse(url="/api/docs")
+
+    @app.get("/health", tags=["system"], summary="Liveness probe")
+    async def health():
+        return {"status": "ok", "service": settings.PROJECT_NAME, "version": settings.PROJECT_VERSION}
+
+    @app.get("/health/ready", tags=["system"], summary="Readiness probe (checks the database)")
+    async def ready():
+        if not ping_database():
+            return JSONResponse(status_code=503, content={"status": "unavailable", "database": "down"})
+        return {"status": "ok", "database": "up"}
+
+    app.include_router(api_router, prefix=settings.API_V1_STR)
+
+    ensure_media_dirs()
+    app.mount("/media", StaticFiles(directory=media_root()), name="media")
+
+    Instrumentator(excluded_handlers=["/health.*", "/metrics", "/media.*"]).instrument(app).expose(
+        app, include_in_schema=False
+    )
+    return app
+
+
+app = create_app()

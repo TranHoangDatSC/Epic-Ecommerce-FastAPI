@@ -1,114 +1,69 @@
 from sqlalchemy.orm import Session
-from typing import Optional, List
+
+from app.core.constants import ProductStatus
 from app.crud.base import CRUDBase
-from app.models import Category
-from app.schemas import CategoryCreate, CategoryUpdate
+from app.models import Category, Product
 
 
-class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
-    """Category CRUD operations"""
+class CRUDCategory(CRUDBase[Category]):
+    def get_by_id(self, db: Session, category_id: int, include_deleted: bool = False) -> Category | None:
+        query = db.query(Category).filter(Category.category_id == category_id)
+        if not include_deleted:
+            query = query.filter(Category.is_deleted == False)
+        return query.first()
 
-    def get_by_id(self, db: Session, category_id: int) -> Optional[Category]:
-        """Get category by ID"""
-        return (
-            db.query(Category)
-            .filter(Category.category_id == category_id)
-            .filter(Category.is_deleted == False)
-            .first()
-        )
+    def get_by_name(self, db: Session, name: str) -> Category | None:
+        return db.query(Category).filter(Category.name == name, Category.is_deleted == False).first()
 
-    def get_by_name(self, db: Session, name: str) -> Optional[Category]:
-        """Get category by name"""
-        return (
-            db.query(Category)
-            .filter(Category.name == name)
-            .filter(Category.is_deleted == False)
-            .first()
-        )
-
-    def get_active_categories(
+    def get_list(
         self,
         db: Session,
         skip: int = 0,
-        limit: int = 100
-    ) -> List[Category]:
-        """Get all active categories"""
+        limit: int = 100,
+        active_only: bool = False,
+        include_deleted: bool = False,
+    ) -> list[Category]:
+        query = db.query(Category)
+        if not include_deleted:
+            query = query.filter(Category.is_deleted == False)
+        if active_only:
+            query = query.filter(Category.is_active == True)
+        return query.offset(skip).limit(limit).all()
+
+    def get_parents(self, db: Session, skip: int = 0, limit: int = 100) -> list[Category]:
         return (
             db.query(Category)
-            .filter(Category.is_active == True)
-            .filter(Category.is_deleted == False)
+            .filter(Category.parent_id.is_(None), Category.is_active == True, Category.is_deleted == False)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_parent_categories(
-        self,
-        db: Session,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Category]:
-        """Get parent categories (no parent_id)"""
+    def get_children(self, db: Session, parent_id: int, skip: int = 0, limit: int = 100) -> list[Category]:
         return (
             db.query(Category)
-            .filter(Category.parent_id == None)
-            .filter(Category.is_active == True)
-            .filter(Category.is_deleted == False)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-
-    def get_child_categories(
-        self,
-        db: Session,
-        parent_id: int,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Category]:
-        """Get child categories by parent"""
-        return (
-            db.query(Category)
-            .filter(Category.parent_id == parent_id)
-            .filter(Category.is_deleted == False)
+            .filter(Category.parent_id == parent_id, Category.is_deleted == False)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
     def has_products(self, db: Session, category_id: int) -> bool:
-        """Check if category has any products attached"""
-        from app.models import Product
-        count = db.query(Product).filter(Product.category_id == category_id).count()
-        return count > 0
+        return db.query(Product.product_id).filter(Product.category_id == category_id).first() is not None
 
-    def get_by_id_with_deleted(self, db: Session, category_id: int) -> Optional[Category]:
-        """Get category by ID including soft-deleted ones"""
-        return (
-            db.query(Category)
-            .filter(Category.category_id == category_id)
-            .first()
+    def soft_delete_with_products(self, db: Session, category: Category) -> None:
+        """Trash the category and send its products back to moderation."""
+        category.is_deleted = True
+        db.query(Product).filter(Product.category_id == category.category_id).update(
+            {Product.status: ProductStatus.PENDING}, synchronize_session=False
         )
-    def soft_delete_category_and_products(self, db: Session, category_id: int):
-        category = self.get_by_id(db, category_id)
-        if category:
-            category.is_deleted = True
-            from app.models import Product
-            products = db.query(Product).filter(Product.category_id == category_id).all()
-            for p in products:
-                p.status = 0  
-            db.commit()
-
-    def hard_delete(self, db: Session, category_id: int) -> bool:
-        """Permanently delete a category from DB"""
-        db_obj = self.get_by_id_with_deleted(db, category_id)
-        if not db_obj:
-            return False
-        
-        db.delete(db_obj)
         db.commit()
-        return True
+
+    def restore(self, db: Session, category: Category) -> Category:
+        category.is_deleted = False
+        db.commit()
+        db.refresh(category)
+        return category
 
 
-# Create CRUD instance
 crud_category = CRUDCategory(Category)

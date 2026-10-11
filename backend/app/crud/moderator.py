@@ -1,160 +1,99 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
-from app import models, schemas
-from app.crud.base import CRUDBase
-from app.core.exceptions import NotFoundException, ValidationException
-from typing import List, Optional
-from sqlalchemy.orm import joinedload
-from app.models import User
+from sqlalchemy.orm import Session, joinedload
 
-class CRUDModerator(CRUDBase[models.Product, schemas.ProductApprovalRequest, schemas.ProductApprovalRequest]):
-    """CRUD operations for moderator functions"""
+from app.core.constants import REPORT_RATING, ProductStatus, RoleId
+from app.core.exceptions import BadRequestError, NotFoundError
+from app.models import Review, User, UserRole, ViolationLog
 
-    def approve_product(self, db: Session, *, product_id: int, status: int, reject_reason: Optional[str] = None, moderator_id: int) -> models.Product:
-        product = db.query(models.Product).filter(
-            and_(models.Product.product_id == product_id, models.Product.is_deleted == False)
-        ).first()
-        if not product:
-            raise NotFoundException("Product not found")
-        if status not in [0, 1, 2]:
-            raise ValidationException("Invalid status value")
-        
-        product.status = status
-        if status == 2:  # Rejected
-            if not reject_reason:
-                raise ValidationException("Reject reason is required for rejection")
-            product.reject_reason = reject_reason
-        elif status == 1:  # Approved
-            product.approved_by = moderator_id
-        
-        db.commit()
-        db.refresh(product)
-        return product
+TRUST_PENALTY = 10.0
 
-    def get_pending_products(self, db: Session) -> List[models.Product]:
-        return db.query(models.Product).filter(
-            and_(models.Product.status == 0, models.Product.is_deleted == False)
-        ).all()
 
-    def get_users_by_role(self, db: Session, *, role_id: int) -> List[models.User]:
-        return db.query(models.User).join(models.UserRole).filter(
-            and_(models.UserRole.role_id == role_id, models.User.is_deleted == False)
-        ).distinct().all()
+class CRUDModerator:
+    def get_users_by_role(self, db: Session, role_id: int, include_deleted: bool = False) -> list[User]:
+        query = db.query(User).join(UserRole).filter(UserRole.role_id == role_id)
+        if not include_deleted:
+            query = query.filter(User.is_deleted == False)
+        return query.distinct().all()
 
-    def handle_violation_report(self, db: Session, *, review_id: int, moderator_id: int) -> models.Review:
-        review = db.query(models.Review).filter(
-            and_(models.Review.review_id == review_id, models.Review.is_deleted == False)
-        ).first()
+    def get_reported_reviews(self, db: Session) -> list[Review]:
+        return db.query(Review).filter(Review.rating == REPORT_RATING, Review.is_deleted == False).all()
+
+    def get_violation_logs(self, db: Session, user_id: int | None = None, skip: int = 0, limit: int = 100):
+        """Logs joined with the username of the sanctioned account."""
+        query = (
+            db.query(
+                ViolationLog.log_id,
+                ViolationLog.user_id,
+                ViolationLog.reason,
+                ViolationLog.action_taken,
+                ViolationLog.created_at,
+                User.username.label("username"),
+            )
+            .join(User, ViolationLog.user_id == User.user_id)
+            .order_by(ViolationLog.created_at.desc())
+        )
+        if user_id is not None:
+            query = query.filter(ViolationLog.user_id == user_id)
+        return query.offset(skip).limit(limit).all()
+
+    def handle_violation_report(self, db: Session, review_id: int) -> Review:
+        """Take the reported product down and penalise the seller's trust score (ban at 0)."""
+        review = db.query(Review).filter(Review.review_id == review_id, Review.is_deleted == False).first()
         if not review:
-            raise NotFoundException("Review not found")
-        
-        product = review.product
-        seller = product.seller
-        
-        has_seller_role = db.query(models.UserRole).filter(
-            and_(models.UserRole.user_id == seller.user_id, models.UserRole.role_id == 3)
-        ).first() is not None
+            raise NotFoundError("Review not found")
 
-        product.status = 2
+        product, seller = review.product, review.product.seller
+        product.status = ProductStatus.REJECTED
         product.reject_reason = f"Violation reported on review {review_id}"
 
-        if has_seller_role:
-            current_score = seller.trust_score if seller.trust_score is not None else 0.0
-            seller.trust_score = max(0.0, current_score - 10.0)
-            
-            violation_log = models.ViolationLog(
-                user_id=seller.user_id,
-                reason=f"Violation on review {review_id} for product {product.product_id}",
-                action_taken="PRODUCT_REMOVAL"
-            )
-            db.add(violation_log)
-
+        reason = f"Violation on review {review_id} for product {product.product_id}"
+        if seller.has_role(RoleId.USER):
+            seller.trust_score = max(0.0, float(seller.trust_score or 0) - TRUST_PENALTY)
+            db.add(ViolationLog(user_id=seller.user_id, reason=reason, action_taken="PRODUCT_REMOVAL"))
             if seller.trust_score <= 0:
                 seller.is_active = False
-                ban_log = models.ViolationLog(
-                    user_id=seller.user_id,
-                    reason="Trust score dropped to 0 or below",
-                    action_taken="BAN"
-                )
-                db.add(ban_log)
+                db.add(ViolationLog(user_id=seller.user_id, reason="Trust score dropped to 0", action_taken="BAN"))
         else:
-            violation_log = models.ViolationLog(
-                user_id=seller.user_id,
-                reason=f"Violation on review {review_id} for product {product.product_id} (no trust score penalty - not a seller)",
-                action_taken="PRODUCT_REMOVAL"
+            db.add(
+                ViolationLog(
+                    user_id=seller.user_id,
+                    reason=f"{reason} (no trust score penalty - not a seller)",
+                    action_taken="PRODUCT_REMOVAL",
+                )
             )
-            db.add(violation_log)
-            
+
         db.commit()
         db.refresh(review)
         return review
 
-    def get_violation_reviews(self, db: Session) -> List[models.Review]:
-        return db.query(models.Review).filter(
-            and_(models.Review.rating == 1, models.Review.is_deleted == False)
-        ).all()
-
-    def toggle_user_status(self, db: Session, *, user_id: int, is_active: bool, reason: str, moderator_id: int) -> models.User:
-        # ĐÃ SỬA: Dùng User.roles thay vì User.user_roles
+    def _set_active(
+        self, db: Session, user_id: int, is_active: bool, reason: str, required_role: RoleId, log_suffix: str = ""
+    ) -> User:
         user = db.query(User).options(joinedload(User.roles)).filter(User.user_id == user_id).first()
         if not user:
-            raise NotFoundException("User not found")
-
-        # ĐÃ SỬA: Dùng user.roles thay vì user.user_roles
-        if not any(role.role_id == 3 for role in user.roles):
-            raise ValidationException("Can only change status for users with User role (role_id=3)")
-
+            raise NotFoundError("User not found")
+        if not user.has_role(required_role):
+            raise BadRequestError(f"Can only change status for users with role_id={int(required_role)}")
         if user.is_active == is_active:
-            action = "ACTIVATE" if is_active else "DEACTIVATE"
-            raise ValidationException(f"User is already {action.lower()}")
-            
+            raise BadRequestError(f"Account is already {'active' if is_active else 'inactive'}")
+
         user.is_active = is_active
-        action_taken = "ACTIVATE" if is_active else "DEACTIVATE"
-        
-        violation_log = models.ViolationLog(
-            user_id=user_id,
-            reason=reason,
-            action_taken=action_taken
-        )
-        db.add(violation_log)
+        action = ("ACTIVATE" if is_active else "DEACTIVATE") + log_suffix
+        db.add(ViolationLog(user_id=user_id, reason=reason, action_taken=action))
+        return user
+
+    def toggle_user_status(self, db: Session, user_id: int, is_active: bool, reason: str) -> User:
+        user = self._set_active(db, user_id, is_active, reason, RoleId.USER)
         db.commit()
         db.refresh(user)
         return user
 
-    def get_moderators(self, db: Session, include_deleted: bool = False) -> List[models.User]:
-        query = db.query(models.User).join(models.UserRole).filter(models.UserRole.role_id == 2)
-        if not include_deleted:
-            query = query.filter(models.User.is_deleted == False)
-        return query.distinct().all()
-
-    def toggle_moderator_status(self, db: Session, *, user_id: int, is_active: bool, reason: str, admin_id: int) -> models.User:
-        user = db.query(models.User).options(joinedload(models.User.roles)).filter(models.User.user_id == user_id).first()
-        if not user:
-            raise NotFoundException("User not found")
-            
-        is_moderator = any(role.role_id == 2 for role in user.roles)
-        if not is_moderator:
-            raise ValidationException("Can only change status for users with Moderator role (role_id=2)")
-            
-        if user.is_active == is_active:
-            action = "ACTIVATE" if is_active else "DEACTIVATE"
-            raise ValidationException(f"Moderator is already {action.lower()}")
-            
-        user.is_active = is_active
+    def toggle_moderator_status(self, db: Session, user_id: int, is_active: bool, reason: str) -> User:
+        user = self._set_active(db, user_id, is_active, reason, RoleId.MODERATOR, log_suffix="_MODERATOR")
+        # A locked moderator is also hidden from the moderator list.
         user.is_deleted = not is_active
-        
-        violation_log = models.ViolationLog(
-            user_id=user_id,
-            reason=reason,
-            action_taken="ACTIVATE_MODERATOR" if is_active else "DEACTIVATE_MODERATOR"
-        )
-        db.add(violation_log)
         db.commit()
         db.refresh(user)
         return user
 
-    def get_violation_reviews(self, db: Session):
-        """Lấy các review có rating = 0"""
-        return db.query(models.Review).filter(models.Review.rating == 0).all()
 
-moderator = CRUDModerator(models.Product)
+crud_moderator = CRUDModerator()

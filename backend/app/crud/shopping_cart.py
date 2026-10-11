@@ -1,74 +1,73 @@
+"""Shopping cart.
+
+Stock is *reserved* when an item is added to the cart (product.quantity goes
+down) and released when it is removed. Rows are locked with SELECT ... FOR
+UPDATE so two buyers cannot reserve the last unit at the same time.
+"""
+
 from datetime import datetime
+
 from sqlalchemy.orm import Session, joinedload
-from app.models import ShoppingCart, ShoppingCartItem, Product
+
+from app.core.constants import ProductStatus
+from app.core.exceptions import BadRequestError
+from app.models import Product, ShoppingCart, ShoppingCartItem
+
+
+def _release_stock(product: Product, quantity: int) -> None:
+    product.quantity += quantity
+    if product.quantity > 0 and product.status == ProductStatus.SOLD_OUT:
+        product.status = ProductStatus.APPROVED
+
+
+def _reserve_stock(product: Product, quantity: int) -> None:
+    if product.quantity < quantity:
+        raise BadRequestError(f"Sản phẩm hiện chỉ còn {product.quantity} món. Vui lòng giảm số lượng!")
+    product.quantity -= quantity
+    if product.quantity == 0:
+        product.status = ProductStatus.SOLD_OUT
 
 
 class CRUDShoppingCart:
-    """Shopping cart CRUD operations"""
-
     def get_by_user_id(self, db: Session, user_id: int) -> ShoppingCart | None:
         return (
             db.query(ShoppingCart)
-            .options(
-                joinedload(ShoppingCart.cart_items).joinedload(ShoppingCartItem.product)
-            )
+            .options(joinedload(ShoppingCart.cart_items).joinedload(ShoppingCartItem.product))
             .filter(ShoppingCart.user_id == user_id)
             .first()
         )
 
-    def create_cart(self, db: Session, user_id: int) -> ShoppingCart:
+    def get_or_create(self, db: Session, user_id: int) -> ShoppingCart:
+        cart = self.get_by_user_id(db, user_id)
+        if cart:
+            return cart
         cart = ShoppingCart(user_id=user_id, last_updated=datetime.utcnow())
         db.add(cart)
         db.commit()
         db.refresh(cart)
         return cart
 
-    def get_or_create_by_user_id(self, db: Session, user_id: int) -> ShoppingCart:
-        cart = self.get_by_user_id(db, user_id)
-        return cart or self.create_cart(db, user_id)
-
-    def get_item_by_id(self, db: Session, cart_item_id: int) -> ShoppingCartItem | None:
+    def get_item(self, db: Session, cart_item_id: int) -> ShoppingCartItem | None:
         return db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_item_id == cart_item_id).first()
 
-    def get_item_by_cart_and_product(self, db: Session, cart_id: int, product_id: int) -> ShoppingCartItem | None:
-        return (
+    def _lock_product(self, db: Session, product_id: int, approved_only: bool = False) -> Product | None:
+        query = db.query(Product).filter(Product.product_id == product_id)
+        if approved_only:
+            query = query.filter(Product.is_deleted == False, Product.status == ProductStatus.APPROVED)
+        return query.with_for_update().first()
+
+    def add_item(self, db: Session, user_id: int, product_id: int, quantity: int) -> ShoppingCartItem:
+        product = self._lock_product(db, product_id, approved_only=True)
+        if not product:
+            raise BadRequestError("Sản phẩm không tồn tại hoặc đã bị xóa")
+        _reserve_stock(product, quantity)
+
+        cart = self.get_or_create(db, user_id)
+        item = (
             db.query(ShoppingCartItem)
-            .filter(ShoppingCartItem.cart_id == cart_id)
-            .filter(ShoppingCartItem.product_id == product_id)
+            .filter(ShoppingCartItem.cart_id == cart.cart_id, ShoppingCartItem.product_id == product_id)
             .first()
         )
-
-    def add_or_update_item(
-        self,
-        db: Session,
-        user_id: int,
-        product_id: int,
-        quantity: int
-    ) -> ShoppingCartItem:
-        if quantity <= 0:
-            raise ValueError("Quantity must be greater than 0")
-
-        # Use FOR UPDATE to prevent race conditions during stock check
-        product = db.query(Product).filter(
-            Product.product_id == product_id,
-            Product.is_deleted == False,
-            Product.status == 1 # Active/Approved
-        ).with_for_update().first()
-
-        if not product:
-            raise ValueError("Sản phẩm không tồn tại hoặc đã bị xóa")
-        
-        if product.quantity < quantity:
-            raise ValueError(f"Sản phẩm hiện chỉ còn {product.quantity} món. Vui lòng giảm số lượng!")
-
-        cart = self.get_or_create_by_user_id(db, user_id)
-        item = self.get_item_by_cart_and_product(db, cart.cart_id, product_id)
-
-        # Decrement stock
-        product.quantity -= quantity
-        if product.quantity == 0:
-            product.status = 3 # Sold Out
-
         if item:
             item.quantity += quantity
         else:
@@ -76,105 +75,55 @@ class CRUDShoppingCart:
             db.add(item)
 
         cart.last_updated = datetime.utcnow()
-        db.add(cart)
-        db.add(product)
         db.commit()
         db.refresh(item)
-        db.refresh(cart)
         return item
 
-    def update_item_quantity(
-        self,
-        db: Session,
-        cart_item_id: int,
-        quantity: int
-    ) -> ShoppingCartItem | None:
-        # Use FOR UPDATE to lock both the cart item and the product
-        item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_item_id == cart_item_id).with_for_update().first()
-        if not item:
-            return None
-        
-        product = db.query(Product).filter(Product.product_id == item.product_id).with_for_update().first()
-        if not product:
-            return None
-
-        old_quantity = item.quantity
-        diff = quantity - old_quantity
-
+    def update_quantity(self, db: Session, item: ShoppingCartItem, quantity: int) -> ShoppingCartItem:
+        product = self._lock_product(db, item.product_id)
+        diff = quantity - item.quantity
         if diff > 0:
-            # Adding more to cart -> check and decrement stock
-            if product.quantity < diff:
-                raise ValueError(f"Không đủ hàng trong kho. Còn lại: {product.quantity}")
-            product.quantity -= diff
+            _reserve_stock(product, diff)
         elif diff < 0:
-            # Reducing quantity in cart -> increment stock back
-            product.quantity += abs(diff)
-        
-        # Update product status based on quantity
-        if product.quantity > 0 and product.status == 3:
-            product.status = 1 # Back to Approved
-        elif product.quantity == 0:
-            product.status = 3 # Sold Out
+            _release_stock(product, -diff)
 
-        if quantity <= 0:
-            db.delete(item)
-        else:
-            item.quantity = quantity
-            item.added_at = datetime.utcnow()
-            db.add(item)
-
+        item.quantity = quantity
+        item.added_at = datetime.utcnow()
         item.cart.last_updated = datetime.utcnow()
-        db.add(product)
-        db.add(item.cart)
         db.commit()
-        
-        if quantity > 0:
-            db.refresh(item)
-            return item
-        return None
+        db.refresh(item)
+        return item
 
-    def remove_item(self, db: Session, cart_item_id: int) -> bool:
-        item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_item_id == cart_item_id).with_for_update().first()
-        if not item:
-            return False
-
-        # Restore stock before deleting the item
-        product = db.query(Product).filter(Product.product_id == item.product_id).with_for_update().first()
+    def remove_item(self, db: Session, item: ShoppingCartItem) -> None:
+        product = self._lock_product(db, item.product_id)
         if product:
-            product.quantity += item.quantity
-            if product.quantity > 0 and product.status == 3:
-                product.status = 1
-            db.add(product)
-
-        cart = item.cart
+            _release_stock(product, item.quantity)
+        item.cart.last_updated = datetime.utcnow()
         db.delete(item)
-        if cart:
-            cart.last_updated = datetime.utcnow()
-            db.add(cart)
-
         db.commit()
-        return True
 
-    def clear_cart(self, db: Session, user_id: int, restore_stock: bool = True) -> bool:
+    def clear(self, db: Session, user_id: int) -> None:
         cart = self.get_by_user_id(db, user_id)
         if not cart:
-            return False
-
-        items = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id).all()
-        for item in items:
-            if restore_stock:
-                product = db.query(Product).filter(Product.product_id == item.product_id).with_for_update().first()
-                if product:
-                    product.quantity += item.quantity
-                    if product.quantity > 0 and product.status == 3:
-                        product.status = 1
-                    db.add(product)
+            return
+        for item in list(cart.cart_items):
+            product = self._lock_product(db, item.product_id)
+            if product:
+                _release_stock(product, item.quantity)
             db.delete(item)
-
         cart.last_updated = datetime.utcnow()
-        db.add(cart)
         db.commit()
-        return True
+
+    def remove_ordered_products(self, db: Session, user_id: int, product_ids: list[int]) -> None:
+        """After checkout the reserved stock is consumed, so items are dropped without releasing it."""
+        cart = db.query(ShoppingCart).filter(ShoppingCart.user_id == user_id).first()
+        if not cart or not product_ids:
+            return
+        db.query(ShoppingCartItem).filter(
+            ShoppingCartItem.cart_id == cart.cart_id,
+            ShoppingCartItem.product_id.in_(product_ids),
+        ).delete(synchronize_session=False)
+        db.commit()
 
 
 crud_cart = CRUDShoppingCart()

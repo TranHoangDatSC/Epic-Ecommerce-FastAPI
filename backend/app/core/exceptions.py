@@ -1,61 +1,32 @@
-from fastapi import HTTPException, status
+"""Domain errors raised by the CRUD/service layer.
+
+They carry an HTTP status so routers don't need try/except boilerplate: the
+handler registered in app.main turns them into `{"detail": ...}` responses,
+which is the same shape FastAPI uses for HTTPException.
+"""
+
+from fastapi import status
 
 
-class BaseException(HTTPException):
-    """Base exception class"""
-    pass
+class AppError(Exception):
+    status_code = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, detail: str):
+        super().__init__(detail)
+        self.detail = detail
 
 
-class UnauthorizedException(HTTPException):
-    """401 Unauthorized"""
-    def __init__(self, detail: str = "Unauthorized"):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=detail,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+class BadRequestError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
 
 
-class ForbiddenException(HTTPException):
-    """403 Forbidden"""
-    def __init__(self, detail: str = "Forbidden"):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=detail
-        )
+class NotFoundError(AppError):
+    status_code = status.HTTP_404_NOT_FOUND
 
 
-class NotFoundException(HTTPException):
-    """404 Not Found"""
-    def __init__(self, detail: str = "Not Found"):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=detail
-        )
+class ForbiddenError(AppError):
+    status_code = status.HTTP_403_FORBIDDEN
 
 
-class ConflictException(HTTPException):
-    """409 Conflict"""
-    def __init__(self, detail: str = "Conflict"):
-        super().__init__(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=detail
-        )
-
-
-class BadRequestException(HTTPException):
-    """400 Bad Request"""
-    def __init__(self, detail: str = "Bad Request"):
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail
-        )
-
-
-class ValidationException(HTTPException):
-    """422 Validation Error"""
-    def __init__(self, detail: str = "Validation Error"):
-        super().__init__(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=detail
-        )
+class ConflictError(AppError):
+    status_code = status.HTTP_409_CONFLICT
