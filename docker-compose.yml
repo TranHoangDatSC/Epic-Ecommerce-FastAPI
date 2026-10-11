@@ -1,88 +1,53 @@
+# Local quick start: `docker compose up --build`, then open http://localhost:8080
+# (API docs: http://localhost:8000/api/docs). Production lives in deploy/.
+name: oldshop-local
+
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: oldshop_db
+  postgres:
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: oldshop
     ports:
-      - "5432:5432"
+      - "5433:5432"   # 5433 to avoid clashing with a locally installed PostgreSQL
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - oldshop_network
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d oldshop"]
+      interval: 5s
+      retries: 20
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: oldshop_backend
-    restart: always
     depends_on:
-      - db
-    env_file:
-      - ./backend/.env
+      postgres:
+        condition: service_healthy
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=123
-      - DB_NAME=oldshop
+      ENVIRONMENT: development
+      DEBUG: "true"
+      LOG_FORMAT: text
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: oldshop
+      SECRET_KEY: local-dev-secret-change-me
+      CORS_ORIGINS: http://localhost:8080,http://localhost:4200
+      WEB_CONCURRENCY: 1
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app                      # Hot-reload code khi dev
-      - ./backend/media:/app/media          # Ảnh upload lưu trực tiếp ra host, persistent
-    networks:
-      - oldshop_network
+      - media:/data/media
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: oldshop_frontend
-    depends_on:
-      - backend
+    depends_on: [backend]
     ports:
-      - "80:80" # Publish cổng 80 cho web
-    networks:
-      - oldshop_network
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: oldshop_prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - oldshop_network
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: oldshop_grafana
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    networks:
-      - oldshop_network
-  sonarqube:
-    image: sonarqube:lts-community
-    container_name: oldshop_sonarqube
-    ports:
-      - "9000:9000"
-    environment:
-      - SONAR_FORCEAUTHENTICATION=false
-    networks:
-      - oldshop_network
-
-networks:
-  oldshop_network:
-    driver: bridge
+      - "8080:80"
 
 volumes:
-  postgres_data:
+  pg_data:
+  media:
