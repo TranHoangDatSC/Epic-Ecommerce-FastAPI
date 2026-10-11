@@ -129,7 +129,7 @@ BEGIN
         change_description := 'Record deleted';
     ELSE
         RETURN COALESCE(NEW, OLD);
-    END;
+    END IF;
 
     -- Log the change (user_id will be NULL for system/auto operations)
     PERFORM log_system_action(NULL, action_type, TG_TABLE_NAME, record_id, change_description);

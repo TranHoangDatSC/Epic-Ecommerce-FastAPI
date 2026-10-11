@@ -37,6 +37,7 @@
 \i 02_functions/order_detail/triggers.sql
 \i 02_functions/system/audit_functions.sql
 \i 02_functions/system/business_functions.sql
+\i 02_functions/system/utility_functions.sql
 
 -- Execute seed data (with encrypted passwords and rich sample data)
 \i 03_seeds/role/seed.sql
