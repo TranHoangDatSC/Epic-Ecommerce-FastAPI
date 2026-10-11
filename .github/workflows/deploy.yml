@@ -73,8 +73,16 @@ jobs:
     if: always() && (needs.build.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.tag != ''))
     runs-on: ubuntu-latest
     environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
     steps:
+      # Images are already in GHCR at this point; without a server configured there is nothing to roll out.
+      - name: Skip when no VPS is configured
+        if: env.VPS_HOST == ''
+        run: echo "::notice title=Deploy skipped::Images were pushed to GHCR. Set the VPS_HOST, VPS_USER and VPS_SSH_KEY secrets to deploy automatically."
+
       - name: Deploy over SSH
+        if: env.VPS_HOST != ''
         uses: appleboy/ssh-action@v1.0.3
         env:
           TAG: ${{ inputs.tag || needs.build.outputs.tag }}
