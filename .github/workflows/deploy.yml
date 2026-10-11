@@ -19,7 +19,6 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: ${{ github.repository_owner }}
 
 jobs:
   build:
@@ -42,7 +41,10 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - id: vars
-        run: echo "tag=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+        # Image names must be lowercase; the GitHub owner name may not be.
+        run: |
+          echo "tag=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "namespace=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -58,8 +60,8 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/oldshop-backend:${{ steps.vars.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/oldshop-backend:latest
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/oldshop-backend:${{ steps.vars.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/oldshop-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -69,8 +71,8 @@ jobs:
           context: frontend
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/oldshop-frontend:${{ steps.vars.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/oldshop-frontend:latest
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/oldshop-frontend:${{ steps.vars.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/oldshop-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
