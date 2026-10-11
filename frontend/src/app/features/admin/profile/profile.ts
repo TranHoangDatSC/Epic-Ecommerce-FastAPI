@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { User } from '../../../core/models/index';
 import { AuthService } from '../../../core/services/auth.service';
 import { take } from 'rxjs/operators';
+import { mediaUrl } from '../../../core/utils/media-url';
 
 @Component({
   selector: 'app-profile',
@@ -39,8 +40,7 @@ export class AdminProfileComponent implements OnInit {
   }
 
   getAvatarUrl(path: string | null | undefined): string {
-    if (!path) return 'assets/images/default-avt.png';
-    return path.startsWith('http') ? path : `http://localhost:8000${path}`;
+    return mediaUrl(path);
   }
 
   onImageError(event: any) { event.target.src = 'assets/images/default-avt.png'; }

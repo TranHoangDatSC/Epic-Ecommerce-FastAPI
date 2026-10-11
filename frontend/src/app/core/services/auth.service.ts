@@ -134,7 +134,6 @@ export class AuthService {
 
   forgotPasswordOtp(email: string): Observable<any> {
     const url = `${this.apiUrl}/forgot-password-otp?email=${encodeURIComponent(email)}`;
-    console.log('Đang gọi URL tà đạo:', url);
     return this.http.post(url, {}); 
   }
 

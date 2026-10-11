@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { User } from '../../../core/models/index';
 import { AuthService } from '../../../core/services/auth.service';
 import { take } from 'rxjs/operators';
+import { mediaUrl } from '../../../core/utils/media-url';
 
 @Component({
   selector: 'app-customer-profile',
@@ -43,9 +44,7 @@ export class ProfileComponent implements OnInit {
   }
 
   getAvatarUrl(path: string | null | undefined): string {
-    if (!path) return this.defaultAvatar;
-    if (path.startsWith('http')) return path;
-    return `http://localhost:8000${path}`; 
+    return mediaUrl(path, this.defaultAvatar);
   }
 
   onImageError(event: any) { event.target.src = this.defaultAvatar; }

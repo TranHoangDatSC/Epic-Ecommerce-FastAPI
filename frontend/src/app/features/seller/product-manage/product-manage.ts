@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { UIService } from '../../../core/services/ui.service';
+import { mediaUrl } from '../../../core/utils/media-url';
 
 declare var bootstrap: any;
 
@@ -116,9 +117,7 @@ export class ProductManageComponent implements OnInit {
   getPrimaryImage(product: any): string {
     const primaryImage = product.product_images?.find((img: any) => img.is_primary);
     const raw = primaryImage ? primaryImage.image_url : (product.product_images?.[0]?.image_url || '');
-    if (!raw) return 'assets/placeholder.jpg';
-    if (raw.startsWith('/')) return `${environment.imageBaseUrl || 'http://localhost:8000'}${raw}`;
-    return raw;
+    return mediaUrl(raw, 'assets/placeholder.jpg');
   }
 
   get filteredProducts() {
