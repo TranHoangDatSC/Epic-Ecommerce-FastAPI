@@ -1,55 +1,30 @@
-# ==========================================
-# 1. CORE WEB & API
-# ==========================================
-fastapi
-uvicorn[standard]
-pydantic
-pydantic-settings
-python-multipart
+# Runtime dependencies (pinned for reproducible Docker builds).
+# Dev/test tooling lives in requirements-dev.txt.
 
-# ==========================================
-# 2. DATABASE & ORM
-# ==========================================
-sqlalchemy
-psycopg2-binary
-alembic
+# Web
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+httpx==0.28.1
 
-# ==========================================
-# 3. SECURITY & AUTHENTICATION
-# ==========================================
-python-jose[cryptography]
-passlib[bcrypt]
-bcrypt==4.0.1
+# Settings & validation
+pydantic==2.14.0
+pydantic-settings==2.15.0
+email-validator==2.3.0
 
-# ==========================================
-# 4. MACHINE LEARNING & DATA
-# (Đã ghim cứng version để tránh lỗi unpickle)
-# ==========================================
-scikit-learn==1.7.1
-scipy
-joblib
-pandas
+# Database
+SQLAlchemy==2.1.4
+psycopg2-binary==2.9.13
 
-# ==========================================
-# 5. UTILITIES (Email, Validation, Config)
-# ==========================================
-python-dotenv
-email-validator
-emails
-yagmail
+# Auth
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1  # passlib 1.7 breaks with bcrypt>=4.1
 
-# ==========================================
-# 6. TESTING & DEV
-# ==========================================
-pytest
-pytest-asyncio
-httpx
-pytest-cov
+# Fraud detection (model artifacts are mounted at runtime, see app/services/fraud_detection.py)
+scikit-learn==1.7.1  # must match the version the model was pickled with
+joblib==1.6.0
+numpy==2.5.4
 
-# 7. ML TOOLS (Tùy chọn - chỉ cài nếu cần)
-# Joblib: Cần cho mô hình scikit-learn cũ
-# Joblib==1.5.3
-# NumPy==2.4.4
-# SciPy==1.17.1
-
-# Command: pip install -r requirements.txt
+# Observability
+prometheus-fastapi-instrumentator==8.1.0
