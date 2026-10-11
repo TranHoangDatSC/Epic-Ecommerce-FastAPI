@@ -1,7 +1,7 @@
+// Production: the SPA, /api and /media are served from the same origin by Nginx.
 export const environment = {
   production: true,
-  apiUrl: '/api/v1',              // Nginx proxy /api/ → backend:8000
-  imageBaseUrl: '',               // Chuỗi rỗng = dùng origin hiện tại, nginx proxy /media/ → backend
-  imageUrl: '',
-  googleScriptContact: ''
+  apiUrl: '/api/v1',
+  imageBaseUrl: '',
+  imageUrl: ''
 };

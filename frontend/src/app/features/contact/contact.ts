@@ -1,9 +1,15 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs';
 import { UIService } from '../../core/services/ui.service';
 import { environment } from '../../../environments/environment';
 
+/**
+ * Contact form. Messages go to the backend (`POST /system/contact`), which stores them and relays
+ * them to the Google Apps Script helpdesk sheet. The Apps Script URL never reaches the browser.
+ */
 @Component({
   selector: 'app-contact',
   standalone: true,
@@ -12,9 +18,12 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./contact.scss']
 })
 export class ContactComponent {
+  private http = inject(HttpClient);
+  private uiService = inject(UIService);
+  private cdr = inject(ChangeDetectorRef);
+
   isLoading = false;
 
-  // THÊM LẠI ĐOẠN NÀY ĐỂ FIX LỖI TS2339
   contactInfo = {
     office: 'Số 123, Đường ABC, Quận Ninh Kiều, Cần Thơ',
     email: 'contact@oldshop.com',
@@ -22,62 +31,44 @@ export class ContactComponent {
     messenger: 'm.me/oldshop.secondhand'
   };
 
-  formData = {
-    fullName: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: ''
-  };
+  formData = this.emptyForm();
 
-  constructor(private uiService: UIService, private cdr: ChangeDetectorRef) {}
-
-  async sendMessage() {
-    // 1. Kiểm tra đầu vào
-    if (!this.formData.fullName || !this.formData.email || !this.formData.message) {
+  sendMessage() {
+    const { fullName, email, phone, subject, message } = this.formData;
+    if (!fullName || !email || !message) {
       this.uiService.showError('Vui lòng điền đầy đủ các thông tin bắt buộc!', 'Thông báo');
       return;
     }
 
     this.isLoading = true;
-
-    try {
-      // 2. Chuyển sang URLSearchParams
-      const payload = new URLSearchParams();
-      payload.append('fullName', this.formData.fullName);
-      payload.append('email', this.formData.email);
-      payload.append('phone', this.formData.phone || 'N/A');
-      payload.append('subject', this.formData.subject || 'Liên hệ từ website');
-      payload.append('message', this.formData.message);
-
-      // 3. Gửi POST (Dùng fetch vì mode no-cors xử lý Google Script tốt hơn HttpClient của Angular trong một số case local)
-      await fetch(environment.googleScriptContact, {
-        method: 'POST',
-        body: payload,
-        mode: 'no-cors', 
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+    this.http
+      .post(`${environment.apiUrl}/system/contact`, {
+        full_name: fullName,
+        email,
+        phone: phone || null,
+        subject: subject || null,
+        message
+      })
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.uiService.showModal({
+            title: 'Đã gửi yêu cầu!',
+            message: 'Cảm ơn bạn đã liên hệ. Đội ngũ OldShop sẽ phản hồi bạn sớm nhất.',
+            type: 'success'
+          });
+          this.formData = this.emptyForm();
+        },
+        error: () => this.uiService.showError('Đã có lỗi xảy ra, vui lòng thử lại sau!', 'Lỗi')
       });
+  }
 
-      // 4. Thành công
-      this.uiService.showModal({
-        title: 'Đã gửi yêu cầu!',
-        message: 'Cảm ơn bạn đã liên hệ. Đội ngũ OldShop sẽ phản hồi bạn sớm nhất.',
-        type: 'success'
-        
-      });
-
-      // Reset form
-      this.formData = { fullName: '', email: '', phone: '', subject: '', message: '' };
-
-    } catch (error) {
-      console.error('Lỗi gửi contact:', error);
-      this.uiService.showError('Đã có lỗi xảy ra, vui lòng thử lại sau!', 'Lỗi');
-      this.cdr.detectChanges();
-    } finally {
-      this.isLoading = false;
-      this.cdr.detectChanges();
-    }
+  private emptyForm() {
+    return { fullName: '', email: '', phone: '', subject: '', message: '' };
   }
 }
