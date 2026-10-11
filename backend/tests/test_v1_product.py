@@ -1,70 +1,61 @@
-import pytest
-import sys
-import os
 import io
-import logging
-from fastapi.testclient import TestClient
 
-# Cấu hình log sạch
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
+import pytest
 
-# Fix path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from app.main import app
 
-client = TestClient(app)
+@pytest.fixture(scope="module")
+def seller(login):
+    return login("user1@gmail.com")
 
-class TestProductModule:
-    """
-    HỆ THỐNG KIỂM THỬ TỰ ĐỘNG - PHÂN HỆ SẢN PHẨM & MEDIA
-    """
 
-    @pytest.fixture(scope="class")
-    def seller_auth(self):
-        """Token của người bán (user1@gmail.com)"""
-        res = client.post("/api/v1/auth/login", data={"username": "user1@gmail.com", "password": "user123"})
-        return {"Authorization": f"Bearer {res.json()['access_token']}"}
+def test_public_listing_only_shows_approved(client):
+    products = client.get("/api/v1/products").json()
+    assert products
+    assert all(p["status"] == 1 and p["is_approved"] for p in products)
 
-    @pytest.fixture(scope="class")
-    def mod_auth(self):
-        """Token của kiểm duyệt viên (mod1@oldshop.com)"""
-        res = client.post("/api/v1/auth/login", data={"username": "mod1@oldshop.com", "password": "mod123"})
-        return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
-    def test_01_moderator_approve_flow(self, mod_auth):
-        """[Xác minh] Moderator phê duyệt sản phẩm"""
-        # Lấy danh sách sản phẩm đang chờ duyệt
-        pending_res = client.get("/api/v1/products/pending/all", headers=mod_auth)
-        if not pending_res.json():
-            pytest.skip("Không có sản phẩm chờ duyệt để test.")
-            
-        target_id = pending_res.json()[0]["product_id"]
-        
-        # Thực hiện phê duyệt
-        res_approve = client.post(f"/api/v1/products/{target_id}/approve", headers=mod_auth)
-        assert res_approve.status_code == 200
-        assert res_approve.json()["status"] == 1
-        logger.info(f">>> [SUCCESS] Moderator phê duyệt sản phẩm thành công: OK")
+def test_seller_does_not_see_own_listings(client, seller):
+    me = client.get("/api/v1/auth/me", headers=seller).json()
+    products = client.get("/api/v1/products", headers=seller).json()
+    assert all(p["seller_id"] != me["user_id"] for p in products)
 
-    def test_02_reject_product_with_reason(self, mod_auth):
-        """[Xác minh] Chốt chặn: Từ chối sản phẩm phải có lý do ít nhất 10 ký tự"""
-        # Thử reject không đủ 10 ký tự lý do
-        res_fail = client.post("/api/v1/products/1/reject?reject_reason=Short", headers=mod_auth)
-        assert res_fail.status_code == 422 # Lỗi Validation của FastAPI
-        logger.info(">>> [SUCCESS] Chốt chặn độ dài lý do từ chối: OK")
 
-    def test_03_increment_view_count(self):
-        """[Xác minh] Tự động tăng lượt xem khi xem chi tiết sản phẩm"""
-        # Lấy view hiện tại của sản phẩm ID 1
-        p1 = client.get("/api/v1/products/1").json()
-        initial_views = p1.get("view_count", 0)
-        
-        # Xem lại lần nữa
-        client.get("/api/v1/products/1")
-        p2 = client.get("/api/v1/products/1").json()
-        
-        assert p2.get("view_count", 0) == initial_views + 2
-        logger.info(">>> [SUCCESS] Tự động tăng View Count khi truy cập: OK")
+def test_create_product_then_moderate(client, seller, mod_headers, png_bytes):
+    """Người bán đăng tin (multipart) -> chờ duyệt -> moderator duyệt."""
+    response = client.post(
+        "/api/v1/products",
+        headers=seller,
+        data={"category_id": "1", "title": "Máy ảnh film cũ", "price": "1500000", "quantity": "1"},
+        files=[("files", ("camera.png", io.BytesIO(png_bytes), "image/png"))],
+    )
+    assert response.status_code == 201, response.text
+    product = response.json()
+    assert product["status"] == 0
+    assert product["product_images"][0]["image_url"].startswith(f"/media/products/prod_{product['product_id']}_1_")
 
-# -> # -> python -m pytest tests/test_v1_order.py -s -v -p no:warnings
+    pending_ids = [p["product_id"] for p in client.get("/api/v1/products/pending/all", headers=mod_headers).json()]
+    assert product["product_id"] in pending_ids
+
+    approved = client.post(f"/api/v1/products/{product['product_id']}/approve", headers=mod_headers)
+    assert approved.status_code == 200
+    assert approved.json()["status"] == 1
+
+
+def test_create_product_rejects_non_image(client, seller):
+    response = client.post(
+        "/api/v1/products",
+        headers=seller,
+        data={"category_id": "1", "title": "x", "price": "1000", "quantity": "1"},
+        files=[("files", ("notes.txt", io.BytesIO(b"hello"), "text/plain"))],
+    )
+    assert response.status_code == 400
+
+
+def test_reject_requires_reason(client, mod_headers):
+    assert client.post("/api/v1/products/1/reject?reject_reason=Short", headers=mod_headers).status_code == 422
+
+
+def test_view_count_increments(client):
+    before = client.get("/api/v1/products/1").json()["view_count"]
+    client.get("/api/v1/products/1")
+    assert client.get("/api/v1/products/1").json()["view_count"] == before + 2

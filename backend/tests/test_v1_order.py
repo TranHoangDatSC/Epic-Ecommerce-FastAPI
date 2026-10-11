@@ -1,91 +1,84 @@
 import pytest
-import sys
-import os
-import logging
-from fastapi.testclient import TestClient
 
-# Cấu hình log sạch cho báo cáo
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
 
-# Fix path import app
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from app.main import app
+@pytest.fixture(scope="module")
+def buyer(login):
+    return login("user6@gmail.com")
 
-client = TestClient(app)
 
-class TestOrderModule:
-    """
-    HỆ THỐNG KIỂM THỬ TỰ ĐỘNG - PHÂN HỆ ĐƠN HÀNG & THANH TOÁN THÔNG MINH
-    Dự án: Oldshop Ecommerce
-    """
+@pytest.fixture(scope="module")
+def contact_id(client, buyer):
+    contacts = client.get("/api/v1/users/me/contacts", headers=buyer).json()
+    if not contacts:
+        pytest.skip("Seed data has no address for user6")
+    return contacts[0]["contact_id"]
 
-    @pytest.fixture(scope="class", autouse=True)
-    def user_auth(self):
-        """Khởi tạo quyền truy cập cho User (người mua)"""
-        login_data = {"username": "user6@gmail.com", "password": "user123"}
-        res = client.post("/api/v1/auth/login", data=login_data)
-        if res.status_code != 200:
-            pytest.fail(">>> [FAILED] Không thể đăng nhập tài khoản người mua.")
-        
-        token = res.json()["access_token"]
-        logger.info("\n>>> [XÁC THỰC] Đăng nhập tài khoản người mua thành công.")
-        return {"Authorization": f"Bearer {token}"}
 
-    # --- NHÓM 1: KHỞI TẠO ĐƠN HÀNG ---
+def test_create_cod_order(client, buyer, contact_id):
+    payload = {
+        "contact_id": contact_id,
+        "payment_method_id": 1,  # COD
+        "order_items": [{"product_id": 2, "quantity": 1}],
+        "shipping_fee": 30000,
+        "notes": "Kiểm tra hàng trước khi nhận",
+    }
+    response = client.post("/api/v1/orders", json=payload, headers=buyer)
 
-    def test_01_create_order_basic(self, user_auth):
-        """[Xác minh] Luồng tạo đơn hàng COD tiêu chuẩn"""
-        # Lấy contact_id thực tế từ DB để tránh lỗi ID cứng
-        contact_res = client.get("/api/v1/users/me/contacts", headers=user_auth)
-        if not contact_res.json():
-            pytest.skip("User chưa có thông tin liên hệ trong DB.")
-        
-        payload = {
-            "contact_id": 10,
-            "payment_method_id": 1,  # COD
-            "order_items": [{"product_id": 2, "quantity": 1}],
-            "shipping_fee": 30000,
-            "notes": "Kiểm tra hàng trước khi nhận"
-        }
-        response = client.post("/api/v1/orders", json=payload, headers=user_auth)
-        assert response.status_code == 201
-        logger.info(">>> [SUCCESS] Khởi tạo đơn hàng tiêu chuẩn (COD): OK")
+    assert response.status_code == 201
+    order = response.json()
+    assert order["order_status"] == 0
+    assert float(order["final_amount"]) == float(order["total_amount"]) + 30000
+    assert len(order["order_details"]) == 1
 
-    # --- NHÓM 2: THANH TOÁN PAYPAL & FRAUD DETECTION ---
 
-    def test_02_paypal_fraud_detection(self, user_auth):
-        """[Xác minh] Chốt chặn AI: Tự động chặn giao dịch rủi ro cao"""
-        # Đẩy số lượng cực lớn (20 cái điện thoại 18 triệu)
-        fraud_payload = {
-            "contact_id": 10,
-            "payment_method_id": 4,  # PayPal
-            "order_items": [{"product_id": 2, "quantity": 20}],
-            "shipping_fee": 50000
-        }
-        response = client.post("/api/v1/orders/create-paypal-order", json=fraud_payload, headers=user_auth)
-        
-        # Mong đợi 403 Forbidden từ logic verify_transaction_ml
-        assert response.status_code == 403
-        assert "Giao dịch bị từ chối" in response.json()["detail"]
-        logger.info(">>> [SUCCESS] AI Fraud Detection chặn đơn hàng ảo giá trị lớn: OK")
+def test_order_requires_own_address(client, buyer):
+    payload = {"contact_id": 1, "payment_method_id": 1, "order_items": [{"product_id": 2, "quantity": 1}]}
+    assert client.post("/api/v1/orders", json=payload, headers=buyer).status_code == 400
 
-    # --- NHÓM 3: LOGIC QUẢN LÝ TRẠNG THÁI ---
 
-    def test_03_cancel_order_stock_recovery(self, user_auth):
-        """[Xác minh] Luồng hủy đơn hàng và tự động hoàn trả kho"""
-        # Tìm đơn hàng đầu tiên của user để hủy
-        orders = client.get("/api/v1/orders", headers=user_auth).json()
-        if not orders:
-            pytest.skip("Không có đơn hàng nào để thực hiện test hủy.")
-            
-        o_id = orders[0]["order_id"]
-        
-        # Cập nhật status sang 4 (Cancelled)
-        response = client.put(f"/api/v1/orders/{o_id}", json={"order_status": 4}, headers=user_auth)
-        
-        # Nếu đơn đã hủy từ trước hoặc không thuộc quyền, chấp nhận status lỗi có kiểm soát
-        assert response.status_code in [200, 400]
-        logger.info(f">>> [SUCCESS] Hủy đơn hàng và thực hiện logic hoàn kho (ID: {o_id}): OK")
+def test_unknown_voucher_is_rejected(client, buyer, contact_id):
+    payload = {
+        "contact_id": contact_id,
+        "payment_method_id": 1,
+        "voucher_code": "DOES-NOT-EXIST",
+        "order_items": [{"product_id": 2, "quantity": 1}],
+    }
+    assert client.post("/api/v1/orders", json=payload, headers=buyer).status_code == 404
 
-# -> python -m pytest tests/test_v1_order.py -s -v -p no:warnings
+
+def test_paypal_checkout_blocks_high_risk_amount(client, buyer, contact_id):
+    """Đơn > 100 triệu bị chặn bởi luật cứng của fraud detection trước khi gọi PayPal."""
+    payload = {
+        "contact_id": contact_id,
+        "payment_method_id": 4,  # PayPal
+        "order_items": [{"product_id": 2, "quantity": 20}],
+        "shipping_fee": 50000,
+    }
+    response = client.post("/api/v1/orders/create-paypal-order", json=payload, headers=buyer)
+
+    assert response.status_code == 403
+    assert "Giao dịch bị từ chối" in response.json()["detail"]
+
+
+def test_cancel_order_restocks(client, buyer):
+    orders = client.get("/api/v1/orders?status_filter=0", headers=buyer).json()
+    if not orders:
+        pytest.skip("No pending order to cancel")
+    order_id = orders[0]["order_id"]
+    detail = client.get(f"/api/v1/orders/{order_id}", headers=buyer).json()["order_details"][0]
+    stock_before = client.get(f"/api/v1/products/{detail['product_id']}").json()["quantity"]
+
+    response = client.put(f"/api/v1/orders/{order_id}", json={"order_status": 4}, headers=buyer)
+
+    assert response.status_code == 200
+    stock_after = client.get(f"/api/v1/products/{detail['product_id']}").json()["quantity"]
+    assert stock_after == stock_before + detail["quantity"]
+    assert client.put(f"/api/v1/orders/{order_id}", json={"order_status": 4}, headers=buyer).status_code == 400
+
+
+def test_buyer_cannot_confirm_own_order(client, buyer):
+    orders = client.get("/api/v1/orders", headers=buyer).json()
+    if not orders:
+        pytest.skip("No order")
+    response = client.put(f"/api/v1/orders/{orders[0]['order_id']}", json={"order_status": 1}, headers=buyer)
+    assert response.status_code == 403
