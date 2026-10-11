@@ -20,7 +20,7 @@
 
 {$DOMAIN} {
 	import common
-	reverse_proxy frontend:80 {
+	reverse_proxy frontend:8080 {
 		header_up X-Forwarded-Proto {scheme}
 	}
 }

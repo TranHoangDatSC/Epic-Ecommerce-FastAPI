@@ -20,7 +20,7 @@ dpkg-reconfigure -f noninteractive unattended-upgrades
 
 if ! command -v docker >/dev/null; then
   log "Docker Engine + compose plugin"
-  curl -fsSL https://get.docker.com | sh
+  curl --proto '=https' --tlsv1.2 -fsSL https://get.docker.com | sh
 fi
 
 log "Docker log rotation (Promtail/Filebeat read these files)"

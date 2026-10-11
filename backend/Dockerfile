@@ -3,8 +3,9 @@
 
 FROM python:3.13-slim AS builder
 WORKDIR /build
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+COPY backend/requirements.lock .
+# Wheels only (no setup.py execution) and every package pinned by hash, transitive ones included.
+RUN pip install --no-cache-dir --only-binary :all: --require-hashes --prefix=/install -r requirements.lock
 
 
 FROM python:3.13-slim
@@ -27,10 +28,11 @@ RUN apt-get update \
 
 COPY --from=builder /install /usr/local
 WORKDIR /app
-COPY --chown=app:app backend/app ./app
-COPY --chown=app:app backend/scripts ./scripts
-COPY --chown=app:app --chmod=755 backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-COPY --chown=app:app database /opt/database
+# Code stays root-owned and read-only for the runtime user; only /data is writable.
+COPY backend/app ./app
+COPY backend/scripts ./scripts
+COPY --chmod=755 backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY database /opt/database
 
 USER app
 EXPOSE 8000
