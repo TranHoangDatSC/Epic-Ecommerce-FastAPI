@@ -80,7 +80,7 @@ RETURNS DECIMAL(18,2) AS $$
 DECLARE
     voucher_record RECORD;
     order_record RECORD;
-    discount_amount DECIMAL(18,2) := 0;
+    v_discount_amount DECIMAL(18,2) := 0;
     final_total DECIMAL(18,2);
 BEGIN
     -- Get order details
@@ -110,14 +110,14 @@ BEGIN
     END IF;
 
     -- Calculate discount
-    discount_amount := calculate_order_total(order_record.total_amount, voucher_record.voucher_id, order_record.shipping_fee)
+    v_discount_amount := calculate_order_total(order_record.total_amount, voucher_record.voucher_id, order_record.shipping_fee)
                      - order_record.total_amount + order_record.discount_amount;
 
     -- Update order with voucher
     UPDATE "order"
     SET voucher_id = voucher_record.voucher_id,
-        discount_amount = discount_amount,
-        final_amount = total_amount - discount_amount + shipping_fee,
+        discount_amount = v_discount_amount,
+        final_amount = total_amount - v_discount_amount + shipping_fee,
         updated_at = CURRENT_TIMESTAMP
     WHERE order_id = p_order_id;
 
@@ -132,10 +132,10 @@ BEGIN
         'VOUCHER_APPLIED',
         'order',
         p_order_id,
-        'Applied voucher ' || p_voucher_code || ' with discount ' || discount_amount
+        'Applied voucher ' || p_voucher_code || ' with discount ' || v_discount_amount
     );
 
-    RETURN discount_amount;
+    RETURN v_discount_amount;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER

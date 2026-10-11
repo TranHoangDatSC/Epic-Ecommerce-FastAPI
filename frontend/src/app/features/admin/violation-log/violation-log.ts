@@ -25,7 +25,7 @@ export class ViolationLogComponent implements OnInit {
   rawLogsCount: number = 0;
 
   ngOnInit(): void {
-    this.loadInitialData();
+    void this.loadInitialData();
   }
 
   /**

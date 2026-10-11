@@ -1,6 +1,7 @@
 """Minimal PayPal Orders v2 client (sandbox by default)."""
 
 import logging
+import re
 from decimal import ROUND_HALF_UP, Decimal
 
 import httpx
@@ -11,6 +12,8 @@ from app.core.exceptions import BadRequestError
 logger = logging.getLogger(__name__)
 
 TIMEOUT = httpx.Timeout(15.0)
+# PayPal order ids are short upper-case alphanumerics; anything else must not reach the URL path.
+PAYPAL_ORDER_ID = re.compile(r"^[A-Z0-9]{8,36}$")
 
 
 def vnd_to_usd(amount_vnd: Decimal) -> str:
@@ -56,6 +59,8 @@ async def create_order(internal_order_id: int, amount_vnd: Decimal) -> dict:
 
 async def capture_order(paypal_order_id: str) -> dict:
     """Capture a payment the buyer has approved in the PayPal popup."""
+    if not PAYPAL_ORDER_ID.fullmatch(paypal_order_id):
+        raise BadRequestError("Invalid PayPal order id")
     token = await get_access_token()
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         response = await client.post(

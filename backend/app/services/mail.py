@@ -25,7 +25,7 @@ Trân trọng,
 
 def send_email(to: str, subject: str, body: str) -> bool:
     if not settings.SMTP_USER:
-        logger.warning("SMTP is not configured, email to %s was not sent", to)
+        logger.warning("SMTP is not configured, email was not sent")
         return False
 
     msg = EmailMessage()
@@ -35,12 +35,15 @@ def send_email(to: str, subject: str, body: str) -> bool:
     msg.set_content(body)
 
     try:
-        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, context=ssl.create_default_context()) as smtp:
+        context = ssl.create_default_context()
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, context=context) as smtp:
             smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             smtp.send_message(msg)
         return True
     except (smtplib.SMTPException, OSError):
-        logger.exception("Failed to send email", extra={"to": to})
+        logger.exception("Failed to send email")
         return False
 
 

@@ -1,8 +1,12 @@
+import asyncio
 from decimal import Decimal
 
+import pytest
+
+from app.core.exceptions import BadRequestError
 from app.services import contact_relay
 from app.services.fraud_detection import score_transaction
-from app.services.paypal import vnd_to_usd
+from app.services.paypal import capture_order, vnd_to_usd
 
 
 def test_health_and_readiness(client):
@@ -59,3 +63,10 @@ def test_fraud_hard_limit():
 def test_vnd_to_usd_rounding():
     assert vnd_to_usd(Decimal("25400")) == "1.00"
     assert vnd_to_usd(Decimal("38100")) == "1.50"
+
+
+@pytest.mark.parametrize("bad_id", ["../../v1/oauth2/token", "abc", "5O190127TN364715T/refund"])
+def test_paypal_capture_rejects_malformed_order_id(bad_id):
+    """The id is client-supplied and ends up in the PayPal URL path."""
+    with pytest.raises(BadRequestError):
+        asyncio.run(capture_order(bad_id))
