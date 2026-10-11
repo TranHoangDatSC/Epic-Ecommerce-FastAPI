@@ -9,7 +9,6 @@ import { CartService } from '../../../core/services/cart.service';
 import { UIService } from '../../../core/services/ui.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CategoryService } from '../../../shared/services/category.service';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 declare var bootstrap: any;
 
 @Component({
@@ -34,8 +33,7 @@ export class ProductDetailComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private categoryService: CategoryService,
-    private router: Router,
-    private sanitizer: DomSanitizer
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -86,27 +84,6 @@ export class ProductDetailComponent implements OnInit {
   setPrimaryImage(image: ProductImage): void {
     this.primaryImage = image;
   }
-
-  getSafeVideoUrl(url: string | undefined): SafeResourceUrl | string | null {
-  if (!url) return null;
-  const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(youtubeRegExp);
-  if (match && match[2].length === 11) {
-    const embedUrl = `https://www.youtube.com/embed/${match[2]}`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
-  }
-  if (url.includes('drive.google.com')) {
-    return url; 
-  }
-  return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-}
-
-getVideoType(url: string | undefined): 'youtube' | 'drive' | 'direct' | 'none' {
-  if (!url) return 'none';
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-  if (url.includes('drive.google.com')) return 'drive';
-  return 'direct';
-}
 
   reportingType: 'product' | 'review' | null = null;
   reportingId: number | null = null;

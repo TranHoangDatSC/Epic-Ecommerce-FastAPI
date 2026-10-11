@@ -38,7 +38,7 @@
                 <div class="address-card p-3 border rounded-4 cursor-pointer transition-all h-100" 
                      [class.border-primary]="selectedAddressId === addr.contact_id" 
                      [class.bg-primary-subtle]="selectedAddressId === addr.contact_id"
-                     (click)="selectAddress(addr)">
+                     (click)="selectAddress(addr)" tabindex="0" role="button" (keydown)="$event.key === 'Enter' && selectAddress(addr)">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
                       <span class="fw-bold d-block">{{ addr.full_name }}</span>
@@ -54,12 +54,12 @@
             <div class="edit-contact-box p-3 bg-light rounded-4 border" *ngIf="isEditingContact">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="small fw-bold mb-1">Số điện thoại</label>
-                  <input type="text" class="form-control border-0 shadow-sm" [(ngModel)]="customPhone">
+                  <label for="checkout-customphone" class="small fw-bold mb-1">Số điện thoại</label>
+                  <input id="checkout-customphone" type="text" class="form-control border-0 shadow-sm" [(ngModel)]="customPhone">
                 </div>
                 <div class="col-md-12">
-                  <label class="small fw-bold mb-1">Địa chỉ chi tiết</label>
-                  <textarea class="form-control border-0 shadow-sm" rows="2" [(ngModel)]="customAddress"></textarea>
+                  <label for="checkout-customaddress" class="small fw-bold mb-1">Địa chỉ chi tiết</label>
+                  <textarea id="checkout-customaddress" class="form-control border-0 shadow-sm" rows="2" [(ngModel)]="customAddress"></textarea>
                 </div>
               </div>
             </div>
@@ -72,18 +72,20 @@
           <div class="card-body">
             <div class="payment-grid d-flex flex-column gap-3">
               <div class="payment-item p-3 border rounded-4 d-flex align-items-center cursor-pointer transition-all" 
-                   [class.active]="selectedPaymentMethodId === 1" 
-                   (click)="selectPaymentMethod(1)">
+                   [class.active]="selectedPaymentMethodId === PAYMENT.COD" 
+                   (click)="selectPaymentMethod(PAYMENT.COD)" tabindex="0" role="button" (keydown)="$event.key === 'Enter' && selectPaymentMethod(PAYMENT.COD)">
                 <i class="bi bi-truck fs-4 me-3 text-warning"></i>
                 <div class="grow"><b>COD</b></div>
-                <input class="form-check-input" type="radio" [checked]="selectedPaymentMethodId === 1">
+                <label for="checkout-pay-cod" class="visually-hidden">Thanh toán khi nhận hàng (COD)</label>
+                <input id="checkout-pay-cod" class="form-check-input" type="radio" [checked]="selectedPaymentMethodId === PAYMENT.COD">
               </div>
               <div class="payment-item p-3 border rounded-4 d-flex align-items-center cursor-pointer transition-all" 
-                   [class.active]="selectedPaymentMethodId === 2" 
-                   (click)="selectPaymentMethod(2)">
+                   [class.active]="selectedPaymentMethodId === PAYMENT.PAYPAL" 
+                   (click)="selectPaymentMethod(PAYMENT.PAYPAL)" tabindex="0" role="button" (keydown)="$event.key === 'Enter' && selectPaymentMethod(PAYMENT.PAYPAL)">
                 <i class="bi bi-paypal fs-4 me-3 text-info"></i>
                 <div class="grow"><b>PayPal</b></div>
-                <input class="form-check-input" type="radio" [checked]="selectedPaymentMethodId === 2">
+                <label for="checkout-pay-paypal" class="visually-hidden">Thanh toán qua PayPal</label>
+                <input id="checkout-pay-paypal" class="form-check-input" type="radio" [checked]="selectedPaymentMethodId === PAYMENT.PAYPAL">
               </div>
             </div>
           </div>
@@ -111,10 +113,10 @@
 
             <!-- VOUCHER MỚI LẮP VÀO ĐÂY -->
             <div class="voucher-section mb-4 p-3 bg-light rounded-4 border">
-              <label class="fw-bold mb-2 small text-uppercase text-muted"><i class="bi bi-ticket-perforated me-2"></i>Mã giảm giá</label>
+              <label for="checkout-voucherinput" class="fw-bold mb-2 small text-uppercase text-muted"><i class="bi bi-ticket-perforated me-2"></i>Mã giảm giá</label>
               
               <div class="input-group" *ngIf="!appliedVoucher">
-                <input type="text" class="form-control text-uppercase" placeholder="Nhập mã..." [(ngModel)]="voucherInput" [disabled]="isCheckingVoucher">
+                <input id="checkout-voucherinput" type="text" class="form-control text-uppercase" placeholder="Nhập mã..." [(ngModel)]="voucherInput" [disabled]="isCheckingVoucher">
                 <button class="btn btn-dark fw-bold px-3" (click)="applyVoucher()" [disabled]="isCheckingVoucher || !voucherInput">
                   <i class="bi" [class.bi-check2]="!isCheckingVoucher" [class.spinner-border]="isCheckingVoucher" [class.spinner-border-sm]="isCheckingVoucher"></i> Áp dụng
                 </button>
@@ -165,7 +167,7 @@
               </button>
               
               <!-- Nút PayPal -->
-              <div [style.display]="selectedPaymentMethodId === 2 ? 'block' : 'none'" class="paypal-render-area">
+              <div [style.display]="selectedPaymentMethodId === PAYMENT.PAYPAL ? 'block' : 'none'" class="paypal-render-area">
                 <div id="paypal-button-container"></div>
               </div>
             </div>

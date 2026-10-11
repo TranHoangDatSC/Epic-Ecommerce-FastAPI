@@ -22,16 +22,21 @@
           <div class="contact-form">
             <form (ngSubmit)="sendMessage()">
               <div class="input-group">
-                <input type="text" placeholder="Họ và tên" name="fullName" [(ngModel)]="formData.fullName" required />
-                <input type="email" placeholder="Email" name="email" [(ngModel)]="formData.email" required />
+                <label for="contact-fullname" class="visually-hidden">Họ và tên</label>
+                <input id="contact-fullname" type="text" placeholder="Họ và tên" name="fullName" [(ngModel)]="formData.fullName" required />
+                <label for="contact-email" class="visually-hidden">Email</label>
+                <input id="contact-email" type="email" placeholder="Email" name="email" [(ngModel)]="formData.email" required />
               </div>
               
               <div class="input-group">
-                <input type="text" placeholder="Số điện thoại" name="phone" [(ngModel)]="formData.phone" />
-                <input type="text" placeholder="Chủ đề" name="subject" [(ngModel)]="formData.subject" />
+                <label for="contact-phone" class="visually-hidden">Số điện thoại</label>
+                <input id="contact-phone" type="text" placeholder="Số điện thoại" name="phone" [(ngModel)]="formData.phone" />
+                <label for="contact-subject" class="visually-hidden">Chủ đề</label>
+                <input id="contact-subject" type="text" placeholder="Chủ đề" name="subject" [(ngModel)]="formData.subject" />
               </div>
 
-              <textarea placeholder="Nội dung" name="message" [(ngModel)]="formData.message" required></textarea>
+              <label for="contact-message" class="visually-hidden">Nội dung</label>
+              <textarea id="contact-message" placeholder="Nội dung" name="message" [(ngModel)]="formData.message" required></textarea>
 
               <button type="submit" [disabled]="isLoading">
                 <span *ngIf="!isLoading">Gửi Tin Nhắn</span>

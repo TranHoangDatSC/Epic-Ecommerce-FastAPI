@@ -84,7 +84,8 @@
           <p class="mb-3">
             Hành động này sẽ {{ actionType === 'reject_product' ? 'gỡ sản phẩm #' + selectedReview?.product_id + ' khỏi hệ thống' : 'cấm người bán (seller_id: ' + selectedReview?.product?.seller_id + ') đăng nhập và kinh doanh' }}. Vui lòng nhập lý do (bắt buộc):
           </p>
-          <textarea class="form-control rounded-3" rows="3" placeholder="Nhập lý do chi tiết..." [(ngModel)]="actionReason"></textarea>
+          <label for="review-manage-actionreason" class="visually-hidden">Nhập lý do chi tiết...</label>
+          <textarea id="review-manage-actionreason" class="form-control rounded-3" rows="3" placeholder="Nhập lý do chi tiết..." [(ngModel)]="actionReason"></textarea>
         </div>
         <div class="modal-footer border-0">
           <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>

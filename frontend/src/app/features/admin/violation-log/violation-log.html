@@ -94,7 +94,8 @@
         
         <div class="page-input-wrapper d-flex align-items-center gap-2 px-2">
           <span class="text-secondary small fw-medium">Trang</span>
-          <input type="number" class="form-control page-input shadow-sm" 
+          <label for="violation-log-page" class="visually-hidden">Trang</label>
+          <input id="violation-log-page" type="number" class="form-control page-input shadow-sm" 
                  [value]="currentPage" 
                  (keyup.enter)="goToPage($event)" 
                  (blur)="goToPage($event)" 

@@ -38,7 +38,8 @@
       <div class="search-bar" style="width: 350px;">
         <div class="input-group shadow-sm">
           <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm sản phẩm, người bán..." [(ngModel)]="searchTerm" (input)="filterProducts()">
+          <label for="product-manage-searchterm" class="visually-hidden">Tìm kiếm sản phẩm, người bán...</label>
+          <input id="product-manage-searchterm" type="text" class="form-control border-start-0" placeholder="Tìm kiếm sản phẩm, người bán..." [(ngModel)]="searchTerm" (input)="filterProducts()">
         </div>
       </div>
     </div>
@@ -57,9 +58,9 @@
           <tr *ngFor="let product of paginatedProducts">
             <td>
               <div class="product-cell d-flex align-items-center">
-                <img [src]="getPrimaryImage(product)" class="rounded shadow-sm me-3 border" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" (click)="viewProductDetail(product)" (error)="$any($event.target).src = 'assets/placeholder.jpg'">
+                <img [src]="getPrimaryImage(product)" class="rounded shadow-sm me-3 border" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" (click)="viewProductDetail(product)" tabindex="0" role="button" alt="Xem chi tiết sản phẩm" (keydown)="$event.key === 'Enter' && viewProductDetail(product)" (error)="$any($event.target).src = 'assets/placeholder.jpg'">
                 <div class="product-info">
-                  <span class="name fw-bold d-block text-primary" (click)="viewProductDetail(product)" style="cursor: pointer;">
+                  <span class="name fw-bold d-block text-primary" (click)="viewProductDetail(product)" tabindex="0" role="button" (keydown)="$event.key === 'Enter' && viewProductDetail(product)" style="cursor: pointer;">
                     {{ product.product_name }}
                   </span>
                   <span class="badge bg-light text-secondary border mt-1 fw-bold">
@@ -160,8 +161,8 @@
             {{ rejectionReason }}
           </div>
           <div *ngIf="!isViewMode && targetStatus === 2">
-            <label class="mb-2 text-danger fw-bold text-uppercase small">Lý do từ chối (Bắt buộc):</label>
-            <textarea class="form-control" [(ngModel)]="rejectionReason" rows="3" placeholder="Nhập lý do tại sao sản phẩm không được duyệt..."></textarea>
+            <label for="product-manage-rejectionreason" class="mb-2 text-danger fw-bold text-uppercase small">Lý do từ chối (Bắt buộc):</label>
+            <textarea id="product-manage-rejectionreason" class="form-control" [(ngModel)]="rejectionReason" rows="3" placeholder="Nhập lý do tại sao sản phẩm không được duyệt..."></textarea>
           </div>
           <div *ngIf="!isViewMode && targetStatus === 1">
             <div class="text-center">

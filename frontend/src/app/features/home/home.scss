@@ -85,15 +85,6 @@ $transition-long: 0.5s ease-out;
   cursor: pointer;
   transition: all $transition-base;
   text-decoration: none;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: $shadow-lg;
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
 }
 
 @mixin glass-effect() {
@@ -101,63 +92,6 @@ $transition-long: 0.5s ease-out;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-@mixin card-hover() {
-  transition: all $transition-base;
-  
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: $shadow-lg;
-  }
-}
-
-// ===== MIXINS =====
-@mixin flexy($direction: row, $justify: center, $align: center) {
-  display: flex;
-  flex-direction: $direction;
-  justify-content: $justify;
-  align-items: $align;
-}
-
-@mixin button-base($bg, $text: $color-white) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: $bg;
-  color: $text;
-  border: none;
-  border-radius: $radius-lg;
-  padding: $spacing-md $spacing-lg;
-  font-weight: $font-weight-semibold;
-  cursor: pointer;
-  transition: all $transition-base;
-  text-decoration: none;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: $shadow-lg;
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
-}
-
-@mixin glass-effect() {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-@mixin card-hover() {
-  transition: all $transition-base;
-  
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: $shadow-lg;
-  }
 }
 
 // ===== GLOBAL STYLES =====
@@ -862,6 +796,15 @@ img {
     padding: $spacing-md $spacing-lg;
     min-width: 150px;
 
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: $shadow-lg;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
     &.btn-secondary {
       background: $color-light;
       color: $color-primary;
@@ -932,7 +875,13 @@ img {
   padding: $spacing-xl;
   text-align: center;
   height: 100%;
-  @include card-hover();
+  transition: all $transition-base;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+
   position: relative;
   overflow: hidden;
   margin: $spacing-md; // add spacing around each card

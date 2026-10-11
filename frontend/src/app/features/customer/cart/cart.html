@@ -54,11 +54,14 @@
                           <i class="bi bi-dash-lg"></i>
                         </button>
                         
+                        <label style="display: contents;">
+                        <span class="visually-hidden">Số lượng</span>
                         <input type="number" 
                               class="form-control form-control-sm border-0 text-center fw-bold p-0 bg-transparent hide-arrows" 
                               [(ngModel)]="item.quantity"
                               (change)="onManualQuantityChange(item)"
                               style="box-shadow: none; font-size: 0.9rem;">
+                        </label>
 
                         <button class="btn btn-icon btn-sm rounded-circle border-0 bg-transparent" 
                                 (click)="updateQuantity(item.product.product_id, item.quantity + 1)" 

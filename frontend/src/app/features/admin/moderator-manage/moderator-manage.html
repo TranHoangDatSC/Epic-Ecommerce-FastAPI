@@ -33,7 +33,8 @@
       <!-- Thanh Search -->
       <div class="search-box position-relative" style="width: 300px;">
         <i class="bi bi-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
-        <input type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
+        <label for="moderator-manage-searchterm" class="visually-hidden">Tìm theo tên, email...</label>
+        <input id="moderator-manage-searchterm" type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
                placeholder="Tìm theo tên, email..." 
                [(ngModel)]="searchTerm" 
                (ngModelChange)="onSearchChange()">
@@ -143,28 +144,28 @@
         <div class="modal-body p-4">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Tên đăng nhập *</label>
-              <input type="text" class="form-control" [(ngModel)]="moderatorForm.username" placeholder="Nhập username">
+              <label for="moderator-manage-username" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Tên đăng nhập *</label>
+              <input id="moderator-manage-username" type="text" class="form-control" [(ngModel)]="moderatorForm.username" placeholder="Nhập username">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Email *</label>
-              <input type="email" class="form-control" [(ngModel)]="moderatorForm.email" placeholder="example@email.com">
+              <label for="moderator-manage-email" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Email *</label>
+              <input id="moderator-manage-email" type="email" class="form-control" [(ngModel)]="moderatorForm.email" placeholder="example@email.com">
             </div>
             <div class="col-md-6" *ngIf="!editingModerator">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mật khẩu *</label>
-              <input type="password" class="form-control" [(ngModel)]="moderatorForm.password" placeholder="Nhập mật khẩu an toàn">
+              <label for="moderator-manage-password" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mật khẩu *</label>
+              <input id="moderator-manage-password" type="password" class="form-control" [(ngModel)]="moderatorForm.password" placeholder="Nhập mật khẩu an toàn">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Họ và tên *</label>
-              <input type="text" class="form-control" [(ngModel)]="moderatorForm.full_name" placeholder="Nguyễn Văn A">
+              <label for="moderator-manage-full-name" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Họ và tên *</label>
+              <input id="moderator-manage-full-name" type="text" class="form-control" [(ngModel)]="moderatorForm.full_name" placeholder="Nguyễn Văn A">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Số điện thoại</label>
-              <input type="text" class="form-control" [(ngModel)]="moderatorForm.phone_number" placeholder="0987654321">
+              <label for="moderator-manage-phone-number" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Số điện thoại</label>
+              <input id="moderator-manage-phone-number" type="text" class="form-control" [(ngModel)]="moderatorForm.phone_number" placeholder="0987654321">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Địa chỉ</label>
-              <input type="text" class="form-control" [(ngModel)]="moderatorForm.address" placeholder="Nhập địa chỉ">
+              <label for="moderator-manage-address" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Địa chỉ</label>
+              <input id="moderator-manage-address" type="text" class="form-control" [(ngModel)]="moderatorForm.address" placeholder="Nhập địa chỉ">
             </div>
           </div>
         </div>
@@ -192,8 +193,8 @@
             Bạn có chắc chắn muốn {{ statusAction === 'lock' ? 'khóa' : 'mở khóa' }} moderator <strong class="text-primary">{{ statusModalModerator?.username }}</strong>?
           </p>
           <div class="text-start">
-            <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Lý do thực hiện *</label>
-            <textarea class="form-control bg-light" rows="3" [(ngModel)]="statusReason" placeholder="Ghi chú bắt buộc..."></textarea>
+            <label for="moderator-manage-statusreason" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Lý do thực hiện *</label>
+            <textarea id="moderator-manage-statusreason" class="form-control bg-light" rows="3" [(ngModel)]="statusReason" placeholder="Ghi chú bắt buộc..."></textarea>
           </div>
         </div>
         <div class="modal-footer border-0 p-4 pt-2">

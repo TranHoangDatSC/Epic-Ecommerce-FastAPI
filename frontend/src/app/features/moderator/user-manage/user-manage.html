@@ -9,7 +9,8 @@
     <div class="header-actions">
       <div class="search-box shadow-sm">
         <i class="bi bi-search"></i>
-        <input type="text" placeholder="Tìm kiếm người dùng..." [(ngModel)]="searchTerm" (ngModelChange)="filterUsers()" />
+        <label for="user-manage-searchterm" class="visually-hidden">Tìm kiếm người dùng...</label>
+        <input id="user-manage-searchterm" type="text" placeholder="Tìm kiếm người dùng..." [(ngModel)]="searchTerm" (ngModelChange)="filterUsers()" />
       </div>
     </div>
   </div>
@@ -136,8 +137,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label text-muted fw-bold text-uppercase small mb-2">Lý do thực hiện *</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Vui lòng ghi rõ lý do để lưu vào Log hệ thống..."></textarea>
+            <label for="user-manage-statusreason" class="form-label text-muted fw-bold text-uppercase small mb-2">Lý do thực hiện *</label>
+            <textarea id="user-manage-statusreason" class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Vui lòng ghi rõ lý do để lưu vào Log hệ thống..."></textarea>
           </div>
         </div>
         <div class="modal-footer border-top pt-3 pb-3 px-4 bg-light">

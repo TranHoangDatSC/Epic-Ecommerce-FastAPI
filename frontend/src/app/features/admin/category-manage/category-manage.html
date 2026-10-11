@@ -29,7 +29,8 @@
 
       <div class="search-box position-relative" style="width: 300px;">
         <i class="bi bi-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
-        <input type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
+        <label for="category-manage-searchterm" class="visually-hidden">Tìm theo tên hoặc mô tả...</label>
+        <input id="category-manage-searchterm" type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
                placeholder="Tìm theo tên hoặc mô tả..." 
                [(ngModel)]="searchTerm" 
                (ngModelChange)="onSearchChange()">
@@ -154,12 +155,12 @@
         <div class="modal-body p-4">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Tên Danh Mục</label>
-              <input type="text" class="form-control" [(ngModel)]="categoryForm.name" placeholder="Ví dụ: Điện thoại">
+              <label for="category-manage-name" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Tên Danh Mục</label>
+              <input id="category-manage-name" type="text" class="form-control" [(ngModel)]="categoryForm.name" placeholder="Ví dụ: Điện thoại">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thuộc Danh Mục (Parent)</label>
-              <select class="form-select" [(ngModel)]="categoryForm.parent_id">
+              <label for="category-manage-parent-id" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thuộc Danh Mục (Parent)</label>
+              <select id="category-manage-parent-id" class="form-select" [(ngModel)]="categoryForm.parent_id">
                 <option [ngValue]="null">--- Danh Mục Cấp 1 ---</option>
                 <ng-container *ngFor="let c of allCategories">
                   <option *ngIf="!c.is_deleted && (!editingCategory || c.category_id !== editingCategory.category_id)" [ngValue]="c.category_id">{{ c.name }}</option>
@@ -167,8 +168,8 @@
               </select>
             </div>
             <div class="col-12">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mô tả chi tiết</label>
-              <textarea class="form-control" [(ngModel)]="categoryForm.description" rows="4" placeholder="Nhập mô tả..."></textarea>
+              <label for="category-manage-description" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mô tả chi tiết</label>
+              <textarea id="category-manage-description" class="form-control" [(ngModel)]="categoryForm.description" rows="4" placeholder="Nhập mô tả..."></textarea>
             </div>
             <div class="col-12" *ngIf="editingCategory">
               <div class="form-check form-switch p-3 rounded-3 border bg-light-soft">

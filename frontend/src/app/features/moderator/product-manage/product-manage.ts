@@ -45,7 +45,7 @@ Math: any;
   ) {}
 
   ngOnInit(): void {
-    import('rxjs').then(rxjs => {
+    void import('rxjs').then(rxjs => {
       rxjs.forkJoin({
         categories: this.categoryService.getCategories(),
         users: this.moderatorService.getUsers()

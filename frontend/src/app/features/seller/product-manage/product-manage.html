@@ -153,18 +153,18 @@
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-1-circle-fill me-2"></i>Thông tin cơ bản</h6>
                 <div class="row g-4">
                   <div class="col-12">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Tên Sản Phẩm *</label>
-                    <input class="form-control" formControlName="title" placeholder="Ví dụ: Áo thun nam...">
+                    <label for="product-manage-title" class="form-label text-muted fw-bold small text-uppercase">Tên Sản Phẩm *</label>
+                    <input id="product-manage-title" class="form-control" formControlName="title" placeholder="Ví dụ: Áo thun nam...">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Danh mục *</label>
-                    <select class="form-select" formControlName="category_id">
+                    <label for="product-manage-category-id" class="form-label text-muted fw-bold small text-uppercase">Danh mục *</label>
+                    <select id="product-manage-category-id" class="form-select" formControlName="category_id">
                       <option value="" disabled selected>--- Chọn danh mục ---</option>
                       <option *ngFor="let cat of (categories || [])" [value]="cat.category_id">{{cat.name}}</option>
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Hình ảnh (Nhiều ảnh) *</label>
+                    <label for="fileUpload" class="form-label text-muted fw-bold small text-uppercase">Hình ảnh (Nhiều ảnh) *</label>
                     <input type="file" id="fileUpload" class="form-control" (change)="onFileSelected($event)" multiple accept="image/*">
                   </div>
                 </div>
@@ -176,23 +176,23 @@
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-2-circle-fill me-2"></i>Chi tiết bán hàng</h6>
                 <div class="row g-4">
                   <div class="col-12">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Mô tả sản phẩm</label>
-                    <textarea class="form-control" rows="4" formControlName="description" placeholder="Mô tả chất liệu, xuất xứ, tính năng..."></textarea>
+                    <label for="product-manage-description" class="form-label text-muted fw-bold small text-uppercase">Mô tả sản phẩm</label>
+                    <textarea id="product-manage-description" class="form-control" rows="4" formControlName="description" placeholder="Mô tả chất liệu, xuất xứ, tính năng..."></textarea>
                   </div>
                   <div class="col-12">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Video URL (Tùy chọn)</label>
-                    <input type="text" class="form-control" formControlName="video_url" placeholder="Nhập link Youtube nếu có">
+                    <label for="product-manage-video-url" class="form-label text-muted fw-bold small text-uppercase">Video URL (Tùy chọn)</label>
+                    <input id="product-manage-video-url" type="text" class="form-control" formControlName="video_url" placeholder="Nhập link Youtube nếu có">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Giá bán (VNĐ) *</label>
+                    <label for="product-manage-price" class="form-label text-muted fw-bold small text-uppercase">Giá bán (VNĐ) *</label>
                     <div class="input-group">
-                      <input type="text" class="form-control" [value]="displayPrice" (input)="onPriceInput($event)" placeholder="0">
+                      <input id="product-manage-price" type="text" class="form-control" [value]="displayPrice" (input)="onPriceInput($event)" placeholder="0">
                       <span class="input-group-text bg-light fw-bold text-muted">₫</span>
                     </div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Số lượng kho *</label>
-                    <input type="text" class="form-control" formControlName="quantity" (input)="onNumericInput($event, 'quantity')" placeholder="0">
+                    <label for="product-manage-quantity" class="form-label text-muted fw-bold small text-uppercase">Số lượng kho *</label>
+                    <input id="product-manage-quantity" type="text" class="form-control" formControlName="quantity" (input)="onNumericInput($event, 'quantity')" placeholder="0">
                   </div>
                 </div>
               </div>
@@ -203,17 +203,19 @@
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-3-circle-fill me-2"></i>Thông số vận chuyển</h6>
                 <div class="row g-4">
                   <div class="col-md-4">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Trọng lượng (Gram)</label>
-                    <input type="text" class="form-control" formControlName="weight_grams" (input)="onNumericInput($event, 'weight_grams')" placeholder="VD: 500">
+                    <label for="product-manage-weight-grams" class="form-label text-muted fw-bold small text-uppercase">Trọng lượng (Gram)</label>
+                    <input id="product-manage-weight-grams" type="text" class="form-control" formControlName="weight_grams" (input)="onNumericInput($event, 'weight_grams')" placeholder="VD: 500">
                   </div>
                   <div class="col-md-8">
-                    <label class="form-label text-muted fw-bold small text-uppercase">Kích thước Đóng gói (Dài x Rộng x Cao)</label>
+                    <label for="product-manage-length" class="form-label text-muted fw-bold small text-uppercase">Kích thước Đóng gói (Dài x Rộng x Cao)</label>
                     <div class="input-group">
-                      <input type="text" class="form-control text-center" formControlName="d" (input)="onNumericInput($event, 'd')" placeholder="D">
+                      <input id="product-manage-length" type="text" class="form-control text-center" formControlName="d" (input)="onNumericInput($event, 'd')" placeholder="D">
                       <span class="input-group-text bg-light text-muted">x</span>
-                      <input type="text" class="form-control text-center" formControlName="r" (input)="onNumericInput($event, 'r')" placeholder="R">
+                      <label for="product-manage-width" class="visually-hidden">Chiều rộng (cm)</label>
+                      <input id="product-manage-width" type="text" class="form-control text-center" formControlName="r" (input)="onNumericInput($event, 'r')" placeholder="R">
                       <span class="input-group-text bg-light text-muted">x</span>
-                      <input type="text" class="form-control text-center" formControlName="c" (input)="onNumericInput($event, 'c')" placeholder="C">
+                      <label for="product-manage-height" class="visually-hidden">Chiều cao (cm)</label>
+                      <input id="product-manage-height" type="text" class="form-control text-center" formControlName="c" (input)="onNumericInput($event, 'c')" placeholder="C">
                       <span class="input-group-text bg-light fw-bold text-muted">cm</span>
                     </div>
                   </div>

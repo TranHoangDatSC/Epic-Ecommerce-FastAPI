@@ -9,7 +9,8 @@
     <div class="header-actions">
       <div class="search-box shadow-sm">
         <i class="bi bi-search"></i>
-        <input type="text" placeholder="Tìm mã ĐH, Tên KH, SĐT..." [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+        <label for="order-manage-searchterm" class="visually-hidden">Tìm mã ĐH, Tên KH, SĐT...</label>
+        <input id="order-manage-searchterm" type="text" placeholder="Tìm mã ĐH, Tên KH, SĐT..." [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
       </div>
     </div>
   </div>

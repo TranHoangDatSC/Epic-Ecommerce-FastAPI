@@ -27,7 +27,8 @@
       </ul>
       <div class="search-box position-relative" style="width: 300px;">
         <i class="bi bi-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
-        <input type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
+        <label for="voucher-manage-searchterm" class="visually-hidden">Tìm mã...</label>
+        <input id="voucher-manage-searchterm" type="text" class="form-control bg-light rounded-pill border-0 ps-5" 
                placeholder="Tìm mã..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilterAndTab()">
       </div>
     </div>
@@ -97,52 +98,53 @@
         <div class="modal-body p-4">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mã Voucher (Không thể sửa sau khi tạo)</label>
-              <input type="text" class="form-control py-3" [(ngModel)]="voucherForm.code" 
+              <label for="voucher-manage-code" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mã Voucher (Không thể sửa sau khi tạo)</label>
+              <input id="voucher-manage-code" type="text" class="form-control py-3" [(ngModel)]="voucherForm.code" 
                      [readonly]="!!editingVoucher" [class.bg-light]="editingVoucher"
                      placeholder="Ví dụ: QUYETCHAM" style="text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Loại ưu đãi</label>
-              <select class="form-select py-3" [(ngModel)]="voucherForm.discount_type">
+              <label for="voucher-manage-discount-type" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Loại ưu đãi</label>
+              <select id="voucher-manage-discount-type" class="form-select py-3" [(ngModel)]="voucherForm.discount_type">
                 <option [ngValue]="0">Giảm tiền mặt (VND)</option>
                 <option [ngValue]="1">Giảm phần trăm (%)</option>
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Giá trị giảm</label>
+              <label for="voucher-manage-discount-value" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Giá trị giảm</label>
               <div class="input-group">
-                <input type="text" class="form-control py-3 fw-bold" [value]="displayDiscountValue" 
+                <input id="voucher-manage-discount-value" type="text" class="form-control py-3 fw-bold" [value]="displayDiscountValue" 
                        (input)="formatCurrencyInput($event, 'discount')" placeholder="0">
                 <span class="input-group-text bg-light">{{ voucherForm.discount_type === 0 ? 'đ' : '%' }}</span>
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Đơn hàng tối thiểu</label>
+              <label for="voucher-manage-min-order" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Đơn hàng tối thiểu</label>
               <div class="input-group">
-                <input type="text" class="form-control py-3 fw-bold" [value]="displayMinOrder" 
+                <input id="voucher-manage-min-order" type="text" class="form-control py-3 fw-bold" [value]="displayMinOrder" 
                        (input)="formatCurrencyInput($event, 'minOrder')" placeholder="0">
                 <span class="input-group-text bg-light">đ</span>
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian bắt đầu</label>
-              <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_from">
+              <label for="voucher-manage-valid-from" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian bắt đầu</label>
+              <input id="voucher-manage-valid-from" type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_from">
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian kết thúc</label>
-              <input type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_to">
+              <label for="voucher-manage-valid-to" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Thời gian kết thúc</label>
+              <input id="voucher-manage-valid-to" type="datetime-local" class="form-control py-3" [(ngModel)]="voucherForm.valid_to">
             </div>
             <div class="col-12">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Số lượt phát hành</label>
+              <label for="voucher-manage-max-usage" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Số lượt phát hành</label>
               <div class="d-flex align-items-center gap-3">
-                <input type="number" class="form-control py-2 fw-bold text-primary" style="width: 120px;" min="1" [(ngModel)]="voucherForm.max_usage">
-                <input type="range" class="form-range flex-grow-1" min="1" max="5000" step="1" [(ngModel)]="voucherForm.max_usage">
+                <input id="voucher-manage-max-usage" type="number" class="form-control py-2 fw-bold text-primary" style="width: 120px;" min="1" [(ngModel)]="voucherForm.max_usage">
+                <label for="voucher-manage-max-usage-range" class="visually-hidden">Số lượt phát hành (thanh trượt)</label>
+                <input id="voucher-manage-max-usage-range" type="range" class="form-range flex-grow-1" min="1" max="5000" step="1" [(ngModel)]="voucherForm.max_usage">
               </div>
             </div>
             <div class="col-12">
-              <label class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mô tả chương trình</label>
-              <textarea class="form-control" [(ngModel)]="voucherForm.description" rows="3"></textarea>
+              <label for="voucher-manage-description" class="form-label text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Mô tả chương trình</label>
+              <textarea id="voucher-manage-description" class="form-control" [(ngModel)]="voucherForm.description" rows="3"></textarea>
             </div>
           </div>
         </div>

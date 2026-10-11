@@ -35,6 +35,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   // Form State
   selectedAddressId: number | null = null;
   selectedPaymentMethodId: number | null = null;
+  // Ids from the payment_method seed table (database/03_seeds/payment_method/seed.sql).
+  readonly PAYMENT = { COD: 1, PAYPAL: 4 } as const;
   customAddress: string = '';
   customPhone: string = '';
   orderNotes: string = '';
@@ -112,7 +114,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
 
           // Nếu mặc định load ra là PayPal (ID 2)
-          if (this.selectedPaymentMethodId === 2) {
+          if (this.selectedPaymentMethodId === this.PAYMENT.PAYPAL) {
             this.initPayPalButton();
           }
         },
@@ -136,7 +138,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     
     this.cdr.detectChanges();
 
-    if (id === 2) {
+    if (id === this.PAYMENT.PAYPAL) {
       // Dùng setTimeout để đảm bảo DOM đã render xong [style.display]
       setTimeout(() => this.initPayPalButton(), 0);
     }
@@ -145,7 +147,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   isBanned = false;
 
   initPayPalButton(): void {
-    if (this.isPaypalInitialized || typeof paypal === 'undefined' || this.selectedPaymentMethodId !== 2) return;
+    if (this.isPaypalInitialized || typeof paypal === 'undefined' || this.selectedPaymentMethodId !== this.PAYMENT.PAYPAL) return;
 
     const container = document.getElementById('paypal-button-container');
     if (!container) return;

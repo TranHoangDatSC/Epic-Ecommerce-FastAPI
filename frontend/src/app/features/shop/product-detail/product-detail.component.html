@@ -25,7 +25,7 @@
             <div class="thumbnail-list d-flex gap-2 mb-4 justify-content-start overflow-auto pb-2">
               <div *ngFor="let image of product.product_images" 
                    class="thumb-container rounded-3 border" 
-                   [class.active]="image === primaryImage" (click)="setPrimaryImage(image)">
+                   [class.active]="image === primaryImage" (click)="setPrimaryImage(image)" tabindex="0" role="button" aria-label="Xem ảnh này" (keydown)="$event.key === 'Enter' && setPrimaryImage(image)">
                 <img [src]="getFullImageUrl(image.image_url)" class="w-100 h-100 object-fit-cover">
               </div>
             </div>
@@ -135,7 +135,7 @@
                       <i *ngFor="let s of [1,2,3,4,5]" class="bi" 
                          [class.bi-star-fill]="s <= userRating" 
                          [class.bi-star]="s > userRating" 
-                         (click)="userRating = s" style="transition: transform 0.2s;"></i>
+                         (click)="userRating = s" tabindex="0" role="button" [attr.aria-label]="s + ' sao'" (keydown)="$event.key === 'Enter' && userRating = s" style="transition: transform 0.2s;"></i>
                     </div>
                   </div>
                   <div class="form-floating mb-4">
@@ -205,15 +205,16 @@
         </div>
         <div class="modal-body p-4">
           <div class="mb-3">
-            <label class="form-label fw-bold small">Lý do</label>
-            <select class="form-select rounded-3" [(ngModel)]="reportCategory">
+            <label for="product-detail-reportcategory" class="form-label fw-bold small">Lý do</label>
+            <select id="product-detail-reportcategory" class="form-select rounded-3" [(ngModel)]="reportCategory">
               <option value="">Chọn lý do...</option>
               <option value="fake">Hàng giả, hàng nhái</option>
               <option value="scam">Lừa đảo</option>
               <option value="other">Khác...</option>
             </select>
           </div>
-          <textarea class="form-control rounded-3" rows="3" placeholder="Chi tiết thêm..." [(ngModel)]="reportReason"></textarea>
+          <label for="product-detail-reportreason" class="visually-hidden">Chi tiết thêm...</label>
+          <textarea id="product-detail-reportreason" class="form-control rounded-3" rows="3" placeholder="Chi tiết thêm..." [(ngModel)]="reportReason"></textarea>
         </div>
         <div class="modal-footer border-0">
           <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>

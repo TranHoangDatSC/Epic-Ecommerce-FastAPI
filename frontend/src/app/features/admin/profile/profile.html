@@ -14,6 +14,7 @@
                     (click)="triggerFileUpload()">
               <i class="bi bi-camera"></i>
             </button>
+            <label for="avatarInput" class="visually-hidden">Ảnh đại diện</label>
             <input type="file" id="avatarInput" hidden (change)="onFileSelected($event)">
           </div>
           <h4 class="fw-bold mb-1">{{ userProfile.full_name }}</h4>
@@ -30,9 +31,12 @@
           <div class="collapse mt-3" id="passForm">
             <form (ngSubmit)="changePassword()" class="bg-light p-3 rounded">
                <div class="row g-2">
-                 <div class="col-md-12"> <input type="password" class="form-control" placeholder="Mật khẩu cũ" [(ngModel)]="currentPassword" name="cp"></div>
-                 <div class="col-md-6"> <input type="password" class="form-control" placeholder="Mật khẩu mới" [(ngModel)]="newPassword" name="np"></div>
-                 <div class="col-md-6"> <input type="password" class="form-control" placeholder="Xác nhận" [(ngModel)]="confirmPassword" name="conf"></div>
+                 <label for="profile-currentpassword" class="visually-hidden">Mật khẩu cũ</label>
+                 <div class="col-md-12"> <input id="profile-currentpassword" type="password" class="form-control" placeholder="Mật khẩu cũ" [(ngModel)]="currentPassword" name="cp"></div>
+                 <label for="profile-newpassword" class="visually-hidden">Mật khẩu mới</label>
+                 <div class="col-md-6"> <input id="profile-newpassword" type="password" class="form-control" placeholder="Mật khẩu mới" [(ngModel)]="newPassword" name="np"></div>
+                 <label for="profile-confirmpassword" class="visually-hidden">Xác nhận</label>
+                 <div class="col-md-6"> <input id="profile-confirmpassword" type="password" class="form-control" placeholder="Xác nhận" [(ngModel)]="confirmPassword" name="conf"></div>
                </div>
                <button type="submit" class="btn btn-sm btn-primary mt-2">Xác nhận</button>
             </form>
@@ -49,24 +53,24 @@
           <form (ngSubmit)="saveChanges()">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label small text-muted">Tên tài khoản</label>
-                <input type="text" class="form-control bg-light" [value]="userProfile.username" readonly>
+                <label for="profile-username" class="form-label small text-muted">Tên tài khoản</label>
+                <input id="profile-username" type="text" class="form-control bg-light" [value]="userProfile.username" readonly>
               </div>
               <div class="col-md-6">
-                <label class="form-label small text-muted">Họ và tên</label>
-                <input type="text" class="form-control" [(ngModel)]="userProfile.full_name" name="fullName">
+                <label for="profile-full-name" class="form-label small text-muted">Họ và tên</label>
+                <input id="profile-full-name" type="text" class="form-control" [(ngModel)]="userProfile.full_name" name="fullName">
               </div>
               <div class="col-md-6">
-                <label class="form-label small text-muted">Email liên lạc</label>
-                <input type="email" class="form-control" [(ngModel)]="userProfile.email" name="email">
+                <label for="profile-email" class="form-label small text-muted">Email liên lạc</label>
+                <input id="profile-email" type="email" class="form-control" [(ngModel)]="userProfile.email" name="email">
               </div>
               <div class="col-md-6">
-                <label class="form-label small text-muted">Số điện thoại</label>
-                <input type="text" class="form-control" [(ngModel)]="userProfile.phone_number" name="phone">
+                <label for="profile-phone-number" class="form-label small text-muted">Số điện thoại</label>
+                <input id="profile-phone-number" type="text" class="form-control" [(ngModel)]="userProfile.phone_number" name="phone">
               </div>
               <div class="col-12">
-                <label class="form-label small text-muted">Địa chỉ hiện tại</label>
-                <textarea class="form-control" [(ngModel)]="userProfile.address" name="address" rows="2"></textarea>
+                <label for="profile-address" class="form-label small text-muted">Địa chỉ hiện tại</label>
+                <textarea id="profile-address" class="form-control" [(ngModel)]="userProfile.address" name="address" rows="2"></textarea>
               </div>
             </div>
             <div class="mt-4 text-end">

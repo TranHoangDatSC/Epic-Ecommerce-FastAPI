@@ -21,21 +21,21 @@
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
-                <label class="form-label">Tên đăng nhập</label>
-                <input type="text" class="form-control" formControlName="username" placeholder="vd: dattran9x">
+                <label for="register-username" class="form-label">Tên đăng nhập</label>
+                <input id="register-username" type="text" class="form-control" formControlName="username" placeholder="vd: dattran9x">
                 <div class="text-danger small mt-1" *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.errors?.['required']">
                   Tên đăng nhập không được để trống.
                 </div>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Họ và tên</label>
-                <input type="text" class="form-control" formControlName="full_name" placeholder="vd: Trần Hoàng Đạt">
+                <label for="register-full-name" class="form-label">Họ và tên</label>
+                <input id="register-full-name" type="text" class="form-control" formControlName="full_name" placeholder="vd: Trần Hoàng Đạt">
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-control" formControlName="email" placeholder="vd: example@gmail.com">
+                <label for="register-email" class="form-label">Email</label>
+                <input id="register-email" type="email" class="form-control" formControlName="email" placeholder="vd: example@gmail.com">
                 <div class="text-danger small mt-1" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.errors?.['email']">
                   Email không đúng định dạng.
                 </div>
@@ -44,21 +44,21 @@
 
             <div class="col-md-6">
               <div class="mb-3">
-                <label class="form-label">Mật khẩu</label>
-                <input type="password" class="form-control" formControlName="password" placeholder="Tối thiểu 6 ký tự">
+                <label for="register-password" class="form-label">Mật khẩu</label>
+                <input id="register-password" type="password" class="form-control" formControlName="password" placeholder="Tối thiểu 6 ký tự">
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Nhập lại mật khẩu</label>
-                <input type="password" class="form-control" formControlName="confirmPassword" placeholder="Nhập lại mật khẩu">
+                <label for="register-confirmpassword" class="form-label">Nhập lại mật khẩu</label>
+                <input id="register-confirmpassword" type="password" class="form-control" formControlName="confirmPassword" placeholder="Nhập lại mật khẩu">
                 <small class="text-danger mt-1" *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.dirty">
                   Mật khẩu không khớp!
                 </small>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Số điện thoại</label>
-                <input type="tel" class="form-control" formControlName="phone_number" placeholder="0901234567">
+                <label for="register-phone-number" class="form-label">Số điện thoại</label>
+                <input id="register-phone-number" type="tel" class="form-control" formControlName="phone_number" placeholder="0901234567">
                 <div class="text-danger small mt-1" *ngIf="registerForm.get('phone_number')?.touched && registerForm.get('phone_number')?.invalid">
                   Vui lòng nhập từ 9-10 chữ số.
                 </div>
